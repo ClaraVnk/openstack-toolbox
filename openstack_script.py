@@ -98,7 +98,7 @@ def list_instances(conn):
     print("Liste des instances avec les détails des flavors :")
     print(instances_json)
 
-list_instances_with_flavors(conn)
+list_instances(conn)
 
 # Lister les snapshots
 print("\nListe des snapshots :")
