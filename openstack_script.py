@@ -83,11 +83,15 @@ def list_instances(conn):
 
     # Récupérer toutes les flavors disponibles
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
-    # Récupérer le temps de création des instances
-    creation_times = {instance.id: instance.created_at for instance in instances}
+    # Récupérer l'âge des instances
+    for instance in instances:
+        if instance.created_at:
+            creation_times[instance.id] = instance.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            creation_times[instance.id] = "N/A"
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Temps de création':<20}")
+    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20}")
     print("-" * 96)
 
     for instance in instances:
