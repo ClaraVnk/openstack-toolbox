@@ -73,6 +73,9 @@ def get_gnocchi_client():
     gnocchi = GnocchiClient('1', session=conn.session)
     return gnocchi
 
+# Obtenir le client Gnocchi
+gnocchi = get_gnocchi_client()
+
 # Fonction pour récupérer les métriques de coûts des flavors
 def get_flavor_costs(gnocchi, flavor_id):
     # Note: Vous devez adapter cette partie en fonction de la structure de vos métriques dans Gnocchi
@@ -113,7 +116,7 @@ def list_images(conn):
 list_images(conn)
 
 # Lister les instances
-def list_instances(conn):
+def list_instances(conn, gnnocchi):
     print_header("LISTE DES INSTANCES")
     # Récupérer les instances
     instances = list(conn.compute.servers())
