@@ -85,7 +85,7 @@ def list_instances(conn):
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20})
+    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20}")
     print("-" * 96)
 
     for instance in instances:
