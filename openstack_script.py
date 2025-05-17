@@ -1,7 +1,19 @@
+#!/usr/bin/env python3
+
 import openstack
 
 # Se connecter à OpenStack
-conn = openstack.connect(cloud='NUAGE', region_name='REGION')
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+auth_url = os.getenv("OS_AUTH_URL")
+project_name = os.getenv("OS_PROJECT_NAME")
+username = os.getenv("OS_USERNAME")
+password = os.getenv("OS_PASSWORD")
+user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
+project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
 
 # Lister les instances
 print("Liste des instances :")
