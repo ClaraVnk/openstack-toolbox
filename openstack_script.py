@@ -166,7 +166,7 @@ list_floating_ips(conn)
 def list_containers(conn):
     print_header("LISTE DES CONTAINERS")
     # Récupérer les containers
-    containers = list(conn.object_storage.containers())
+    containers = list(conn.object_store.containers())
 
     # Afficher les en-têtes du tableau
     print(f"{'Nom':<20} {'Taille totale (octets)':<20}")
