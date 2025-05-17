@@ -161,3 +161,17 @@ def list_floating_ips(conn):
         print(f"{ip.id:<36} {ip.floating_ip_address:<20} {ip.status:<20}")
 
 list_floating_ips(conn)
+
+# Lister les containers
+def list_containers(conn):
+    print_header("LISTE DES CONTAINERS")
+    # Récupérer les containers
+    containers = list(conn.object_storage.containers())
+
+    # Afficher les en-têtes du tableau
+    print(f"{'Nom':<20} {'Taille totale (octets)':<20}")
+    print("-" * 96)
+    for container in containers:
+        print(f"{container.name:<20} {container.bytes:<20}")
+
+list_containers(conn)
