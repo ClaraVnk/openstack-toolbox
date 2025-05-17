@@ -3,6 +3,9 @@
 import subprocess
 import sys
 import importlib
+import json
+import openstack
+from datetime import datetime, timedelta
 
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
@@ -21,18 +24,18 @@ except ImportError:
     install_package('python-dotenv')
 
 try:
-    importlib.import_module('gnocchiclient')
+    importlib.import_module('ceilometer')
 except ImportError:
-    print("Installation du package Gnocchi...")
-    install_package('gnocchiclient')
+    print("Installation du package Ceilometer...")
+    install_package('ceilometer')
 
-import openstack
-from datetime import datetime
+try:
+    importlib.import_module('cloudkittyclient')
+except ImportError:
+    print("Installation du package CloudKitty...")
+    install_package('cloudkittyclient')
 
-from gnocchiclient.client import Client as GnocchiClient
-from gnocchiclient.v1 import metric
-
-# Se connecter à OpenStackv 
+# Se connecter à OpenStack
 from dotenv import load_dotenv
 import os
 
@@ -68,34 +71,58 @@ def print_header(header):
     print(header.center(50))
     print("=" * 50 + "\n")
 
-# Fonction pour configurer le client Gnocchi
-def get_gnocchi_client():
-    gnocchi = GnocchiClient('1', session=conn.session)
-    return gnocchi
+def get_billing_data(start_time, end_time):
+    # Commande pour récupérer les données de facturation
+    command = [
+        "openstack", "rating", "dataframes", "get",
+        "-b", start_time,
+        "-e", end_time,
+        "-c", "Resources",
+        "-f", "json"
+    ]
 
-# Obtenir le client Gnocchi
-gnocchi = get_gnocchi_client()
+    # Exécuter la commande et récupérer la sortie
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        print("Erreur lors de la récupération des données de facturation")
+        print(result.stderr)
+        return None
 
-# Fonction pour récupérer les métriques de coûts des flavors
-def get_flavor_costs(gnocchi, flavor_id):
-    # Note: Vous devez adapter cette partie en fonction de la structure de vos métriques dans Gnocchi
-    try:
-        # Exemple: Récupérer la dernière mesure de coût pour la flavor
-        measures = gnocchi.measure.get_measures(metric=flavor_id, aggregation='mean')
-        if measures:
-            return measures[-1][1]  # Supposons que le coût est la dernière mesure
-    except Exception as e:
-        print(f"Erreur lors de la récupération des coûts pour la flavor {flavor_id}: {e}")
-    return 0.0
+    return json.loads(result.stdout)
 
-def calculate_instance_cost(flavor_id, uptime, gnocchi):
-    # Récupérer le coût horaire de la flavor
-    hourly_cost = get_flavor_costs(gnocchi, flavor_id)
-    # Calculer le coût total en fonction de l'uptime
-    uptime_hours = uptime.total_seconds() / 3600
-    total_cost = uptime_hours * hourly_cost
+def calculate_instance_cost(billing_data, icu_to_currency):
+    # Calculer le coût total en utilisant les données de facturation
+    total_icu = sum(float(resource['rating']) for resource in billing_data['Resources'])
+    total_cost = total_icu / icu_to_currency
 
     return total_cost
+
+def main():
+    # Définir la période de temps pour la récupération des données
+    end_time = datetime.now()
+    start_time = end_time - timedelta(hours=1)
+
+    # Formater les dates pour la commande OpenStack
+    start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    end_time_str = end_time.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    # Récupérer les données de facturation
+    billing_data = get_billing_data(start_time_str, end_time_str)
+    if not billing_data:
+        return
+
+    # Taux de conversion ICU à la devise souhaitée (par exemple, CHF)
+    icu_to_chf = 50  # 50 ICUs = 1 CHF
+    icu_to_euro = 55.5  # 55.5 ICUs = 1 Euro
+
+    # Calculer le coût total
+    total_cost = calculate_instance_cost(billing_data, icu_to_chf, icu_to_euro)
+    if total_cost is None:
+        print("Erreur lors du calcul du coût total")
+        return
+
+if __name__ == "__main__":
+    main()
 
 # Lister les images privées et partagées
 def list_images(conn):
@@ -116,7 +143,7 @@ def list_images(conn):
 list_images(conn)
 
 # Lister les instances
-def list_instances(conn, gnocchi):
+def list_instances(conn):
     print_header("LISTE DES INSTANCES")
     # Récupérer les instances
     instances = list(conn.compute.servers())
@@ -135,10 +162,10 @@ def list_instances(conn, gnocchi):
         # Formater l'uptime en jours, heures, minutes, secondes
         uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
         # Calculer le coût total
-        total_cost = calculate_instance_cost(flavor_id, uptime, gnocchi)
+        total_cost = calculate_instance_cost(flavor_id, uptime)
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {total_cost:<20.2f}")
 
-list_instances(conn, gnocchi)
+list_instances(conn)
 
 # Lister les snapshots
 def list_snapshots(conn):
