@@ -64,7 +64,7 @@ def print_tree(tree):
             print(f"  Volume: {volume}")
 
 # Obtenir l'arborescence des volumes montés
-tree = get_mounted_volumes_tree(conn)
+tree = mounted_volumes(conn)
 
 # Afficher l'arborescence
 print_tree(tree)
