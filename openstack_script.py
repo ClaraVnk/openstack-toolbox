@@ -71,11 +71,11 @@ def list_images(conn):
     all_images = private_images + shared_images
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Visibilité':<20}")
+    print(f"{'ID':<36} {'Nom':<36} {'Visibilité':<20}")
     print("-" * 96) 
 
     for image in all_images:
-        print(f"{image.id:<36} {image.name:<20} {image.visibility:<20}")
+        print(f"{image.id:<36} {image.name:<36} {image.visibility:<20}")
 
 list_images(conn)
 
@@ -108,9 +108,23 @@ def list_instances(conn):
 list_instances(conn)
 
 # Lister les snapshots
-print_header("LISTE DES SNAPSHOTS")
-for snapshot in conn.block_storage.snapshots():
-    print(snapshot)
+def list_snapshots(conn):
+    print_header("LISTE DES SNAPSHOTS")
+    # Récupérer les snapshots
+    snapshots = list(conn.block_storage.snapshots())
+    # Récupérer tous les IDs des snapshots
+    snapshot_ids = [snapshot.id for snapshot in snapshots]
+    # Récupérer les noms des snapshots
+    snapshot_names = [snapshot.name for snapshot in snapshots]
+    # Récupérer les volumes associés aux snapshots
+    snapshot_volumes = [snapshot.volume_id for snapshot in snapshots]
+
+    # Afficher les en-têtes du tableau
+    print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
+    print("-" * 96)
+    for snapshot in snapshots:
+        print(f"{snapshot.id:<36} {snapshot.name:<20} {snapshot.volume_id:<20}")
+list_snapshots(conn)
 
 # Lister les volumes 
 def list_volumes(conn):
