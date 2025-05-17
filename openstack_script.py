@@ -84,21 +84,14 @@ def list_instances(conn):
     # Récupérer toutes les flavors disponibles
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
-    # Extraire les informations des instances avec les détails des flavors
-    instances_info = []
+    # Afficher les en-têtes du tableau
+    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20})
+    print("-" * 96)
+
     for instance in instances:
         flavor_id = instance.flavor['id']
         flavor = flavors.get(flavor_id)
-        instances_info.append({
-            'id': instance.id,
-            'name': instance.name,
-            'flavor_id': flavor_id,
-        })
-
-    # Convertir en JSON pour une meilleure lisibilité
-    instances_json = json.dumps(instances_info, indent=4)
-
-    print(instances_json)
+        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20}")
 
 list_instances(conn)
 
