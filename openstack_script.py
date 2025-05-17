@@ -160,13 +160,15 @@ def list_volumes(conn):
     volume_types = [volume.volume_type for volume in volumes]
     # Récupérer si les volumes sont attachés
     volume_attached = [volume.attachments for volume in volumes]
+    # Récupérer le snapshot associé
+    volume_snapshots = [volume.snapshot_id for volume in volumes]
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Taille (Go)':<20} {'Type':<20} {'Attaché':<20}")
+    print(f"{'ID':<36} {'Nom':<20} {'Taille (Go)':<20} {'Type':<20} {'Attaché':<20} {'Snapshot associé':<20}")
     print("-" * 116)
     for volume in volumes:
         attached = "Oui" if volume.attachments else "Non"
-        print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20}")
+        print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20} {volume.snapshot_id:<20}")
 list_volumes(conn)
 
 # Lister les volumes sous forme d'arborescence
