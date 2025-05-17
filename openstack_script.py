@@ -53,8 +53,14 @@ else:
     print("Échec de la connexion à OpenStack")
     exit(1)
 
+def print_header(header):
+    print("\n" + "=" * 50)
+    print(header.center(50))
+    print("=" * 50 + "\n")
+
 # Lister les images privées et partagées
 def list_images(conn):
+    print_header("LISTE DES IMAGES PRIVÉES ET PARTAGÉES UTILISEES PAR L'UTILISATEUR")
     # Récupérer les images privées et les convertir en liste
     private_images = list(conn.image.images(visibility='private'))
 
@@ -64,8 +70,6 @@ def list_images(conn):
     # Combiner les images privées et partagées
     all_images = private_images + shared_images
 
-    # Afficher les images
-    print("Liste des images privées et partagées :")
     for image in all_images:
         print(f"ID: {image.id}, Nom: {image.name}, Visibilité: {image.visibility}")
 
@@ -73,6 +77,7 @@ list_images(conn)
 
 # Lister les instances
 def list_instances(conn):
+    print_header("LISTE DES INSTANCES AVEC LES DÉTAILS DES FLAVORS")
     # Récupérer les instances
     instances = list(conn.compute.servers())
 
@@ -93,19 +98,17 @@ def list_instances(conn):
     # Convertir en JSON pour une meilleure lisibilité
     instances_json = json.dumps(instances_info, indent=4)
 
-    # Afficher les instances avec les détails des flavors
-    print("Liste des instances avec les détails des flavors :")
     print(instances_json)
 
 list_instances(conn)
 
 # Lister les snapshots
-print("\nListe des snapshots :")
+print_header("LISTE DES SNAPSHOTS")
 for snapshot in conn.block_storage.snapshots():
     print(snapshot)
 
 # Lister les volumes sous forme d'arborescence
-print("\nArborescence des volumes :")
+print_header("ARBORESCENCE DES VOLUMES")
 
 # Récupérer les volumes attachés aux instances
 def mounted_volumes(conn):
@@ -141,6 +144,4 @@ def print_tree(tree):
 
 # Obtenir l'arborescence des volumes montés
 tree = mounted_volumes(conn)
-
-# Afficher l'arborescence
 print_tree(tree)
