@@ -21,6 +21,7 @@ except ImportError:
     install_package('python-dotenv')
 
 import openstack
+import datetime
 
 # Se connecter à OpenStackv 
 from dotenv import load_dotenv
@@ -82,21 +83,23 @@ def list_instances(conn):
 
     # Récupérer toutes les flavors disponibles
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
-    # Récupérer l'âge des instances
-    creation_times = {}
-    for instance in instances:
-        if instance.created_at:
-            creation_times[instance.id] = instance.created_at.strftime("%Y-%m-%d %H:%M:%S")
-        else:
-            creation_times[instance.id] = "N/A"
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20}")
-    print("-" * 96)
+    print("-" * 116)
 
     for instance in instances:
         flavor_id = instance.flavor['id']
-        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {creation_times[instance.id]:<20}")
+        flavor = flavors.get(flavor_id)
+
+        # Convertir la date de création en objet datetime
+        created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%S.%f")
+        # Calculer l'uptime
+        uptime = datetime.now() - created_at
+        # Formater l'uptime en jours, heures, minutes, secondes
+        uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
+
+        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20}")
 
 list_instances(conn)
 
