@@ -76,8 +76,11 @@ def list_instances(conn):
     # Récupérer les instances
     instances = list(conn.compute.servers())
 
-    # Convertir les instances en format JSON avec une indentation pour une meilleure lisibilité
-    instances_json = json.dumps([instance.to_dict() for instance in instances], indent=4)
+    # Extraire uniquement les noms et les ID des instances
+    instances_info = [{'id': instance.id, 'name': instance.name} for instance in instances]
+
+    # Convertir en JSON pour une meilleure lisibilité
+    instances_json = json.dumps(instances_info, indent=4)
 
     # Afficher les instances
     print("Liste des instances :")
@@ -89,11 +92,6 @@ list_instances(conn)
 print("\nListe des snapshots :")
 for snapshot in conn.block_storage.snapshots():
     print(snapshot)
-
-# Lister les services
-print("\nListe des services :")
-for service in conn.identity.services():
-    print(service)
 
 # Lister les types de machines virtuelles
 print("\nListe des types de machines virtuelles :")
