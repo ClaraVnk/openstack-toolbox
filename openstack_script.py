@@ -138,3 +138,21 @@ def print_tree(tree):
 # Obtenir l'arborescence des volumes montés
 tree = mounted_volumes(conn)
 print_tree(tree)
+
+def list_floating_ips(conn):
+    print_header("LISTE DES FLOATING IPs")
+    # Récupérer les adresses IP flottantes
+    floating_ips = list(conn.network.ips())
+
+    # Récupérer toutes les IDs des IP flottantes
+    floating_ip_ids = [ip.id for ip in floating_ips]
+    # Récupérer les IP des IP flottantes
+    floating_ip_addresses = [ip.floating_ip_address for ip in floating_ips]
+
+    # Afficher les en-têtes du tableau
+    print(f"{'ID':<36} {'IP':<20}")
+    print("-" * 96)
+    for ip in floating_ips:
+        print(f"{ip.id:<36} {ip.floating_ip_address:<20}")
+
+list_floating_ips(conn)
