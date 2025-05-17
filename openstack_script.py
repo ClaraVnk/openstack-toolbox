@@ -24,12 +24,6 @@ except ImportError:
     install_package('python-dotenv')
 
 try:
-    importlib.import_module('ceilometer')
-except ImportError:
-    print("Installation du package Ceilometer...")
-    install_package('ceilometer')
-
-try:
     importlib.import_module('cloudkittyclient')
 except ImportError:
     print("Installation du package CloudKitty...")
