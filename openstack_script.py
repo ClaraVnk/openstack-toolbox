@@ -63,17 +63,14 @@ def list_images(conn):
     print_header("LISTE DES IMAGES UTILISEES")
     # Récupérer les images privées et les convertir en liste
     private_images = list(conn.image.images(visibility='private'))
-
     # Récupérer les images partagées et les convertir en liste
     shared_images = list(conn.image.images(visibility='shared'))
-
     # Combiner les images privées et partagées
     all_images = private_images + shared_images
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<36} {'Visibilité':<20}")
     print("-" * 96) 
-
     for image in all_images:
         print(f"{image.id:<36} {image.name:<36} {image.visibility:<20}")
 
@@ -84,25 +81,20 @@ def list_instances(conn):
     print_header("LISTE DES INSTANCES")
     # Récupérer les instances
     instances = list(conn.compute.servers())
-
     # Récupérer toutes les flavors disponibles
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20}")
     print("-" * 116)
-
     for instance in instances:
         flavor_id = instance.flavor['id']
-        flavor = flavors.get(flavor_id)
-
         # Convertir la date de création en objet datetime
         created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
         # Calculer l'uptime
         uptime = datetime.now() - created_at
         # Formater l'uptime en jours, heures, minutes, secondes
         uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
-
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20}")
 
 list_instances(conn)
@@ -112,18 +104,13 @@ def list_snapshots(conn):
     print_header("LISTE DES SNAPSHOTS")
     # Récupérer les snapshots
     snapshots = list(conn.block_storage.snapshots())
-    # Récupérer tous les IDs des snapshots
-    snapshot_ids = [snapshot.id for snapshot in snapshots]
-    # Récupérer les noms des snapshots
-    snapshot_names = [snapshot.name for snapshot in snapshots]
-    # Récupérer les volumes associés aux snapshots
-    snapshot_volumes = [snapshot.volume_id for snapshot in snapshots]
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
     print("-" * 96)
     for snapshot in snapshots:
         print(f"{snapshot.id:<36} {snapshot.name:<20} {snapshot.volume_id:<20}")
+    
 list_snapshots(conn)
 
 # Lister les backups
@@ -131,18 +118,13 @@ def list_backups(conn):
     print_header("LISTE DES BACKUPS")
     # Récupérer les backups
     backups = list(conn.block_storage.backups())
-    # Récupérer tous les IDs des backups
-    backup_ids = [backup.id for backup in backups]
-    # Récupérer les noms des backups
-    backup_names = [backup.name for backup in backups]
-    # Récupérer les volumes associés aux backups
-    backup_volumes = [backup.volume_id for backup in backups]
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
     print("-" * 96)
     for backup in backups:
         print(f"{backup.id:<36} {backup.name:<20} {backup.volume_id:<20}")
+
 list_backups(conn)
 
 # Lister les volumes 
@@ -150,18 +132,6 @@ def list_volumes(conn):
     print_header("LISTE DES VOLUMES")
     # Récupérer les volumes
     volumes = list(conn.block_storage.volumes())
-    # Récupérer tous les IDs des volumes
-    volume_ids = [volume.id for volume in volumes]
-    # Récupérer les noms des volumes
-    volume_names = [volume.name for volume in volumes]
-    # Récupérer les tailles des volumes
-    volume_sizes = [volume.size for volume in volumes]
-    # Récupérer les types de volumes
-    volume_types = [volume.volume_type for volume in volumes]
-    # Récupérer si les volumes sont attachés
-    volume_attached = [volume.attachments for volume in volumes]
-    # Récupérer le snapshot associé
-    volume_snapshots = [volume.snapshot_id for volume in volumes]
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Taille (Go)':<20} {'Type':<20} {'Attaché':<20} {'Snapshot associé':<20}")
@@ -171,11 +141,11 @@ def list_volumes(conn):
         # Remplacer None par une chaîne vide pour snapshot_id
         snapshot_id = volume.snapshot_id if volume.snapshot_id else 'Aucun'
         print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20} {snapshot_id:<20}")
+
 list_volumes(conn)
 
 # Lister les volumes sous forme d'arborescence
 print_header("ARBORESCENCE DES VOLUMES")
-
 # Récupérer les volumes attachés aux instances
 def mounted_volumes(conn):
     instances = conn.compute.servers()
@@ -217,13 +187,6 @@ def list_floating_ips(conn):
     print_header("LISTE DES FLOATING IPs")
     # Récupérer les adresses IP flottantes
     floating_ips = list(conn.network.ips())
-
-    # Récupérer toutes les IDs des IP flottantes
-    floating_ip_ids = [ip.id for ip in floating_ips]
-    # Récupérer les IP des IP flottantes
-    floating_ip_addresses = [ip.floating_ip_address for ip in floating_ips]
-    # Récupérer l'état des IP flottantes
-    floating_ip_statuses = [ip.status for ip in floating_ips]
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'IP':<20} {'Statut':<20}")
