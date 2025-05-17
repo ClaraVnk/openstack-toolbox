@@ -84,15 +84,10 @@ def list_instances(conn):
     for instance in instances:
         flavor_id = instance.flavor['id']
         flavor = flavors.get(flavor_id)
-        if flavor:
-            flavor_name = flavor.name
-        else:
-            flavor_name = 'Unknown Flavor'
         instances_info.append({
             'id': instance.id,
             'name': instance.name,
             'flavor_id': flavor_id,
-            'flavor_name': flavor_name
         })
 
     # Convertir en JSON pour une meilleure lisibilité
