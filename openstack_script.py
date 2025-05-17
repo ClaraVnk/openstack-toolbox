@@ -55,8 +55,13 @@ else:
 
 # Lister les images privées et partagées
 def list_images(conn):
-    private_images = conn.image.images(visibility='private')
-    shared_images = conn.image.images(visibility='shared')
+    # Récupérer les images privées et les convertir en liste
+    private_images = list(conn.image.images(visibility='private'))
+
+    # Récupérer les images partagées et les convertir en liste
+    shared_images = list(conn.image.images(visibility='shared'))
+
+    # Combiner les images privées et partagées
     all_images = private_images + shared_images
 
     # Afficher les images
