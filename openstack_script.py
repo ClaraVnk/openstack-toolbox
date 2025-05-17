@@ -168,7 +168,9 @@ def list_volumes(conn):
     print("-" * 116)
     for volume in volumes:
         attached = "Oui" if volume.attachments else "Non"
-        print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20} {volume.snapshot_id:<20}")
+        # Remplacer None par une chaîne vide pour snapshot_id
+        snapshot_id = volume.snapshot_id if volume.snapshot_id else 'Aucun'
+        print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20} {snapshot_id:<20}")
 list_volumes(conn)
 
 # Lister les volumes sous forme d'arborescence
