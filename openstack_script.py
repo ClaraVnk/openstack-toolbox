@@ -20,8 +20,17 @@ except ImportError:
     print("Installation du package dotenv...")
     install_package('python-dotenv')
 
+try:
+    importlib.import_module('gnocchiclient')
+except ImportError:
+    print("Installation du package Gnocchi...")
+    install_package('python-gnocchiclient')
+
 import openstack
 from datetime import datetime
+
+from gnocchiclient.client import Client as GnocchiClient
+from gnocchiclient.v1 import metric
 
 # Se connecter à OpenStackv 
 from dotenv import load_dotenv
@@ -53,10 +62,37 @@ else:
     print("Échec de la connexion à OpenStack")
     exit(1)
 
+# Fonction pour afficher les en-têtes
 def print_header(header):
     print("\n" + "=" * 50)
     print(header.center(50))
     print("=" * 50 + "\n")
+
+# Fonction pour configurer le client Gnocchi
+def get_gnocchi_client():
+    gnocchi = GnocchiClient('1', session=conn.session)
+    return gnocchi
+
+# Fonction pour récupérer les métriques de coûts des flavors
+def get_flavor_costs(gnocchi, flavor_id):
+    # Note: Vous devez adapter cette partie en fonction de la structure de vos métriques dans Gnocchi
+    try:
+        # Exemple: Récupérer la dernière mesure de coût pour la flavor
+        measures = gnocchi.measure.get_measures(metric=flavor_id, aggregation='mean')
+        if measures:
+            return measures[-1][1]  # Supposons que le coût est la dernière mesure
+    except Exception as e:
+        print(f"Erreur lors de la récupération des coûts pour la flavor {flavor_id}: {e}")
+    return 0.0
+
+def calculate_instance_cost(flavor_id, uptime, gnocchi):
+    # Récupérer le coût horaire de la flavor
+    hourly_cost = get_flavor_costs(gnocchi, flavor_id)
+    # Calculer le coût total en fonction de l'uptime
+    uptime_hours = uptime.total_seconds() / 3600
+    total_cost = uptime_hours * hourly_cost
+
+    return total_cost
 
 # Lister les images privées et partagées
 def list_images(conn):
@@ -85,7 +121,7 @@ def list_instances(conn):
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20}")
+    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20}" {'Coût total':<20})
     print("-" * 116)
     for instance in instances:
         flavor_id = instance.flavor['id']
@@ -95,7 +131,9 @@ def list_instances(conn):
         uptime = datetime.now() - created_at
         # Formater l'uptime en jours, heures, minutes, secondes
         uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
-        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20}")
+        # Calculer le coût total
+        total_cost = calculate_instance_cost(flavor_id, uptime, gnocchi)
+        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {total_cost:<20.2f}")
 
 list_instances(conn)
 
