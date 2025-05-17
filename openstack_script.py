@@ -124,7 +124,7 @@ def list_instances(conn, gnnocchi):
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20}" {'Coût total':<20})
+    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût total':<20}")
     print("-" * 116)
     for instance in instances:
         flavor_id = instance.flavor['id']
