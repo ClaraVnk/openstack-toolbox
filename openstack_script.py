@@ -23,7 +23,7 @@ except ImportError:
 import openstack
 import json
 
-# Se connecter à OpenStack
+# Se connecter à OpenStackv 
 from dotenv import load_dotenv
 import os
 
@@ -84,6 +84,7 @@ def list_instances(conn):
     for instance in instances:
         flavor_id = instance.flavor['id']
         flavor = flavors.get(flavor_id, 'Unknown Flavor')
+        flavor_name = flavor.name if hasattr(flavor, 'name') else flavor
         instances_info.append({
             'id': instance.id,
             'name': instance.name,
