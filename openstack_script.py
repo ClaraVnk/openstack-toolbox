@@ -153,7 +153,7 @@ def list_floating_ips(conn):
     floating_ip_statuses = [ip.status for ip in floating_ips]
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'IP':<20}")
+    print(f"{'ID':<36} {'IP':<20} {'Statut':<20}")
     print("-" * 96)
     for ip in floating_ips:
         print(f"{ip.id:<36} {ip.floating_ip_address:<20} {ip.status:<20}")
