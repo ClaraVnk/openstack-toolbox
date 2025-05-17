@@ -93,7 +93,7 @@ def list_instances(conn):
         flavor = flavors.get(flavor_id)
 
         # Convertir la date de création en objet datetime
-        created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%S.%f")
+        created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
         # Calculer l'uptime
         uptime = datetime.now() - created_at
         # Formater l'uptime en jours, heures, minutes, secondes
