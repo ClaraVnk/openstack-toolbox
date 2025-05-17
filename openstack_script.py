@@ -21,7 +21,7 @@ except ImportError:
     install_package('python-dotenv')
 
 import openstack
-import datetime
+from datetime import datetime
 
 # Se connecter à OpenStackv 
 from dotenv import load_dotenv
