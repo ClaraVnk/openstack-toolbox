@@ -1,6 +1,27 @@
 #!/usr/bin/env python3
 
+import subprocess
+import sys
+import importlib
+
+def install_package(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# Vérifier et installer les dépendances manquantes
+try:
+    importlib.import_module('openstack')
+except ImportError:
+    print("Installation du package openstack...")
+    install_package('openstacksdk')
+
+try:
+    importlib.import_module('dotenv')
+except ImportError:
+    print("Installation du package dotenv...")
+    install_package('python-dotenv')
+
 import openstack
+import json
 
 # Se connecter à OpenStack
 from dotenv import load_dotenv
@@ -25,15 +46,39 @@ conn = openstack.connect(
     project_domain_name=project_domain_name,
 )
 
-# Lister les instances
-print("Liste des instances :")
-for server in conn.compute.servers():
-    print(server)
+# Vérifier la connexion
+if conn.authorize():
+    print("Connexion réussie à OpenStack")
+else:
+    print("Échec de la connexion à OpenStack")
+    exit(1)
 
-# Lister les images
-print("\nListe des images :")
-for image in conn.compute.images():
-    print(image)
+# Lister les images privées et partagées
+def list_images(conn):
+    private_images = conn.image.images(visibility='private')
+    shared_images = conn.image.images(visibility='shared')
+    all_images = private_images + shared_images
+
+    # Afficher les images
+    print("Liste des images privées et partagées :")
+    for image in all_images:
+        print(f"ID: {image.id}, Nom: {image.name}, Visibilité: {image.visibility}")
+
+list_images(conn)
+
+# Lister les instances
+def list_instances(conn):
+    # Récupérer les instances
+    instances = list(conn.compute.servers())
+
+    # Convertir les instances en format JSON avec une indentation pour une meilleure lisibilité
+    instances_json = json.dumps([instance.to_dict() for instance in instances], indent=4)
+
+    # Afficher les instances
+    print("Liste des instances :")
+    print(instances_json)
+
+list_instances(conn)
 
 # Lister les snapshots
 print("\nListe des snapshots :")
