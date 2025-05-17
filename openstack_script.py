@@ -139,6 +139,7 @@ def print_tree(tree):
 tree = mounted_volumes(conn)
 print_tree(tree)
 
+# Lister les IP flottantes
 def list_floating_ips(conn):
     print_header("LISTE DES FLOATING IPs")
     # Récupérer les adresses IP flottantes
