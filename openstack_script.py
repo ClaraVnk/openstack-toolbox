@@ -116,7 +116,7 @@ def list_images(conn):
 list_images(conn)
 
 # Lister les instances
-def list_instances(conn, gnnocchi):
+def list_instances(conn, gnocchi):
     print_header("LISTE DES INSTANCES")
     # Récupérer les instances
     instances = list(conn.compute.servers())
@@ -138,7 +138,7 @@ def list_instances(conn, gnnocchi):
         total_cost = calculate_instance_cost(flavor_id, uptime, gnocchi)
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {total_cost:<20.2f}")
 
-list_instances(conn)
+list_instances(conn, gnocchi)
 
 # Lister les snapshots
 def list_snapshots(conn):
