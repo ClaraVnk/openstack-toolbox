@@ -76,27 +76,34 @@ def list_instances(conn):
     # Récupérer les instances
     instances = list(conn.compute.servers())
 
-    # Extraire uniquement les noms et les ID des instances
-    instances_info = [{'id': instance.id, 'name': instance.name} for instance in instances]
+    # Récupérer toutes les flavors disponibles
+    flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
+
+    # Extraire les informations des instances avec les détails des flavors
+    instances_info = []
+    for instance in instances:
+        flavor_id = instance.flavor['id']
+        flavor = flavors.get(flavor_id, 'Unknown Flavor')
+        instances_info.append({
+            'id': instance.id,
+            'name': instance.name,
+            'flavor_id': flavor_id,
+            'flavor_name': flavor.name
+        })
 
     # Convertir en JSON pour une meilleure lisibilité
     instances_json = json.dumps(instances_info, indent=4)
 
-    # Afficher les instances
-    print("Liste des instances :")
+    # Afficher les instances avec les détails des flavors
+    print("Liste des instances avec les détails des flavors :")
     print(instances_json)
 
-list_instances(conn)
+list_instances_with_flavors(conn)
 
 # Lister les snapshots
 print("\nListe des snapshots :")
 for snapshot in conn.block_storage.snapshots():
     print(snapshot)
-
-# Lister les types de machines virtuelles
-print("\nListe des types de machines virtuelles :")
-for flavor in conn.compute.flavors():
-    print(flavor)
 
 # Lister les volumes sous forme d'arborescence
 print("\nArborescence des volumes :")
