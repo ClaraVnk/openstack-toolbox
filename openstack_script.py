@@ -24,7 +24,7 @@ try:
     importlib.import_module('gnocchiclient')
 except ImportError:
     print("Installation du package Gnocchi...")
-    install_package('python-gnocchiclient')
+    install_package('gnocchiclient')
 
 import openstack
 from datetime import datetime
