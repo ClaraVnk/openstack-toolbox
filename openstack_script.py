@@ -149,11 +149,13 @@ def list_floating_ips(conn):
     floating_ip_ids = [ip.id for ip in floating_ips]
     # Récupérer les IP des IP flottantes
     floating_ip_addresses = [ip.floating_ip_address for ip in floating_ips]
+    # Récupérer l'état des IP flottantes
+    floating_ip_statuses = [ip.status for ip in floating_ips]
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'IP':<20}")
     print("-" * 96)
     for ip in floating_ips:
-        print(f"{ip.id:<36} {ip.floating_ip_address:<20}")
+        print(f"{ip.id:<36} {ip.floating_ip_address:<20} {ip.status:<20}")
 
 list_floating_ips(conn)
