@@ -60,7 +60,7 @@ def print_header(header):
 
 # Lister les images privées et partagées
 def list_images(conn):
-    print_header("LISTE DES IMAGES PRIVÉES ET PARTAGÉES UTILISEES PAR L'UTILISATEUR")
+    print_header("LISTE DES IMAGES UTILISEES")
     # Récupérer les images privées et les convertir en liste
     private_images = list(conn.image.images(visibility='private'))
 
@@ -70,14 +70,18 @@ def list_images(conn):
     # Combiner les images privées et partagées
     all_images = private_images + shared_images
 
+    # Afficher les en-têtes du tableau
+    print(f"{'ID':<36} {'Nom':<20} {'Visibilité':<20}")
+    print("-" * 96) 
+
     for image in all_images:
-        print(f"ID: {image.id}, Nom: {image.name}, Visibilité: {image.visibility}")
+        print(f"{image.id:<36} {image.name:<20} {image.visibility:<20}")
 
 list_images(conn)
 
 # Lister les instances
 def list_instances(conn):
-    print_header("LISTE DES INSTANCES AVEC LES DÉTAILS DES FLAVORS")
+    print_header("LISTE DES INSTANCES")
     # Récupérer les instances
     instances = list(conn.compute.servers())
 
@@ -107,6 +111,30 @@ list_instances(conn)
 print_header("LISTE DES SNAPSHOTS")
 for snapshot in conn.block_storage.snapshots():
     print(snapshot)
+
+# Lister les volumes 
+def list_volumes(conn):
+    print_header("LISTE DES VOLUMES")
+    # Récupérer les volumes
+    volumes = list(conn.block_storage.volumes())
+    # Récupérer tous les IDs des volumes
+    volume_ids = [volume.id for volume in volumes]
+    # Récupérer les noms des volumes
+    volume_names = [volume.name for volume in volumes]
+    # Récupérer les tailles des volumes
+    volume_sizes = [volume.size for volume in volumes]
+    # Récupérer les types de volumes
+    volume_types = [volume.volume_type for volume in volumes]
+    # Récupérer si les volumes sont attachés
+    volume_attached = [volume.attachments for volume in volumes]
+
+    # Afficher les en-têtes du tableau
+    print(f"{'ID':<36} {'Nom':<20} {'Taille (Go)':<20} {'Type':<20} {'Attaché':<20}")
+    print("-" * 116)
+    for volume in volumes:
+        attached = "Oui" if volume.attachments else "Non"
+        print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20}")
+list_volumes(conn)
 
 # Lister les volumes sous forme d'arborescence
 print_header("ARBORESCENCE DES VOLUMES")
