@@ -21,7 +21,6 @@ except ImportError:
     install_package('python-dotenv')
 
 import openstack
-import json
 
 # Se connecter à OpenStackv 
 from dotenv import load_dotenv
@@ -84,6 +83,7 @@ def list_instances(conn):
     # Récupérer toutes les flavors disponibles
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
     # Récupérer l'âge des instances
+    creation_times = {}
     for instance in instances:
         if instance.created_at:
             creation_times[instance.id] = instance.created_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -96,7 +96,6 @@ def list_instances(conn):
 
     for instance in instances:
         flavor_id = instance.flavor['id']
-        flavor = flavors.get(flavor_id)
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {creation_times[instance.id]:<20}")
 
 list_instances(conn)
@@ -166,6 +165,22 @@ def list_floating_ips(conn):
 
 list_floating_ips(conn)
 
+def format_size(size_bytes):
+    # Définir les unités et leurs seuils
+    units = [
+        ('To', 1000000000000),
+        ('Go', 1000000000),
+        ('Mo', 1000000),
+        ('Ko', 1000)
+    ]
+
+    # Parcourir les unités pour trouver la plus appropriée
+    for unit, threshold in units:
+        if size_bytes >= threshold:
+            size = size_bytes / threshold
+            return f"{size:.2f} {unit}"
+    return f"{size_bytes} octets"
+
 # Lister les containers
 def list_containers(conn):
     print_header("LISTE DES CONTAINERS")
@@ -173,9 +188,10 @@ def list_containers(conn):
     containers = list(conn.object_store.containers())
 
     # Afficher les en-têtes du tableau
-    print(f"{'Nom':<20} {'Taille totale (octets)':<20}")
-    print("-" * 96)
+    print(f"{'Nom':<20} {'Taille totale':<20}")
+    print("-" * 40)
     for container in containers:
-        print(f"{container.name:<20} {container.bytes:<20}")
+        size_formatted = format_size(container.bytes)
+        print(f"{container.name:<20} {size_formatted:<20}")
 
 list_containers(conn)
