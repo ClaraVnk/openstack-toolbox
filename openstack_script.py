@@ -126,6 +126,25 @@ def list_snapshots(conn):
         print(f"{snapshot.id:<36} {snapshot.name:<20} {snapshot.volume_id:<20}")
 list_snapshots(conn)
 
+# Lister les backups
+def list_backups(conn):
+    print_header("LISTE DES BACKUPS")
+    # Récupérer les backups
+    backups = list(conn.block_storage.backups())
+    # Récupérer tous les IDs des backups
+    backup_ids = [backup.id for backup in backups]
+    # Récupérer les noms des backups
+    backup_names = [backup.name for backup in backups]
+    # Récupérer les volumes associés aux backups
+    backup_volumes = [backup.volume_id for backup in backups]
+
+    # Afficher les en-têtes du tableau
+    print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
+    print("-" * 96)
+    for backup in backups:
+        print(f"{backup.id:<36} {backup.name:<20} {backup.volume_id:<20}")
+list_backups(conn)
+
 # Lister les volumes 
 def list_volumes(conn):
     print_header("LISTE DES VOLUMES")
