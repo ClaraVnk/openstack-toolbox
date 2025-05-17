@@ -92,7 +92,7 @@ def list_instances(conn):
             'id': instance.id,
             'name': instance.name,
             'flavor_id': flavor_id,
-            'flavor_name': flavor.name
+            'flavor_name': flavor_name
         })
 
     # Convertir en JSON pour une meilleure lisibilité
