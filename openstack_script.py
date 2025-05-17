@@ -15,6 +15,16 @@ password = os.getenv("OS_PASSWORD")
 user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
 project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
 
+# Créer la connexion OpenStack
+conn = openstack.connect(
+    auth_url=auth_url,
+    project_name=project_name,
+    username=username,
+    password=password,
+    user_domain_name=user_domain_name,
+    project_domain_name=project_domain_name,
+)
+
 # Lister les instances
 print("Liste des instances :")
 for server in conn.compute.servers():
