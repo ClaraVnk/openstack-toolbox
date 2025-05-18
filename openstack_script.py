@@ -253,9 +253,7 @@ def main():
     # Définir une période d'exemple (les 2 dernières heures)
     start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
     end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
-    print(f"Fetching billing data from {start_time} to {end_time}")
     billing_data = get_billing_data_from_file('billing.json')
-    print("Billing data récupérée:")
     
     # Lister les ressources
     list_images(conn)
