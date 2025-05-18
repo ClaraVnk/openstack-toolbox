@@ -250,9 +250,8 @@ def main():
     
     print("Connexion réussie à OpenStack")
     
-    # Définir une période d'exemple (les 2 dernières heures)
-    start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
-    end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
+    start_time = input("Entrer la date de début (format YYYY-MM-DDTHH:MM:SS+00:00) : ")
+    end_time = input("Entrer la date de fin (format YYYY-MM-DDTHH:MM:SS+00:00) : ")
     billing_data = get_billing_data_from_file('billing.json')
     
     # Lister les ressources
