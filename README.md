@@ -24,4 +24,4 @@ python3 openstack_script.py
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-Special thanks to @kallioli for his support ! 
+Special thanks to [@kallioli](https://github.com/kallioli) for his support ! 
