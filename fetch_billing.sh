@@ -16,14 +16,15 @@ DEFAULT_END=$(date -u +"%Y-%m-%dT%H:%M:00+00:00")
 echo "Entrez la période de facturation souhaitée (format simplifié: YYYY-MM-DD HH:MM)"
 read -p "Date de début [Défaut: $(date -u -d "2 hours ago" +"%Y-%m-%d %H:%M")]: " START_INPUT
 read -p "Date de fin   [Défaut: $(date -u +"%Y-%m-%d %H:%M")]: " END_INPUT
-read -p "Nom du fichier de sortie [Défaut: billing.json]: " FILE
 
 START_INPUT=${START_INPUT:-$(date -u -d "2 hours ago" +"%Y-%m-%d %H:%M")}
 END_INPUT=${END_INPUT:-$(date -u +"%Y-%m-%d %H:%M")}
-FILE=${FILE:-billing.json}
 
 START=$(convert_to_iso8601 "$START_INPUT")
 END=$(convert_to_iso8601 "$END_INPUT")
+
+# Nom de fichier fixe
+FILE="billing.json"
 
 echo
 echo "Récupération des données de facturation..."
