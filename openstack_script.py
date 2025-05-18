@@ -270,7 +270,7 @@ def list_images(conn):
 def list_instances(conn, cloudkitty=None):
     print_header("LISTE DES INSTANCES")
     # Récupérer les instances
-    instances = list(conn.compute.servers())
+    instances = list(conn.compute.servers())  # Assurez-vous que cette ligne est exécutée
     # Taux de conversion ICU vers monnaies
     icu_to_chf = 50  # Taux de conversion ICU vers CHF
     icu_to_euro = 55.5  # Taux de conversion ICU vers EUR
@@ -280,39 +280,39 @@ def list_instances(conn, cloudkitty=None):
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':<12} {'Coût (EUR)':<12}")
     print("-" * 130)
-    
+
     # Définir la période pour les données de facturation (30 derniers jours)
-start_time = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-end_time = datetime.now().strftime("%Y-%m-%d")
+    start_time = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    end_time = datetime.now().strftime("%Y-%m-%d")
 
-print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
+    print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
 
-for instance in instances:
-    flavor_id = instance.flavor['id']
-    # Convertir la date de création en objet datetime
-    created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
-    # Calculer l'uptime
-    uptime = datetime.now() - created_at
-    # Formater l'uptime en jours, heures, minutes, secondes
-    uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
+    for instance in instances:
+        flavor_id = instance.flavor['id']
+        # Convertir la date de création en objet datetime
+        created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
+        # Calculer l'uptime
+        uptime = datetime.now() - created_at
+        # Formater l'uptime en jours, heures, minutes, secondes
+        uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
 
-    # Récupérer les données de billing si CloudKitty est disponible
-    billing_data = None
-    try:
-        # Utiliser le client passé en paramètre s'il existe
-        if cloudkitty:
-            billing_data = cloudkitty.report.get_dataframes(
-                begin=start_time,
-                end=end_time,
-                resource_id=instance.id
-            )
-            print(f"Billing data for instance {instance.id}: {billing_data}")  # Ajout pour le débogage
-    except Exception as e:
-        print(f"Erreur lors de la récupération des données de facturation pour l'instance {instance.id}: {e}")
+        # Récupérer les données de billing si CloudKitty est disponible
+        billing_data = None
+        try:
+            # Utiliser le client passé en paramètre s'il existe
+            if cloudkitty:
+                billing_data = cloudkitty.report.get_dataframes(
+                    begin=start_time,
+                    end=end_time,
+                    resource_id=instance.id
+                )
+                print(f"Billing data for instance {instance.id}: {billing_data}")  # Ajout pour le débogage
+        except Exception as e:
+            print(f"Erreur lors de la récupération des données de facturation pour l'instance {instance.id}: {e}")
 
-    # Calculer le coût en CHF et EUR
-    cost_chf, cost_euro = calculate_instance_cost(billing_data, icu_to_chf, icu_to_euro)
-    print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")
+        # Calculer le coût en CHF et EUR
+        cost_chf, cost_euro = calculate_instance_cost(billing_data, icu_to_chf, icu_to_euro)
+        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")
 
 
 # Lister les snapshots
