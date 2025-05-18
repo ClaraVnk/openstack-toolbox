@@ -132,6 +132,8 @@ def list_instances(conn, cloudkitty=None):
 
     print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
 
+    billing_data = get_billing_data(start_time, end_time)
+
     for instance in instances:
         flavor_id = instance.flavor['id']
         # Convertir la date de création en objet datetime
@@ -140,9 +142,6 @@ def list_instances(conn, cloudkitty=None):
         uptime = datetime.now() - created_at
         # Formater l'uptime en jours, heures, minutes, secondes
         uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
-
-        # Récupérer les données de billing
-        billing_data = get_billing_data(start_time, end_time)
 
         # Calculer le coût en CHF et EUR
         cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
