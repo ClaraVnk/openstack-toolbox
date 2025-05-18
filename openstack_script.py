@@ -39,6 +39,7 @@ def get_billing_data(start_time, end_time):
         "openstack", "rating", "dataframes", "get",
         "-b", start_time,
         "-e", end_time,
+        "-c", "Resources",
         "-f", "json"
     ]
 
@@ -282,8 +283,8 @@ def list_instances(conn, cloudkitty=None):
     print("-" * 130)
 
     # Définir la période pour les données de facturation (30 derniers jours)
-    start_time = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-    end_time = datetime.now().strftime("%Y-%m-%d")
+    start_time = (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
+    end_time = datetime.now().strftime("%Y-%m-%dT%H:00:00+00:00")
 
     print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
 
