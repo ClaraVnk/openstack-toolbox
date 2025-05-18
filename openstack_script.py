@@ -256,7 +256,6 @@ def main():
     print(f"Fetching billing data from {start_time} to {end_time}")
     billing_data = get_billing_data_from_file('billing.json')
     print("Billing data récupérée:")
-    print(json.dumps(billing_data, indent=2) if billing_data else "Aucune donnée récupérée")
     
     # Lister les ressources
     list_images(conn)
