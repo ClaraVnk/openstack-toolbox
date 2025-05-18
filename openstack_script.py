@@ -54,14 +54,12 @@ def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_t
             try:
                 price = float(resource.get("rating", 0))
                 total_icu += price
-                print(f"Instance {instance_id}: +{price} ICU")
             except (TypeError, ValueError):
                 continue
 
     cost_chf = total_icu / icu_to_chf
     cost_euro = total_icu / icu_to_euro
 
-    print(f"Instance {instance_id}: Total ICU = {total_icu}, CHF = {cost_chf:.2f}, EUR = {cost_euro:.2f}")
     return cost_chf, cost_euro
 
 def format_size(size_bytes):
