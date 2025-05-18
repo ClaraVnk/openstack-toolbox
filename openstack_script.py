@@ -33,30 +33,25 @@ def print_header(header):
     print("=" * 50 + "\n")
 
 def get_billing_data(start_time, end_time):
-    # Commande pour récupérer les données de facturation
-    command = [
-        "openstack", "rating", "dataframes", "get",
-        "-b", start_time,
-        "-e", end_time,
-        "-c", "Resources",
-        "-f", "json"
-    ]
-    print("Commande exécutée :", " ".join(command))
+    openrc_path = os.path.expanduser("~/openstack.sh")  # ← adapte ce chemin si besoin
 
-    # Exécuter la commande et récupérer la sortie
-    command_str = f"openstack rating dataframes get -b {start_time} -e {end_time} -c Resources -f json"
-    print("Variables d’environnement OS_* visibles dans le script :")
-    for k, v in os.environ.items():
-        if k.startswith("OS_"):
-            print(f"{k}={v}")
-    result = subprocess.run(command_str, shell=True, capture_output=True, text=True)
+    command_str = f"source {openrc_path} && openstack rating dataframes get -b {start_time} -e {end_time} -c Resources -f json"
+    print("Commande exécutée (avec sourcing):", command_str)
+
+    result = subprocess.run(command_str, shell=True, executable="/bin/bash", capture_output=True, text=True)
+
     if result.returncode != 0:
         print("Erreur lors de la récupération des données de facturation")
         print("Code de retour:", result.returncode)
-        print("Erreur:", result.stderr)
+        print("Erreur (stderr):", result.stderr)
+        print("Sortie (stdout):", result.stdout)
         return None
 
-    return json.loads(result.stdout)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as e:
+        print("Erreur de parsing JSON:", e)
+        return None
 
 def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
@@ -258,10 +253,6 @@ def main():
     password = os.getenv("OS_PASSWORD")
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
-
-    print("Vérification des variables chargées depuis .env")
-    for k in ["OS_AUTH_URL", "OS_PROJECT_NAME", "OS_USERNAME", "OS_PASSWORD"]:
-        print(k, "=", os.getenv(k))
 
     # Créer la connexion OpenStack
     conn = openstack.connect(
