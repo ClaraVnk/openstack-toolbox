@@ -23,6 +23,12 @@ except ImportError:
     print("Installation du package dotenv...")
     install_package('python-dotenv')
 
+try:
+    importlib.import_module('python-cloudkittyclient')
+except ImportError:
+    print("Installation du package CloudKitty...")
+    install_package('python-cloudkittyclient')
+
 import openstack
 from dotenv import load_dotenv
 
