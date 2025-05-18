@@ -421,6 +421,7 @@ def main():
     password = os.getenv("OS_PASSWORD")
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
+    region_name = os.getenv("OS_REGION_NAME")
     
     # Afficher les variables d'environnement OpenStack
     print("OS_AUTH_URL:", os.getenv("OS_AUTH_URL"))
@@ -429,6 +430,7 @@ def main():
     print("OS_USER_DOMAIN_NAME:", os.getenv("OS_USER_DOMAIN_NAME"))
     print("OS_PROJECT_DOMAIN_NAME:", os.getenv("OS_PROJECT_DOMAIN_NAME"))
     print("OS_PROJECT_NAME:", os.getenv("OS_PROJECT_NAME"))
+    print("OS_REGION_NAME:", os.getenv("OS_REGION_NAME"))
 
     # Créer la connexion OpenStack
     conn = openstack.connect(
