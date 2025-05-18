@@ -54,18 +54,24 @@ def get_billing_data(start_time, end_time):
 
 def calculate_instance_cost(billing_data, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
+        print("Aucune donnée de facturation disponible")
         return 0.0, 0.0  # Retourne zéro pour les deux devises si pas de données
 
     total_icu = 0
     for entry in billing_data:
         # Additionner tous les ICUs
-        total_icu += entry.get('rating', {}).get('price', 0)
+        price = entry.get('rating', {}).get('price', 0)
+        total_icu += price
+        print(f"Entry: {entry}, Price: {price}")  # Ajout pour le débogage
 
     # Convertir en CHF et EUR
     cost_chf = total_icu / icu_to_chf
     cost_euro = total_icu / icu_to_euro
 
+    print(f"Total ICU: {total_icu}, Cost CHF: {cost_chf}, Cost EUR: {cost_euro}")  # Ajout pour le débogage
+
     return cost_chf, cost_euro
+
 
 # La spéciale Infomaniak aka gérer des version d'Openstack différentes
 # def check_cloudkitty_version(region='dc3-a'):
@@ -276,7 +282,10 @@ def list_instances(conn, cloudkitty=None):
     print("-" * 130)
     
     # Définir la période pour les données de facturation (30 derniers jours)
-    start_time = datetime.now() - timedelta(days=30)
+start_time = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+end_time = datetime.now().strftime("%Y-%m-%d")
+
+print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
 
     for instance in instances:
         flavor_id = instance.flavor['id']
@@ -293,17 +302,17 @@ def list_instances(conn, cloudkitty=None):
             # Utiliser le client passé en paramètre s'il existe
             if cloudkitty:
                 billing_data = cloudkitty.report.get_dataframes(
-                    begin=start_time.isoformat(),
-                    end=datetime.now().isoformat(),
-                    resource_id=instance.id
+                    begin=start_time,
+                    end=end_time,
+                    resource_id=instance.id,
                 )
+                print(f"Billing data for instance {instance.id}: {billing_data}")  # Ajout pour le débogage
         except Exception as e:
-            # Gérer silencieusement l'erreur ou afficher un message informatif
-            pass
-        
-        # Calculer le coût en CHF et EUR
-        cost_chf, cost_euro = calculate_instance_cost(billing_data, icu_to_chf, icu_to_euro)
-        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")
+            print(f"Erreur lors de la récupération des données de facturation pour l'instance {instance.id}: {e}")
+
+    # Calculer le coût en CHF et EUR
+    cost_chf, cost_euro = calculate_instance_cost(billing_data, icu_to_chf, icu_to_euro)
+    print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")
 
 # Lister les snapshots
 def list_snapshots(conn):
