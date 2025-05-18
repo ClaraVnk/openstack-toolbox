@@ -34,6 +34,48 @@ def print_header(header):
     print("=" * 50 + "\n")
 
 # La spéciale Infomaniak aka gérer des version d'Openstack différentes
+def check_cloudkitty_version(region='dc3-a'):
+    """Vérifie si CloudKitty est disponible dans la région spécifiée en utilisant l'API services"""
+    try:
+        # Créer une connexion OpenStack pour la région spécifiée
+        conn = openstack.connect(region_name=region)
+        
+        # Récupérer la liste des services disponibles
+        services = list(conn.identity.services())
+        
+        # Rechercher CloudKitty dans les services disponibles
+        cloudkitty_service = None
+        for service in services:
+            if (hasattr(service, 'name') and ('rating' in service.name.lower() or 
+                'cloudkitty' in service.name.lower() or 
+                'billing' in service.name.lower())) or \
+               (hasattr(service, 'type') and ('rating' in service.type.lower() or
+                'cloudkitty' in service.type.lower())):
+                cloudkitty_service = service
+                break
+        
+        if cloudkitty_service:
+            print(f"CloudKitty est disponible sur Infomaniak OpenStack (région {region}).")
+            print(f"Service trouvé: {cloudkitty_service.name} (type: {getattr(cloudkitty_service, 'type', 'N/A')})")
+            return True
+        
+        # Si nous n'avons pas trouvé le service par nom, regardons les endpoints
+        try:
+            # Essayer de récupérer les endpoints par type de service
+            endpoints = list(conn.identity.endpoints(service_type='rating'))
+            if endpoints:
+                print(f"CloudKitty trouvé via les endpoints (région {region}).")
+                return True
+        except Exception as e:
+            print(f"Erreur lors de la recherche des endpoints: {e}")
+        
+        print(f"CloudKitty n'est pas accessible dans la région {region}.")
+        return False
+            
+    except Exception as e:
+        print(f"Erreur lors de la vérification de CloudKitty dans la région {region}: {e}")
+        return False
+
 def get_cloudkitty_version(region='dc3-a'):
     """Obtient la version de CloudKitty depuis l'API dans la région spécifiée"""
     # Mapper les noms de région aux identifiants d'URL
