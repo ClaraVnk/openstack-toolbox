@@ -53,23 +53,26 @@ def get_billing_data(start_time, end_time):
 
     return json.loads(result.stdout)
 
-def calculate_instance_cost(billing_data, icu_to_chf=50, icu_to_euro=55.5):
+def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
         print("Aucune donnée de facturation disponible")
-        return 0.0, 0.0  # Retourne zéro pour les deux devises si pas de données
+        return 0.0, 0.0
 
     total_icu = 0
+
     for entry in billing_data:
-        # Additionner tous les ICUs
+        resource_id = entry.get("resource_id")
+        if instance_id and resource_id != instance_id:
+            continue  # Ignorer les autres ressources
+
         price = entry.get('rating', {}).get('price', 0)
         total_icu += price
-        print(f"Entry: {entry}, Price: {price}")  # Ajout pour le débogage
+        print(f"Instance {instance_id}: entry={entry}, price={price}")  # Debug
 
-    # Convertir en CHF et EUR
     cost_chf = total_icu / icu_to_chf
     cost_euro = total_icu / icu_to_euro
 
-    print(f"Total ICU: {total_icu}, Cost CHF: {cost_chf}, Cost EUR: {cost_euro}")  # Ajout pour le débogage
+    print(f"Instance {instance_id}: Total ICU={total_icu}, CHF={cost_chf:.2f}, EUR={cost_euro:.2f}")
 
     return cost_chf, cost_euro
 
@@ -113,8 +116,6 @@ def list_instances(conn, cloudkitty=None):
     # Taux de conversion ICU vers monnaies
     icu_to_chf = 50  # Taux de conversion ICU vers CHF
     icu_to_euro = 55.5  # Taux de conversion ICU vers EUR
-    # Récupérer toutes les flavors disponibles
-    flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':<12} {'Coût (EUR)':<12}")
@@ -150,7 +151,7 @@ def list_instances(conn, cloudkitty=None):
             print(f"Erreur lors de la récupération des données de facturation pour l'instance {instance.id}: {e}")
 
         # Calculer le coût en CHF et EUR
-        cost_chf, cost_euro = calculate_instance_cost(billing_data, icu_to_chf, icu_to_euro)
+        cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id, icu_to_chf=icu_to_chf, icu_to_euro=icu_to_euro)
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")
 
 
