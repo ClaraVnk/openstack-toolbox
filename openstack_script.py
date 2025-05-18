@@ -34,7 +34,7 @@ def print_header(header):
 
 def get_billing_data(start_time, end_time):
     openrc_path = os.path.expanduser("~/openstack.sh")  # ← adapte ce chemin si besoin
-    venv_path = os.path.expanduser("/home/loutre/projects/openstack/bin/activation")
+    venv_path = os.path.expanduser("/home/loutre/projects/openstack/bin/activate")
     command_str = f"source {venv_path} && source {openrc_path} && openstack rating dataframes get -b {start_time} -e {end_time} -c Resources -f json"
     print("Commande exécutée (avec sourcing):", command_str)
 
