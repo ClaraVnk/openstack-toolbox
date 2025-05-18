@@ -27,7 +27,7 @@ try:
     importlib.import_module('python-cloudkittyclient')
 except ImportError:
     print("Installation du package CloudKitty...")
-    install_package('python-cloudkittyclient')
+    install_package('python-')
 
 import openstack
 from dotenv import load_dotenv
@@ -38,26 +38,9 @@ def print_header(header):
     print(header.center(50))
     print("=" * 50 + "\n")
 
-def get_billing_data(start_time, end_time):
-    openrc_path = os.path.expanduser("~/openstack.sh")  # ← adapte ce chemin si besoin
-    venv_path = os.path.expanduser("/home/loutre/projects/openstack/bin/activate")
-    command_str = f"source {venv_path} && source {openrc_path} && openstack rating dataframes get -b {start_time} -e {end_time} -c Resources -f json"
-    print("Commande exécutée (avec sourcing):", command_str)
-
-    result = subprocess.run(command_str, shell=True, executable="/bin/bash", capture_output=True, text=True)
-
-    if result.returncode != 0:
-        print("Erreur lors de la récupération des données de facturation")
-        print("Code de retour:", result.returncode)
-        print("Erreur (stderr):", result.stderr)
-        print("Sortie (stdout):", result.stdout)
-        return None
-
-    try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError as e:
-        print("Erreur de parsing JSON:", e)
-        return None
+def get_billing_data_from_file(filepath):
+    with open(filepath, 'r') as f:
+        return json.load(f)
 
 def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
@@ -281,7 +264,7 @@ def main():
     start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
     end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
     print(f"Fetching billing data from {start_time} to {end_time}")
-    billing_data = get_billing_data(start_time=start_time, end_time=end_time)
+    billing_data = get_billing_data_from_file('billing.json')
     print("Billing data récupérée:")
     print(json.dumps(billing_data, indent=2) if billing_data else "Aucune donnée récupérée")
     
