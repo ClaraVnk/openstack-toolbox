@@ -266,6 +266,7 @@ def main():
     #except ValueError:
         #print("Format invalide. Veuillez entrer la date au format YYYY-MM-DD HH:MM")
         #return
+    
     billing_data = get_billing_data_from_file('billing.json')
     
     # Lister les ressources
