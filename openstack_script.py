@@ -97,7 +97,7 @@ def list_images(conn):
         print(f"{image.id:<36} {image.name:<36} {image.visibility:<20}")
 
 # Lister les instances
-def list_instances(conn, cloudkitty=None):
+def list_instances(conn, billing_data):
     print_header("LISTE DES INSTANCES")
     # Récupérer les instances
     instances = list(conn.compute.servers())  # Assurez-vous que cette ligne est exécutée
@@ -113,8 +113,6 @@ def list_instances(conn, cloudkitty=None):
     start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
     end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
     print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
-
-    billing_data = get_billing_data(start_time, end_time)
 
     for instance in instances:
         flavor_id = instance.flavor['id']
@@ -264,7 +262,7 @@ def main():
     
     # Lister les ressources
     list_images(conn)
-    list_instances(conn)
+    list_instances(conn, billing_data)
     list_snapshots(conn)
     list_backups(conn)
     list_volumes(conn)
