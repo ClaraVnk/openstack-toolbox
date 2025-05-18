@@ -2,22 +2,28 @@
 source ~/openstack.sh          # adapte selon ton environnement
 source ~/projects/openstack/bin/activate  # adapte selon ton venv
 
-# Format ISO 8601 attendu
-DATE_FORMAT="%Y-%m-%dT%H:%M:%S+00:00"
+# Fonction pour convertir une date simple en ISO 8601 UTC
+convert_to_iso8601() {
+    # Entrée : date sous la forme "YYYY-MM-DD HH:MM"
+    # Sortie : "YYYY-MM-DDTHH:MM:00+00:00"
+    date -u -d "$1" +"%Y-%m-%dT%H:%M:00+00:00"
+}
 
 # Définir les dates par défaut (les 2 dernières heures)
-DEFAULT_START=$(date -u -d "2 hours ago" +"$DATE_FORMAT")
-DEFAULT_END=$(date -u +"$DATE_FORMAT")
+DEFAULT_START=$(date -u -d "2 hours ago" +"%Y-%m-%dT%H:%M:00+00:00")
+DEFAULT_END=$(date -u +"%Y-%m-%dT%H:%M:00+00:00")
 
-echo "Entrez la période de facturation souhaitée (format ISO 8601, ex: 2025-05-18T14:00:00+00:00)"
-read -p "Date de début [Défaut: $DEFAULT_START] : " START
-read -p "Date de fin   [Défaut: $DEFAULT_END] : " END
-read -p "Nom du fichier de sortie [Défaut: billing.json] : " FILE
+echo "Entrez la période de facturation souhaitée (format simplifié: YYYY-MM-DD HH:MM)"
+read -p "Date de début [Défaut: $(date -u -d "2 hours ago" +"%Y-%m-%d %H:%M")]: " START_INPUT
+read -p "Date de fin   [Défaut: $(date -u +"%Y-%m-%d %H:%M")]: " END_INPUT
+read -p "Nom du fichier de sortie [Défaut: billing.json]: " FILE
 
-# Appliquer les valeurs par défaut si vide
-START=${START:-$DEFAULT_START}
-END=${END:-$DEFAULT_END}
+START_INPUT=${START_INPUT:-$(date -u -d "2 hours ago" +"%Y-%m-%d %H:%M")}
+END_INPUT=${END_INPUT:-$(date -u +"%Y-%m-%d %H:%M")}
 FILE=${FILE:-billing.json}
+
+START=$(convert_to_iso8601 "$START_INPUT")
+END=$(convert_to_iso8601 "$END_INPUT")
 
 echo
 echo "Récupération des données de facturation..."
