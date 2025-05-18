@@ -36,30 +36,37 @@ def print_header(header):
 # La spéciale Infomaniak aka gérer des version d'Openstack différentes
 def check_cloudkitty_version(region='dc3-a'):
     """Vérifie si CloudKitty est disponible dans la région spécifiée"""
-    # Mapper les noms de région aux identifiants d'URL
     region_url_map = {
         'dc3-a': 'pub1',
         'dc4-a': 'pub2'
     }
-    url_region = region_url_map.get(region, 'pub1')  # Défaut à pub1 si région inconnue
-    cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
+    url_region = region_url_map.get(region, 'pub1')
+    base_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
     
     try:
-        # Créer une connexion OpenStack pour la région spécifiée
         conn = openstack.connect(region_name=region)
-        
-        # Utiliser le token d'authentification pour la requête
         headers = {'X-Auth-Token': conn.session.get_token()}
         
-        # Vérifier si l'endpoint est accessible
-        response = requests.get(f"{cloudkitty_endpoint}/v1", headers=headers)
+        # Essayer différents chemins d'API
+        endpoints = [
+            f"{base_endpoint}",           # Racine
+            f"{base_endpoint}/v1",        # v1
+            f"{base_endpoint}/v2"         # v2
+        ]
         
-        if response.status_code == 200:
-            print(f"CloudKitty est disponible sur Infomaniak OpenStack (région {region}).")
-            return True
-        else:
-            print(f"CloudKitty n'est pas accessible dans la région {region}. Code d'état: {response.status_code}")
-            return False
+        for endpoint in endpoints:
+            try:
+                # Pour éviter l'erreur 405, utiliser OPTIONS au lieu de GET
+                options_response = requests.options(endpoint, headers=headers)
+                if options_response.status_code < 400:
+                    print(f"CloudKitty est disponible sur {endpoint}")
+                    return True
+            except Exception as e:
+                print(f"Erreur lors de la vérification de {endpoint}: {e}")
+                continue
+                
+        print(f"CloudKitty n'est pas accessible dans la région {region}")
+        return False
             
     except Exception as e:
         print(f"Erreur lors de la vérification de CloudKitty dans la région {region}: {e}")
