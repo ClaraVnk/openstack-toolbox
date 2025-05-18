@@ -45,6 +45,10 @@ def get_billing_data(start_time, end_time):
 
     # Exécuter la commande et récupérer la sortie
     command_str = f"openstack rating dataframes get -b {start_time} -e {end_time} -c Resources -f json"
+    print("Variables d’environnement OS_* visibles dans le script :")
+    for k, v in os.environ.items():
+        if k.startswith("OS_"):
+            print(f"{k}={v}")
     result = subprocess.run(command_str, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
         print("Erreur lors de la récupération des données de facturation")
@@ -254,6 +258,10 @@ def main():
     password = os.getenv("OS_PASSWORD")
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
+
+    print("Vérification des variables chargées depuis .env")
+    for k in ["OS_AUTH_URL", "OS_PROJECT_NAME", "OS_USERNAME", "OS_PASSWORD"]:
+        print(k, "=", os.getenv(k))
 
     # Créer la connexion OpenStack
     conn = openstack.connect(
