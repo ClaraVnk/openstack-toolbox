@@ -2,6 +2,12 @@
 import subprocess
 from datetime import datetime, timedelta, timezone
 
+def trim_to_minute(dt_str):
+      # Extrait "YYYY-MM-DD HH:MM" de la chaîne ISO complète
+      # Exemple d'entrée : "2025-05-18T14:00:57+00:00"
+      # On remplace "T" par espace puis on coupe après les 16 premiers caractères
+      return dt_str.replace("T", " ")[:16]
+
 def isoformat(dt):
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
@@ -14,8 +20,8 @@ def main():
     default_end = isoformat(datetime.now(timezone.utc))
 
     print("Entrez la période de facturation souhaitée (format: YYYY-MM-DD HH:MM)")
-    start_input = input_with_default("Date de début", default_start.replace("T", " ")[:-6])
-    end_input = input_with_default("Date de fin", default_end.replace("T", " ")[:-6])
+    start_input = input_with_default("Date de début", trim_to_minute(default_start))
+    end_input = input_with_default("Date de fin", trim_to_minute(default_end))
 
     # Conversion en datetime
     start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
