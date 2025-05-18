@@ -35,38 +35,35 @@ def print_header(header):
 
 # La spéciale Infomaniak aka gérer des version d'Openstack différentes
 def check_cloudkitty_version(region='dc3-a'):
-    """Vérifie si CloudKitty est disponible dans la région spécifiée"""
-    region_url_map = {
-        'dc3-a': 'pub1',
-        'dc4-a': 'pub2'
-    }
-    url_region = region_url_map.get(region, 'pub1')
-    base_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
-    
+    """Vérifie si CloudKitty est disponible dans la région spécifiée en consultant le catalogue de services Keystone"""
     try:
+        # Créer une connexion OpenStack pour la région spécifiée
         conn = openstack.connect(region_name=region)
-        headers = {'X-Auth-Token': conn.session.get_token()}
         
-        # Essayer différents chemins d'API
-        endpoints = [
-            f"{base_endpoint}",           # Racine
-            f"{base_endpoint}/v1",        # v1
-            f"{base_endpoint}/v2"         # v2
-        ]
+        # Obtenir la liste des services depuis le catalogue
+        service_catalog = conn.identity.get_catalog()
         
-        for endpoint in endpoints:
-            try:
-                # Pour éviter l'erreur 405, utiliser OPTIONS au lieu de GET
-                options_response = requests.options(endpoint, headers=headers)
-                if options_response.status_code < 400:
-                    print(f"CloudKitty est disponible sur {endpoint}")
-                    return True
-            except Exception as e:
-                print(f"Erreur lors de la vérification de {endpoint}: {e}")
-                continue
+        # Chercher CloudKitty dans le catalogue des services
+        cloudkitty_service = None
+        for service in service_catalog:
+            if 'rating' in service.name.lower() or 'cloudkitty' in service.name.lower() or 'billing' in service.name.lower():
+                cloudkitty_service = service
+                break
+            
+        if cloudkitty_service:
+            print(f"CloudKitty est disponible sur Infomaniak OpenStack (région {region}).")
+            # Afficher les endpoints disponibles
+            print(f"Endpoints disponibles : {cloudkitty_service.endpoints}")
+            return True
+        else:
+            # Essayer une recherche directe des endpoints
+            endpoints = conn.identity.endpoints(service_type='rating')
+            if len(list(endpoints)) > 0:
+                print(f"Service de rating trouvé via les endpoints dans la région {region}.")
+                return True
                 
-        print(f"CloudKitty n'est pas accessible dans la région {region}")
-        return False
+            print(f"CloudKitty n'est pas accessible dans la région {region}.")
+            return False
             
     except Exception as e:
         print(f"Erreur lors de la vérification de CloudKitty dans la région {region}: {e}")
