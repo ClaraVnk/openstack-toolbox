@@ -4,7 +4,6 @@ import subprocess
 import sys
 import importlib
 import json
-import requests
 from datetime import datetime, timedelta
 import os
 
@@ -55,25 +54,30 @@ def get_billing_data(start_time, end_time):
 
 def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
-        print("Aucune donnée de facturation disponible")
+        print(f"Aucune donnée de facturation disponible pour l'instance {instance_id}")
         return 0.0, 0.0
 
-    total_icu = 0
+    total_icu = 0.0
 
-    for entry in billing_data:
-        resource_id = entry.get("resource_id")
-        if instance_id and resource_id != instance_id:
-            continue  # Ignorer les autres ressources
+    for group in billing_data:
+        resources = group.get("Resources", [])
+        for resource in resources:
+            desc = resource.get("desc", {})
+            resource_id = desc.get("id")
+            if instance_id and resource_id != instance_id:
+                continue  # ignorer les autres
 
-        price = entry.get('rating', {}).get('price', 0)
-        total_icu += price
-        print(f"Instance {instance_id}: entry={entry}, price={price}")  # Debug
+            try:
+                price = float(resource.get("rating", 0))
+                total_icu += price
+                print(f"Instance {instance_id}: +{price} ICU")
+            except (TypeError, ValueError):
+                continue
 
     cost_chf = total_icu / icu_to_chf
     cost_euro = total_icu / icu_to_euro
 
-    print(f"Instance {instance_id}: Total ICU={total_icu}, CHF={cost_chf:.2f}, EUR={cost_euro:.2f}")
-
+    print(f"Instance {instance_id}: Total ICU = {total_icu}, CHF = {cost_chf:.2f}, EUR = {cost_euro:.2f}")
     return cost_chf, cost_euro
 
 def format_size(size_bytes):
@@ -151,7 +155,7 @@ def list_instances(conn, cloudkitty=None):
             print(f"Erreur lors de la récupération des données de facturation pour l'instance {instance.id}: {e}")
 
         # Calculer le coût en CHF et EUR
-        cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id, icu_to_chf=icu_to_chf, icu_to_euro=icu_to_euro)
+        cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")
 
 
@@ -280,8 +284,8 @@ def main():
     print("Connexion réussie à OpenStack")
     
     # Définir une période d'exemple (les 2 dernières heures)
-    start_time = (datetime.utcnow() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
-    end_time = datetime.utcnow().strftime("%Y-%m-%dT%H:00:00+00:00")
+    start_time = (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
+    end_time = datetime.now().strftime("%Y-%m-%dT%H:00:00+00:00")
     print(f"Fetching billing data from {start_time} to {end_time}")
     billing_data = get_billing_data(start_time=start_time, end_time=end_time)
     print("Billing data récupérée:")
@@ -289,7 +293,7 @@ def main():
     
     # Lister les ressources
     list_images(conn)
-    list_instances(conn, cloudkitty=None) # Passer None pour cloudkitty
+    list_instances(conn)
     list_snapshots(conn)
     list_backups(conn)
     list_volumes(conn)
