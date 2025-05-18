@@ -33,8 +33,42 @@ def print_header(header):
     print(header.center(50))
     print("=" * 50 + "\n")
 
+def get_billing_data(start_time, end_time):
+    # Commande pour récupérer les données de facturation
+    command = [
+        "openstack", "rating", "dataframes", "get",
+        "-b", start_time,
+        "-e", end_time,
+        "-c", "Resources",
+        "-f", "json"
+    ]
+
+    # Exécuter la commande et récupérer la sortie
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        print("Erreur lors de la récupération des données de facturation")
+        print(result.stderr)
+        return None
+
+    return json.loads(result.stdout)
+
+def calculate_instance_cost(billing_data, icu_to_chf=50, icu_to_euro=55.5):
+    if not billing_data:
+        return 0.0, 0.0  # Retourne zéro pour les deux devises si pas de données
+
+    total_icu = 0
+    for entry in billing_data:
+        # Additionner tous les ICUs
+        total_icu += entry.get('rating', {}).get('price', 0)
+
+    # Convertir en CHF et EUR
+    cost_chf = total_icu / icu_to_chf
+    cost_euro = total_icu / icu_to_euro
+
+    return cost_chf, cost_euro
+
 # La spéciale Infomaniak aka gérer des version d'Openstack différentes
-def check_cloudkitty_version(region='dc3-a'):
+# def check_cloudkitty_version(region='dc3-a'):
     """Vérifie si CloudKitty est disponible dans la région spécifiée en utilisant l'API services"""
     try:
         # Créer une connexion OpenStack pour la région spécifiée
@@ -76,7 +110,7 @@ def check_cloudkitty_version(region='dc3-a'):
         print(f"Erreur lors de la vérification de CloudKitty dans la région {region}: {e}")
         return False
 
-def get_cloudkitty_version(region='dc3-a'):
+# def get_cloudkitty_version(region='dc3-a'):
     """Obtient la version de CloudKitty depuis l'API dans la région spécifiée"""
     # Mapper les noms de région aux identifiants d'URL
     region_url_map = {
@@ -114,7 +148,7 @@ def get_cloudkitty_version(region='dc3-a'):
         print(f"Erreur lors de la récupération de la version de CloudKitty dans la région {region}: {e}")
         return None
 
-def determine_cloudkitty_client_version(cloudkitty_version):
+# def determine_cloudkitty_client_version(cloudkitty_version):
     if not cloudkitty_version:
         return None
         
@@ -132,7 +166,7 @@ def determine_cloudkitty_client_version(cloudkitty_version):
         # Fallback sur la version la plus récente
         return 'cloudkittyclient==5.0.0'
 
-def setup_cloudkitty(region='dc3-a'):
+# def setup_cloudkitty(region='dc3-a'):
     """Configure la connexion à CloudKitty dans la région spécifiée"""
     # Mapper les noms de région aux identifiants d'URL
     region_url_map = {
@@ -180,7 +214,7 @@ def setup_cloudkitty(region='dc3-a'):
     
     return None
 
-def get_all_regions_cloudkitty():
+# def get_all_regions_cloudkitty():
     """Tente de configurer CloudKitty pour toutes les régions disponibles et retourne le premier client fonctionnel"""
     regions = ['dc3-a', 'dc4-a']
     
@@ -193,40 +227,6 @@ def get_all_regions_cloudkitty():
     
     print("Impossible de configurer CloudKitty pour aucune région")
     return None, None
-
-def get_billing_data(start_time, end_time):
-    # Commande pour récupérer les données de facturation
-    command = [
-        "openstack", "rating", "dataframes", "get",
-        "-b", start_time,
-        "-e", end_time,
-        "-c", "Resources",
-        "-f", "json"
-    ]
-
-    # Exécuter la commande et récupérer la sortie
-    result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode != 0:
-        print("Erreur lors de la récupération des données de facturation")
-        print(result.stderr)
-        return None
-
-    return json.loads(result.stdout)
-
-def calculate_instance_cost(billing_data, icu_to_chf=50, icu_to_euro=55.5):
-    if not billing_data:
-        return 0.0, 0.0  # Retourne zéro pour les deux devises si pas de données
-
-    total_icu = 0
-    for entry in billing_data:
-        # Additionner tous les ICUs
-        total_icu += entry.get('rating', {}).get('price', 0)
-    
-    # Convertir en CHF et EUR
-    cost_chf = total_icu / icu_to_chf
-    cost_euro = total_icu / icu_to_euro
-    
-    return cost_chf, cost_euro
 
 def format_size(size_bytes):
     # Définir les unités et leurs seuils
@@ -430,15 +430,15 @@ def main():
     print("Connexion réussie à OpenStack")
     
     # Configurer CloudKitty
-    cloudkitty, region = get_all_regions_cloudkitty()
-    if cloudkitty:
-        print(f"CloudKitty est prêt à être utilisé dans la région {region}.")
-    else:
-        print("Impossible de configurer CloudKitty pour aucune région.")
+    # cloudkitty, region = get_all_regions_cloudkitty()
+    # if cloudkitty:
+        # print(f"CloudKitty est prêt à être utilisé dans la région {region}.")
+    # else:
+        # print("Impossible de configurer CloudKitty pour aucune région.")
     
     # Lister les ressources
     list_images(conn)
-    list_instances(conn, cloudkitty)
+    list_instances(conn, cloudkitty=None) # Passer None pour cloudkitty
     list_snapshots(conn)
     list_backups(conn)
     list_volumes(conn)
