@@ -73,168 +73,6 @@ def calculate_instance_cost(billing_data, icu_to_chf=50, icu_to_euro=55.5):
 
     return cost_chf, cost_euro
 
-
-# La spéciale Infomaniak aka gérer des version d'Openstack différentes
-# def check_cloudkitty_version(region='dc3-a'):
-    """Vérifie si CloudKitty est disponible dans la région spécifiée en utilisant l'API services"""
-    try:
-        # Créer une connexion OpenStack pour la région spécifiée
-        conn = openstack.connect(region_name=region)
-        
-        # Récupérer la liste des services disponibles
-        services = list(conn.identity.services())
-        
-        # Rechercher CloudKitty dans les services disponibles
-        cloudkitty_service = None
-        for service in services:
-            if (hasattr(service, 'name') and ('rating' in service.name.lower() or 
-                'cloudkitty' in service.name.lower() or 
-                'billing' in service.name.lower())) or \
-               (hasattr(service, 'type') and ('rating' in service.type.lower() or
-                'cloudkitty' in service.type.lower())):
-                cloudkitty_service = service
-                break
-        
-        if cloudkitty_service:
-            print(f"CloudKitty est disponible sur Infomaniak OpenStack (région {region}).")
-            print(f"Service trouvé: {cloudkitty_service.name} (type: {getattr(cloudkitty_service, 'type', 'N/A')})")
-            return True
-        
-        # Si nous n'avons pas trouvé le service par nom, regardons les endpoints
-        try:
-            # Essayer de récupérer les endpoints par type de service
-            endpoints = list(conn.identity.endpoints(service_type='rating'))
-            if endpoints:
-                print(f"CloudKitty trouvé via les endpoints (région {region}).")
-                return True
-        except Exception as e:
-            print(f"Erreur lors de la recherche des endpoints: {e}")
-        
-        print(f"CloudKitty n'est pas accessible dans la région {region}.")
-        return False
-            
-    except Exception as e:
-        print(f"Erreur lors de la vérification de CloudKitty dans la région {region}: {e}")
-        return False
-
-# def get_cloudkitty_version(region='dc3-a'):
-    """Obtient la version de CloudKitty depuis l'API dans la région spécifiée"""
-    # Mapper les noms de région aux identifiants d'URL
-    region_url_map = {
-        'dc3-a': 'pub1',
-        'dc4-a': 'pub2'
-    }
-    url_region = region_url_map.get(region, 'pub1')  # Défaut à pub1 si région inconnue
-    cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
-    
-    try:
-        # Créer une connexion OpenStack pour la région spécifiée
-        conn = openstack.connect(region_name=region)
-        headers = {'X-Auth-Token': conn.session.get_token()}
-        
-        # Tentative d'obtenir les informations de version depuis l'API
-        response = requests.get(f"{cloudkitty_endpoint}/v1", headers=headers)
-        
-        if response.status_code == 200:
-            # Tentative d'extraire la version des données de réponse
-            try:
-                api_info = response.json()
-                if 'version' in api_info:
-                    version = api_info['version']
-                    print(f"Version de CloudKitty détectée via API (région {region}): {version}")
-                    return version
-            except:
-                # Fallback: au moins nous savons que c'est disponible
-                print(f"CloudKitty est disponible dans la région {region} mais impossible de déterminer la version")
-                return "unknown"
-        else:
-            print(f"Impossible d'obtenir la version de CloudKitty dans la région {region}. Code d'état: {response.status_code}")
-            return None
-            
-    except Exception as e:
-        print(f"Erreur lors de la récupération de la version de CloudKitty dans la région {region}: {e}")
-        return None
-
-# def determine_cloudkitty_client_version(cloudkitty_version):
-    if not cloudkitty_version:
-        return None
-        
-    # Si la version est inconnue mais que l'API est disponible, utiliser une version récente
-    if cloudkitty_version == "unknown":
-        print("Version de CloudKitty inconnue, utilisation de la version 5.0.0 du client")
-        return 'cloudkittyclient==5.0.0'
-        
-    if cloudkitty_version.startswith('13.'):
-        return 'cloudkittyclient==4.1.0'
-    elif cloudkitty_version.startswith('20.'):
-        return 'cloudkittyclient==5.0.0'
-    else:
-        print(f"Version de CloudKitty non reconnue: {cloudkitty_version}")
-        # Fallback sur la version la plus récente
-        return 'cloudkittyclient==5.0.0'
-
-# def setup_cloudkitty(region='dc3-a'):
-    """Configure la connexion à CloudKitty dans la région spécifiée"""
-    # Mapper les noms de région aux identifiants d'URL
-    region_url_map = {
-        'dc3-a': 'pub1',
-        'dc4-a': 'pub2'
-    }
-    url_region = region_url_map.get(region, 'pub1')  # Défaut à pub1 si région inconnue
-    cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
-    if not check_cloudkitty_version(region):
-        return None
-    
-    # Obtenir la version de CloudKitty
-    cloudkitty_version = get_cloudkitty_version(region)
-    
-    # Déterminer la version du client à installer
-    client_version = determine_cloudkitty_client_version(cloudkitty_version)
-    if client_version:
-        print(f"Installation du client CloudKitty version: {client_version}")
-        try:
-            install_package(client_version)
-            
-            # Importer et configurer le client CloudKitty
-            try:
-                from cloudkittyclient.v1 import client as ck_client
-                
-                # Créer une connexion OpenStack pour la région spécifiée
-                conn = openstack.connect(region_name=region)
-                
-                # Configurer CloudKitty avec l'endpoint pour la région spécifiée
-                cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating/v1"
-                cloudkitty_client = ck_client.Client(
-                    session=conn.session,
-                    endpoint_override=cloudkitty_endpoint
-                )
-                
-                print(f"Client CloudKitty initialisé avec succès pour la région {region}.")
-                return cloudkitty_client
-                
-            except ImportError as e:
-                print(f"Impossible d'importer cloudkittyclient: {e}")
-            except Exception as e:
-                print(f"Erreur lors de la configuration du client CloudKitty pour la région {region}: {e}")
-        except Exception as e:
-            print(f"Erreur lors de l'installation du client CloudKitty: {e}")
-    
-    return None
-
-# def get_all_regions_cloudkitty():
-    """Tente de configurer CloudKitty pour toutes les régions disponibles et retourne le premier client fonctionnel"""
-    regions = ['dc3-a', 'dc4-a']
-    
-    for region in regions:
-        print(f"\nTentative de configuration de CloudKitty pour la région {region}...")
-        client = setup_cloudkitty(region)
-        if client:
-            print(f"Configuration réussie pour la région {region}")
-            return client, region
-    
-    print("Impossible de configurer CloudKitty pour aucune région")
-    return None, None
-
 def format_size(size_bytes):
     # Définir les unités et leurs seuils
     units = [
@@ -422,16 +260,6 @@ def main():
     password = os.getenv("OS_PASSWORD")
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
-    region_name = os.getenv("OS_REGION_NAME")
-    
-    # Afficher les variables d'environnement OpenStack
-    print("OS_AUTH_URL:", os.getenv("OS_AUTH_URL"))
-    print("OS_USERNAME:", os.getenv("OS_USERNAME"))
-    print("OS_PASSWORD:", os.getenv("OS_PASSWORD"))
-    print("OS_USER_DOMAIN_NAME:", os.getenv("OS_USER_DOMAIN_NAME"))
-    print("OS_PROJECT_DOMAIN_NAME:", os.getenv("OS_PROJECT_DOMAIN_NAME"))
-    print("OS_PROJECT_NAME:", os.getenv("OS_PROJECT_NAME"))
-    print("OS_REGION_NAME:", os.getenv("OS_REGION_NAME"))
 
     # Créer la connexion OpenStack
     conn = openstack.connect(
@@ -450,12 +278,13 @@ def main():
     
     print("Connexion réussie à OpenStack")
     
-    # Configurer CloudKitty
-    # cloudkitty, region = get_all_regions_cloudkitty()
-    # if cloudkitty:
-        # print(f"CloudKitty est prêt à être utilisé dans la région {region}.")
-    # else:
-        # print("Impossible de configurer CloudKitty pour aucune région.")
+    # Définir une période d'exemple (les 2 dernières heures)
+    start_time = (datetime.utcnow() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
+    end_time = datetime.utcnow().strftime("%Y-%m-%dT%H:00:00+00:00")
+    print(f"Fetching billing data from {start_time} to {end_time}")
+    billing_data = get_billing_data(start_time=start_time, end_time=end_time)
+    print("Billing data récupérée:")
+    print(json.dumps(billing_data, indent=2) if billing_data else "Aucune donnée récupérée")
     
     # Lister les ressources
     list_images(conn)
