@@ -272,8 +272,8 @@ def main():
     print("Connexion réussie à OpenStack")
     
     # Définir une période d'exemple (les 2 dernières heures)
-    start_time = (datetime.utcnow() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
-    end_time = datetime.utcnow().strftime("%Y-%m-%dT%H:00:00+00:00")
+    start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
+    end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
     print(f"Fetching billing data from {start_time} to {end_time}")
     billing_data = get_billing_data(start_time=start_time, end_time=end_time)
     print("Billing data récupérée:")
