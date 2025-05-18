@@ -41,6 +41,7 @@ def get_billing_data(start_time, end_time):
         "-c", "Resources",
         "-f", "json"
     ]
+    print("Commande exécutée :", " ".join(command))
 
     # Exécuter la commande et récupérer la sortie
     result = subprocess.run(command, capture_output=True, text=True)
@@ -284,8 +285,8 @@ def main():
     print("Connexion réussie à OpenStack")
     
     # Définir une période d'exemple (les 2 dernières heures)
-    start_time = (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
-    end_time = datetime.now().strftime("%Y-%m-%dT%H:00:00+00:00")
+    start_time = (datetime.utcnow() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
+    end_time = datetime.utcnow().strftime("%Y-%m-%dT%H:00:00+00:00")
     print(f"Fetching billing data from {start_time} to {end_time}")
     billing_data = get_billing_data(start_time=start_time, end_time=end_time)
     print("Billing data récupérée:")
