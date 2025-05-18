@@ -108,9 +108,9 @@ def list_instances(conn, billing_data):
     print("-" * 130)
 
     # Définir la période pour les données de facturation (30 derniers jours)
-    start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
-    end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
-    print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
+    #start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
+    #end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
+    #print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
 
     for instance in instances:
         flavor_id = instance.flavor['id']
@@ -250,22 +250,22 @@ def main():
     
     print("Connexion réussie à OpenStack")
     
-    print("Entrez la période de facturation souhaitée :")
-    default_start = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M")
-    default_end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    #print("Entrez la période de facturation souhaitée :")
+    #default_start = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M")
+    #default_end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
-    start_input = input(f"Date de début (ex. 2025-05-18 14:00) [Défaut: {default_start}] : ") or default_start
-    end_input = input(f"Date de fin   (ex. 2025-05-18 16:00) [Défaut: {default_end}] : ") or default_end
+    #start_input = input(f"Date de début (ex. 2025-05-18 14:00) [Défaut: {default_start}] : ") or default_start
+    #end_input = input(f"Date de fin   (ex. 2025-05-18 16:00) [Défaut: {default_end}] : ") or default_end
 
-    try:
-        start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M")
-        end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M")
-        start_time = start_dt.replace(tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
-        end_time = end_dt.replace(tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
-    except ValueError:
-        print("Format invalide. Veuillez entrer la date au format YYYY-MM-DD HH:MM")
-        return
-    billing_data = get_billing_data_from_file('billing.json')
+    #try:
+        #start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M")
+        #end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M")
+        #start_time = start_dt.replace(tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        #end_time = end_dt.replace(tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    #except ValueError:
+        #print("Format invalide. Veuillez entrer la date au format YYYY-MM-DD HH:MM")
+        #return
+    #billing_data = get_billing_data_from_file('billing.json')
     
     # Lister les ressources
     list_images(conn)
