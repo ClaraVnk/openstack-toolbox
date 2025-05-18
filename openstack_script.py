@@ -44,7 +44,8 @@ def get_billing_data(start_time, end_time):
     print("Commande exécutée :", " ".join(command))
 
     # Exécuter la commande et récupérer la sortie
-    result = subprocess.run(command, capture_output=True, text=True, env=os.environ)
+    command_str = f"openstack rating dataframes get -b {start_time} -e {end_time} -c Resources -f json"
+    result = subprocess.run(command_str, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
         print("Erreur lors de la récupération des données de facturation")
         print("Code de retour:", result.returncode)
