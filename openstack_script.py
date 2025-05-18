@@ -141,19 +141,8 @@ def list_instances(conn, cloudkitty=None):
         # Formater l'uptime en jours, heures, minutes, secondes
         uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
 
-        # Récupérer les données de billing si CloudKitty est disponible
-        billing_data = None
-        try:
-            # Utiliser le client passé en paramètre s'il existe
-            if cloudkitty:
-                billing_data = cloudkitty.report.get_dataframes(
-                    begin=start_time,
-                    end=end_time,
-                    resource_id=instance.id
-                )
-                print(f"Billing data for instance {instance.id}: {billing_data}")  # Ajout pour le débogage
-        except Exception as e:
-            print(f"Erreur lors de la récupération des données de facturation pour l'instance {instance.id}: {e}")
+        # Récupérer les données de billing
+        billing_data = get_billing_data(start_time, end_time)
 
         # Calculer le coût en CHF et EUR
         cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
