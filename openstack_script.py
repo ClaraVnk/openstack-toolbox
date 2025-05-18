@@ -4,7 +4,7 @@ import subprocess
 import sys
 import importlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 
 def install_package(package):
@@ -44,7 +44,7 @@ def get_billing_data(start_time, end_time):
     print("Commande exécutée :", " ".join(command))
 
     # Exécuter la commande et récupérer la sortie
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, env=os.environ)
     if result.returncode != 0:
         print("Erreur lors de la récupération des données de facturation")
         print("Code de retour:", result.returncode)
@@ -127,9 +127,8 @@ def list_instances(conn, cloudkitty=None):
     print("-" * 130)
 
     # Définir la période pour les données de facturation (30 derniers jours)
-    start_time = (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
-    end_time = datetime.now().strftime("%Y-%m-%dT%H:00:00+00:00")
-
+    start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
+    end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
     print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
 
     billing_data = get_billing_data(start_time, end_time)
