@@ -39,7 +39,6 @@ def get_billing_data(start_time, end_time):
         "openstack", "rating", "dataframes", "get",
         "-b", start_time,
         "-e", end_time,
-        "-c", "Resources",
         "-f", "json"
     ]
 
@@ -47,7 +46,8 @@ def get_billing_data(start_time, end_time):
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
         print("Erreur lors de la récupération des données de facturation")
-        print(result.stderr)
+        print("Code de retour:", result.returncode)
+        print("Erreur:", result.stderr)
         return None
 
     return json.loads(result.stdout)
