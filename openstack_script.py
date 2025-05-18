@@ -6,6 +6,8 @@ import importlib
 import json
 import openstack
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+import os
 
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
@@ -65,7 +67,7 @@ def determine_cloudkitty_client_version(cloudkitty_version):
         print(f"Version de CloudKitty non reconnue: {cloudkitty_version}")
         return None
 
-def main():
+def setup_cloudkitty():
     # Vérifier si CloudKitty est installé
     if not check_cloudkitty_version():
         return
@@ -84,7 +86,7 @@ def main():
         print("Version de CloudKitty non reconnue, installation annulée.")
 
 if __name__ == "__main__":
-    main()
+    setup_cloudkitty()
 
 # Vérifier et installer les dépendances manquantes
 try:
@@ -100,8 +102,6 @@ except ImportError:
     install_package('python-dotenv')
 
 # Se connecter à OpenStack
-from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
@@ -154,12 +154,20 @@ def get_billing_data(start_time, end_time):
 
     return json.loads(result.stdout)
 
-def calculate_instance_cost(billing_data, icu_to_currency):
-    # Calculer le coût total en utilisant les données de facturation
-    total_icu = sum(float(resource['rating']) for resource in billing_data['Resources'])
-    total_cost = total_icu / icu_to_currency
+def calculate_instance_cost(billing_data, icu_to_chf=50, icu_to_euro=55.5):
+    if not billing_data:
+        return 0.0, 0.0  # Retourne zéro pour les deux devises si pas de données
 
-    return total_cost
+    total_icu = 0
+    for entry in billing_data:
+        # Additionner tous les ICUs
+        total_icu += entry.get('rating', {}).get('price', 0)
+    
+    # Convertir en CHF et EUR
+    cost_chf = total_icu / icu_to_chf
+    cost_euro = total_icu / icu_to_euro
+    
+    return cost_chf, cost_euro
 
 def main():
     # Définir la période de temps pour la récupération des données
@@ -211,12 +219,36 @@ def list_instances(conn):
     print_header("LISTE DES INSTANCES")
     # Récupérer les instances
     instances = list(conn.compute.servers())
+    # Taux de conversion ICU vers monnaies
+    icu_to_chf = 50  # Taux de conversion ICU vers CHF
+    icu_to_euro = 55.5  # Taux de conversion ICU vers EUR
     # Récupérer toutes les flavors disponibles
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût total':<20}")
-    print("-" * 116)
+    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':<12} {'Coût (EUR)':<12}")
+    print("-" * 130)
+    
+    # Définir la période pour les données de facturation (30 derniers jours)
+    start_time = datetime.now() - timedelta(days=30)
+  
+    # Fonction de calcul des coûts
+    def calculate_instance_cost(billing_data, icu_to_chf=50, icu_to_euro=55.5):
+        """Calcule le coût d'une instance en CHF et en EUR"""
+        if not billing_data:
+            return 0.0, 0.0  # Retourne zéro pour les deux devises si pas de données
+
+        total_icu = 0
+        for entry in billing_data:
+            # Additionner tous les ICUs
+            total_icu += entry.get('rating', {}).get('price', 0)
+        
+        # Convertir en CHF et EUR 
+        cost_chf = total_icu / icu_to_chf
+        cost_euro = total_icu / icu_to_euro
+        
+        return cost_chf, cost_euro
+
     for instance in instances:
         flavor_id = instance.flavor['id']
         # Convertir la date de création en objet datetime
@@ -225,9 +257,25 @@ def list_instances(conn):
         uptime = datetime.now() - created_at
         # Formater l'uptime en jours, heures, minutes, secondes
         uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
-        # Calculer le coût total
-        total_cost = calculate_instance_cost(flavor_id, uptime)
-        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {total_cost:<20.2f}")
+        
+        # Récupérer les données de billing si CloudKitty est disponible
+        billing_data = None
+        try:
+            from cloudkittyclient.v1 import client as ck_client
+            cloudkitty = ck_client.Client(session=conn.session)
+            
+            billing_data = cloudkitty.report.get_dataframes(
+                begin=start_time.isoformat(),
+                end=datetime.now().isoformat(),
+                resource_id=instance.id  # Correction: utiliser instance.id au lieu de instance_id
+            )
+        except (ImportError, Exception) as e:
+            # Gérer silencieusement l'erreur ou afficher un message informatif
+            pass
+        
+        # Calculer le coût en CHF et EUR
+        cost_chf, cost_euro = calculate_instance_cost(billing_data, icu_to_chf, icu_to_euro)
+        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")  # Correction: .2f au lieu de :2f
 
 list_instances(conn)
 
