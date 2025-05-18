@@ -33,19 +33,15 @@ def print_header(header):
     print(header.center(50))
     print("=" * 50 + "\n")
 
-# Fonction pour convertir nom de région en identifiant URL
-def region_to_url_id(region):
-    """Convertit un nom de région en identifiant d'URL"""
+# La spéciale Infomaniak aka gérer des version d'Openstack différentes
+def check_cloudkitty_version(region='dc3-a'):
+    """Vérifie si CloudKitty est disponible dans la région spécifiée"""
+    # Mapper les noms de région aux identifiants d'URL
     region_url_map = {
         'dc3-a': 'pub1',
         'dc4-a': 'pub2'
     }
-    return region_url_map.get(region, 'pub1')  # Défaut à pub1 si région inconnue
-
-# La spéciale Infomaniak aka gérer des version d'Openstack différentes
-def check_cloudkitty_version(region='dc3-a'):
-    """Vérifie si CloudKitty est disponible dans la région spécifiée"""
-    url_region = region_to_url_id(region)
+    url_region = region_url_map.get(region, 'pub1')  # Défaut à pub1 si région inconnue
     cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
     
     try:
@@ -71,7 +67,12 @@ def check_cloudkitty_version(region='dc3-a'):
 
 def get_cloudkitty_version(region='dc3-a'):
     """Obtient la version de CloudKitty depuis l'API dans la région spécifiée"""
-    url_region = region_to_url_id(region)
+    # Mapper les noms de région aux identifiants d'URL
+    region_url_map = {
+        'dc3-a': 'pub1',
+        'dc4-a': 'pub2'
+    }
+    url_region = region_url_map.get(region, 'pub1')  # Défaut à pub1 si région inconnue
     cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
     
     try:
@@ -83,160 +84,215 @@ def get_cloudkitty_version(region='dc3-a'):
         response = requests.get(f"{cloudkitty_endpoint}/v1", headers=headers)
         
         if response.status_code == 200:
-            version_info = response.json()
-            print(f"Version de CloudKitty dans la région {region}: {version_info}")
-            return version_info
+            # Tentative d'extraire la version des données de réponse
+            try:
+                api_info = response.json()
+                if 'version' in api_info:
+                    version = api_info['version']
+                    print(f"Version de CloudKitty détectée via API (région {region}): {version}")
+                    return version
+            except:
+                # Fallback: au moins nous savons que c'est disponible
+                print(f"CloudKitty est disponible dans la région {region} mais impossible de déterminer la version")
+                return "unknown"
         else:
             print(f"Impossible d'obtenir la version de CloudKitty dans la région {region}. Code d'état: {response.status_code}")
             return None
             
     except Exception as e:
-        print(f"Erreur lors de l'obtention de la version de CloudKitty dans la région {region}: {e}")
+        print(f"Erreur lors de la récupération de la version de CloudKitty dans la région {region}: {e}")
         return None
 
+def determine_cloudkitty_client_version(cloudkitty_version):
+    if not cloudkitty_version:
+        return None
+        
+    # Si la version est inconnue mais que l'API est disponible, utiliser une version récente
+    if cloudkitty_version == "unknown":
+        print("Version de CloudKitty inconnue, utilisation de la version 5.0.0 du client")
+        return 'cloudkittyclient==5.0.0'
+        
+    if cloudkitty_version.startswith('13.'):
+        return 'cloudkittyclient==4.1.0'
+    elif cloudkitty_version.startswith('20.'):
+        return 'cloudkittyclient==5.0.0'
+    else:
+        print(f"Version de CloudKitty non reconnue: {cloudkitty_version}")
+        # Fallback sur la version la plus récente
+        return 'cloudkittyclient==5.0.0'
+
 def setup_cloudkitty(region='dc3-a'):
-    """Configure CloudKitty et retourne un client CloudKitty"""
-    url_region = region_to_url_id(region)
-    if check_cloudkitty_version(region):
-        try:
-            # Créer une connexion OpenStack pour la région spécifiée
-            conn = openstack.connect(region_name=region)
-            
-            # Obtenir le token d'authentification pour les requêtes à CloudKitty
-            auth_token = conn.session.get_token()
-            
-            # Configuration de l'URL CloudKitty
-            cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
-            
-            # Retourner un "client" CloudKitty (en réalité, juste les informations nécessaires pour les requêtes HTTP)
-            return {
-                'endpoint': cloudkitty_endpoint,
-                'token': auth_token,
-                'region': region
-            }, region
-        except Exception as e:
-            print(f"Erreur lors de la configuration de CloudKitty pour la région {region}: {e}")
+    """Configure la connexion à CloudKitty dans la région spécifiée"""
+    # Mapper les noms de région aux identifiants d'URL
+    region_url_map = {
+        'dc3-a': 'pub1',
+        'dc4-a': 'pub2'
+    }
+    url_region = region_url_map.get(region, 'pub1')  # Défaut à pub1 si région inconnue
+    cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating"
+    if not check_cloudkitty_version(region):
+        return None
     
-    return None, region
+    # Obtenir la version de CloudKitty
+    cloudkitty_version = get_cloudkitty_version(region)
+    
+    # Déterminer la version du client à installer
+    client_version = determine_cloudkitty_client_version(cloudkitty_version)
+    if client_version:
+        print(f"Installation du client CloudKitty version: {client_version}")
+        try:
+            install_package(client_version)
+            
+            # Importer et configurer le client CloudKitty
+            try:
+                from cloudkittyclient.v1 import client as ck_client
+                
+                # Créer une connexion OpenStack pour la région spécifiée
+                conn = openstack.connect(region_name=region)
+                
+                # Configurer CloudKitty avec l'endpoint pour la région spécifiée
+                cloudkitty_endpoint = f"https://api.{url_region}.infomaniak.cloud/rating/v1"
+                cloudkitty_client = ck_client.Client(
+                    session=conn.session,
+                    endpoint_override=cloudkitty_endpoint
+                )
+                
+                print(f"Client CloudKitty initialisé avec succès pour la région {region}.")
+                return cloudkitty_client
+                
+            except ImportError as e:
+                print(f"Impossible d'importer cloudkittyclient: {e}")
+            except Exception as e:
+                print(f"Erreur lors de la configuration du client CloudKitty pour la région {region}: {e}")
+        except Exception as e:
+            print(f"Erreur lors de l'installation du client CloudKitty: {e}")
+    
+    return None
 
 def get_all_regions_cloudkitty():
-    """Essaie de configurer CloudKitty dans toutes les régions disponibles"""
-    # Essayer de configurer CloudKitty dans les différentes régions
+    """Tente de configurer CloudKitty pour toutes les régions disponibles et retourne le premier client fonctionnel"""
     regions = ['dc3-a', 'dc4-a']
     
     for region in regions:
-        cloudkitty, region = setup_cloudkitty(region)
-        if cloudkitty:
-            return cloudkitty, region
+        print(f"\nTentative de configuration de CloudKitty pour la région {region}...")
+        client = setup_cloudkitty(region)
+        if client:
+            print(f"Configuration réussie pour la région {region}")
+            return client, region
     
+    print("Impossible de configurer CloudKitty pour aucune région")
     return None, None
 
-def get_instance_summary(instance_id, cloudkitty, start_date=None, end_date=None):
-    """Récupère le résumé des coûts d'une instance via CloudKitty"""
-    if not cloudkitty:
-        return None
-    
-    # Si pas de dates spécifiées, utiliser les 30 derniers jours
-    if not start_date:
-        end_date = datetime.utcnow()
-        start_date = end_date - timedelta(days=30)
-    
-    # Formatage des dates pour CloudKitty
-    start_str = start_date.strftime('%Y-%m-%dT00:00:00')
-    end_str = end_date.strftime('%Y-%m-%dT23:59:59')
-    
-    try:
-        # Construire l'URL pour la requête
-        url = f"{cloudkitty['endpoint']}/v1/summary"
-        
-        # Paramètres de la requête
-        params = {
-            'begin': start_str,
-            'end': end_str,
-            'filters': json.dumps({
-                'resource_id': instance_id
-            })
-        }
-        
-        # En-têtes avec le token d'authentification
-        headers = {
-            'X-Auth-Token': cloudkitty['token'],
-            'Content-Type': 'application/json'
-        }
-        
-        # Effectuer la requête
-        response = requests.get(url, params=params, headers=headers)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return data
-        else:
-            print(f"Erreur lors de la récupération des données de facturation. Code: {response.status_code}")
-            return None
-    
-    except Exception as e:
-        print(f"Exception lors de la récupération des données de facturation: {e}")
+def get_billing_data(start_time, end_time):
+    # Commande pour récupérer les données de facturation
+    command = [
+        "openstack", "rating", "dataframes", "get",
+        "-b", start_time,
+        "-e", end_time,
+        "-c", "Resources",
+        "-f", "json"
+    ]
+
+    # Exécuter la commande et récupérer la sortie
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        print("Erreur lors de la récupération des données de facturation")
+        print(result.stderr)
         return None
 
-# Formatage de la taille
+    return json.loads(result.stdout)
+
+def calculate_instance_cost(billing_data, icu_to_chf=50, icu_to_euro=55.5):
+    if not billing_data:
+        return 0.0, 0.0  # Retourne zéro pour les deux devises si pas de données
+
+    total_icu = 0
+    for entry in billing_data:
+        # Additionner tous les ICUs
+        total_icu += entry.get('rating', {}).get('price', 0)
+    
+    # Convertir en CHF et EUR
+    cost_chf = total_icu / icu_to_chf
+    cost_euro = total_icu / icu_to_euro
+    
+    return cost_chf, cost_euro
+
 def format_size(size_bytes):
-    """Formater la taille en unités lisibles"""
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if size_bytes < 1024.0:
-            return f"{size_bytes:.2f} {unit}"
-        size_bytes /= 1024.0
-    return f"{size_bytes:.2f} PB"
+    # Définir les unités et leurs seuils
+    units = [
+        ('To', 1000000000000),
+        ('Go', 1000000000),
+        ('Mo', 1000000),
+        ('Ko', 1000)
+    ]
 
-# Formatage de la date
-def format_date(date_string):
-    """Formater une date ISO en format lisible"""
-    if not date_string:
-        return "N/A"
-    try:
-        date_obj = datetime.fromisoformat(date_string.replace('Z', '+00:00'))
-        return date_obj.strftime('%Y-%m-%d %H:%M:%S')
-    except:
-        return date_string
+    # Parcourir les unités pour trouver la plus appropriée
+    for unit, threshold in units:
+        if size_bytes >= threshold:
+            size = size_bytes / threshold
+            return f"{size:.2f} {unit}"
+    return f"{size_bytes} octets"
 
-# Lister les images
+# Lister les images privées et partagées
 def list_images(conn):
-    print_header("LISTE DES IMAGES")
-    # Récupérer les images
-    images = list(conn.image.images())
-
-    # Trier les images par date de création
-    images.sort(key=lambda x: x.created_at if hasattr(x, 'created_at') else '', reverse=True)
+    print_header("LISTE DES IMAGES UTILISEES")
+    # Récupérer les images privées et les convertir en liste
+    private_images = list(conn.image.images(visibility='private'))
+    # Récupérer les images partagées et les convertir en liste
+    shared_images = list(conn.image.images(visibility='shared'))
+    # Combiner les images privées et partagées
+    all_images = private_images + shared_images
 
     # Afficher les en-têtes du tableau
-    print(f"{'Nom':<30} {'ID':<36} {'Taille':<15} {'Date de création':<25}")
-    print("-" * 106)
-    for image in images:
-        size_formatted = format_size(image.size) if hasattr(image, 'size') else "N/A"
-        created_date = format_date(image.created_at) if hasattr(image, 'created_at') else "N/A"
-        print(f"{image.name:<30} {image.id:<36} {size_formatted:<15} {created_date:<25}")
+    print(f"{'ID':<36} {'Nom':<36} {'Visibilité':<20}")
+    print("-" * 96) 
+    for image in all_images:
+        print(f"{image.id:<36} {image.name:<36} {image.visibility:<20}")
 
 # Lister les instances
 def list_instances(conn, cloudkitty=None):
     print_header("LISTE DES INSTANCES")
-    # Récupérer les serveurs
-    servers = list(conn.compute.servers())
-
-    # Trier les serveurs par date de création
-    servers.sort(key=lambda x: x.created_at if hasattr(x, 'created_at') else '', reverse=True)
+    # Récupérer les instances
+    instances = list(conn.compute.servers())
+    # Taux de conversion ICU vers monnaies
+    icu_to_chf = 50  # Taux de conversion ICU vers CHF
+    icu_to_euro = 55.5  # Taux de conversion ICU vers EUR
+    # Récupérer toutes les flavors disponibles
+    flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
     # Afficher les en-têtes du tableau
-    print(f"{'Nom':<30} {'ID':<36} {'Statut':<15} {'Date de création':<25}")
-    print("-" * 106)
-    for server in servers:
-        created_date = format_date(server.created_at) if hasattr(server, 'created_at') else "N/A"
-        print(f"{server.name:<30} {server.id:<36} {server.status:<15} {created_date:<25}")
+    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':<12} {'Coût (EUR)':<12}")
+    print("-" * 130)
+    
+    # Définir la période pour les données de facturation (30 derniers jours)
+    start_time = datetime.now() - timedelta(days=30)
+
+    for instance in instances:
+        flavor_id = instance.flavor['id']
+        # Convertir la date de création en objet datetime
+        created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
+        # Calculer l'uptime
+        uptime = datetime.now() - created_at
+        # Formater l'uptime en jours, heures, minutes, secondes
+        uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
         
-        # Si CloudKitty est configuré, essayer de récupérer les informations de facturation
-        if cloudkitty:
-            summary = get_instance_summary(server.id, cloudkitty)
-            if summary and 'results' in summary:
-                total = sum(item.get('qty', 0) * item.get('price', 0) for item in summary['results'])
-                print(f"  Coût estimé des 30 derniers jours: {total:.2f} EUR")
+        # Récupérer les données de billing si CloudKitty est disponible
+        billing_data = None
+        try:
+            # Utiliser le client passé en paramètre s'il existe
+            if cloudkitty:
+                billing_data = cloudkitty.report.get_dataframes(
+                    begin=start_time.isoformat(),
+                    end=datetime.now().isoformat(),
+                    resource_id=instance.id
+                )
+        except Exception as e:
+            # Gérer silencieusement l'erreur ou afficher un message informatif
+            pass
+        
+        # Calculer le coût en CHF et EUR
+        cost_chf, cost_euro = calculate_instance_cost(billing_data, icu_to_chf, icu_to_euro)
+        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")
 
 # Lister les snapshots
 def list_snapshots(conn):
@@ -244,16 +300,11 @@ def list_snapshots(conn):
     # Récupérer les snapshots
     snapshots = list(conn.block_storage.snapshots())
 
-    # Trier les snapshots par date de création
-    snapshots.sort(key=lambda x: x.created_at if hasattr(x, 'created_at') else '', reverse=True)
-
     # Afficher les en-têtes du tableau
-    print(f"{'Nom':<30} {'ID':<36} {'Taille':<15} {'Date de création':<25}")
-    print("-" * 106)
+    print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
+    print("-" * 96)
     for snapshot in snapshots:
-        size_formatted = f"{snapshot.size} GB" if hasattr(snapshot, 'size') else "N/A"
-        created_date = format_date(snapshot.created_at) if hasattr(snapshot, 'created_at') else "N/A"
-        print(f"{snapshot.name:<30} {snapshot.id:<36} {size_formatted:<15} {created_date:<25}")
+        print(f"{snapshot.id:<36} {snapshot.name:<20} {snapshot.volume_id:<20}")
 
 # Lister les backups
 def list_backups(conn):
@@ -261,47 +312,49 @@ def list_backups(conn):
     # Récupérer les backups
     backups = list(conn.block_storage.backups())
 
-    # Trier les backups par date de création
-    backups.sort(key=lambda x: x.created_at if hasattr(x, 'created_at') else '', reverse=True)
-
     # Afficher les en-têtes du tableau
-    print(f"{'Nom':<30} {'ID':<36} {'Taille':<15} {'Date de création':<25}")
-    print("-" * 106)
+    print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
+    print("-" * 96)
     for backup in backups:
-        size_formatted = f"{backup.size} GB" if hasattr(backup, 'size') else "N/A"
-        created_date = format_date(backup.created_at) if hasattr(backup, 'created_at') else "N/A"
-        print(f"{backup.name:<30} {backup.id:<36} {size_formatted:<15} {created_date:<25}")
+        print(f"{backup.id:<36} {backup.name:<20} {backup.volume_id:<20}")
 
-# Lister les volumes
+# Lister les volumes 
 def list_volumes(conn):
     print_header("LISTE DES VOLUMES")
     # Récupérer les volumes
     volumes = list(conn.block_storage.volumes())
 
-    # Trier les volumes par date de création
-    volumes.sort(key=lambda x: x.created_at if hasattr(x, 'created_at') else '', reverse=True)
-
     # Afficher les en-têtes du tableau
-    print(f"{'Nom':<30} {'ID':<36} {'Taille':<15} {'Date de création':<25}")
-    print("-" * 106)
+    print(f"{'ID':<36} {'Nom':<20} {'Taille (Go)':<20} {'Type':<20} {'Attaché':<20} {'Snapshot associé':<20}")
+    print("-" * 116)
     for volume in volumes:
-        size_formatted = f"{volume.size} GB" if hasattr(volume, 'size') else "N/A"
-        created_date = format_date(volume.created_at) if hasattr(volume, 'created_at') else "N/A"
-        print(f"{volume.name:<30} {volume.id:<36} {size_formatted:<15} {created_date:<25}")
+        attached = "Oui" if volume.attachments else "Non"
+        # Remplacer None par une chaîne vide pour snapshot_id
+        snapshot_id = volume.snapshot_id if volume.snapshot_id else 'Aucun'
+        print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20} {snapshot_id:<20}")
 
-# Organiser les volumes par instance
+# Récupérer les volumes attachés aux instances
 def mounted_volumes(conn):
-    instances = list(conn.compute.servers())
-    volumes = list(conn.block_storage.volumes())
-    
+    instances = conn.compute.servers()
+    volumes = conn.block_storage.volumes()
+    instance_volumes = {}
+
+    for volume in volumes:
+        if volume.attachments:
+            for attachment in volume.attachments:
+                instance_id = attachment['server_id']
+                if instance_id not in instance_volumes:
+                    instance_volumes[instance_id] = []
+                instance_volumes[instance_id].append(volume)
+
     tree = {}
-    
     for instance in instances:
-        tree[instance.name] = []
-        for attachment in instance.attached_volumes:
-            for volume in volumes:
-                if volume.id == attachment['id']:
-                    tree[instance.name].append(volume.name)
+        instance_id = instance.id
+        instance_name = instance.name
+        if instance_id in instance_volumes:
+            tree[instance_name] = [volume.name for volume in instance_volumes[instance_id]]
+        else:
+            tree[instance_name] = []
 
     return tree
 
