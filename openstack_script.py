@@ -10,6 +10,82 @@ from datetime import datetime, timedelta
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
+# La spéciale Infomaniak
+def check_cloudkitty_version():
+    try:
+        # Commande pour lister les services OpenStack
+        command = ["openstack", "service", "list", "-c", "Name", "-c", "Type", "-f", "json"]
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+
+        # Analyser la sortie JSON
+        services = json.loads(result.stdout)
+
+        # Rechercher le service CloudKitty
+        for service in services:
+            if service.get('Type') == 'rating':
+                print(f"CloudKitty est installé avec le nom de service: {service.get('Name')}")
+                return True
+        print("CloudKitty n'est pas installé ou n'est pas trouvé dans la liste des services.")
+        return False
+    except subprocess.CalledProcessError as e:
+        print("Erreur lors de l'exécution de la commande OpenStack CLI")
+        print(e.stderr)
+        return False
+    except json.JSONDecodeError:
+        print("Erreur dans le format de sortie de la commande OpenStack")
+        return False
+
+def get_cloudkitty_version():
+    try:
+        # Commande pour obtenir la version de CloudKitty
+        cmd = ["cloudkitty", "--version"]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        
+        # Extraire la version de la sortie
+        # Exemple de sortie: "CloudKitty 13.0.0"
+        version_output = result.stdout.strip()
+        version = version_output.split()[-1]  # Prend le dernier élément (numéro de version)
+        
+        print(f"Version de CloudKitty détectée: {version}")
+        return version
+    except subprocess.CalledProcessError as e:
+        print("Impossible d'obtenir la version de CloudKitty")
+        print(e.stderr if e.stderr else "Commande échouée sans message d'erreur")
+        return None
+
+def determine_cloudkitty_client_version(cloudkitty_version):
+    if not cloudkitty_version:
+        return None
+        
+    if cloudkitty_version.startswith('13.'):
+        return 'cloudkittyclient==4.1.0'
+    elif cloudkitty_version.startswith('20.'):
+        return 'cloudkittyclient==5.0.0'
+    else:
+        print(f"Version de CloudKitty non reconnue: {cloudkitty_version}")
+        return None
+
+def main():
+    # Vérifier si CloudKitty est installé
+    if not check_cloudkitty_version():
+        return
+    
+    # Obtenir la version de CloudKitty
+    cloudkitty_version = get_cloudkitty_version()
+    if not cloudkitty_version:
+        return
+
+    # Déterminer la version du client à installer
+    client_version = determine_cloudkitty_client_version(cloudkitty_version)
+    if client_version:
+        print(f"Installation du client CloudKitty version: {client_version}")
+        install_package(client_version)
+    else:
+        print("Version de CloudKitty non reconnue, installation annulée.")
+
+if __name__ == "__main__":
+    main()
+
 # Vérifier et installer les dépendances manquantes
 try:
     importlib.import_module('openstack')
@@ -22,12 +98,6 @@ try:
 except ImportError:
     print("Installation du package dotenv...")
     install_package('python-dotenv')
-
-try:
-    importlib.import_module('cloudkittyclient')
-except ImportError:
-    print("Installation du package CloudKitty...")
-    install_package('cloudkittyclient')
 
 # Se connecter à OpenStack
 from dotenv import load_dotenv
