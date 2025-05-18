@@ -36,8 +36,7 @@ def get_billing_data_from_file(filepath):
     with open(filepath, 'r') as f:
         return json.load(f)
 
-def calculate_instance_cost(billing_data, ls
-instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
+def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
         print(f"Aucune donnée de facturation disponible pour l'instance {instance_id}")
         return 0.0, 0.0
