@@ -34,7 +34,7 @@ def print_header(header):
     print("=" * 50 + "\n")
 
 # La spéciale Infomaniak aka gérer des version d'Openstack différentes
-def check_cloudkitty_version(region='pub1'):
+def check_cloudkitty_version(region='dc3-a'):
     """Vérifie si CloudKitty est disponible dans la région spécifiée"""
     cloudkitty_endpoint = f"https://api.{region}.infomaniak.cloud/rating"
     
@@ -59,7 +59,7 @@ def check_cloudkitty_version(region='pub1'):
         print(f"Erreur lors de la vérification de CloudKitty dans la région {region}: {e}")
         return False
 
-def get_cloudkitty_version(region='pub1'):
+def get_cloudkitty_version(region='dc3-a'):
     """Obtient la version de CloudKitty depuis l'API dans la région spécifiée"""
     cloudkitty_endpoint = f"https://api.{region}.infomaniak.cloud/rating"
     
@@ -109,7 +109,7 @@ def determine_cloudkitty_client_version(cloudkitty_version):
         # Fallback sur la version la plus récente
         return 'cloudkittyclient==5.0.0'
 
-def setup_cloudkitty(region='pub1'):
+def setup_cloudkitty(region='dc3-a'):
     """Configure la connexion à CloudKitty dans la région spécifiée"""
     # Vérifier si CloudKitty est disponible dans la région spécifiée
     if not check_cloudkitty_version(region):
@@ -153,7 +153,7 @@ def setup_cloudkitty(region='pub1'):
 
 def get_all_regions_cloudkitty():
     """Tente de configurer CloudKitty pour toutes les régions disponibles et retourne le premier client fonctionnel"""
-    regions = ['pub1', 'pub2']
+    regions = ['dc3-a', 'dc4-a']
     
     for region in regions:
         print(f"\nTentative de configuration de CloudKitty pour la région {region}...")
