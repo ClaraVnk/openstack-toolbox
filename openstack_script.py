@@ -34,41 +34,6 @@ def print_header(header):
     print("=" * 50 + "\n")
 
 # La spéciale Infomaniak aka gérer des version d'Openstack différentes
-def check_cloudkitty_version(region='dc3-a'):
-    """Vérifie si CloudKitty est disponible dans la région spécifiée en consultant le catalogue de services Keystone"""
-    try:
-        # Créer une connexion OpenStack pour la région spécifiée
-        conn = openstack.connect(region_name=region)
-        
-        # Obtenir la liste des services depuis le catalogue
-        service_catalog = conn.identity.get_catalog()
-        
-        # Chercher CloudKitty dans le catalogue des services
-        cloudkitty_service = None
-        for service in service_catalog:
-            if 'rating' in service.name.lower() or 'cloudkitty' in service.name.lower() or 'billing' in service.name.lower():
-                cloudkitty_service = service
-                break
-            
-        if cloudkitty_service:
-            print(f"CloudKitty est disponible sur Infomaniak OpenStack (région {region}).")
-            # Afficher les endpoints disponibles
-            print(f"Endpoints disponibles : {cloudkitty_service.endpoints}")
-            return True
-        else:
-            # Essayer une recherche directe des endpoints
-            endpoints = conn.identity.endpoints(service_type='rating')
-            if len(list(endpoints)) > 0:
-                print(f"Service de rating trouvé via les endpoints dans la région {region}.")
-                return True
-                
-            print(f"CloudKitty n'est pas accessible dans la région {region}.")
-            return False
-            
-    except Exception as e:
-        print(f"Erreur lors de la vérification de CloudKitty dans la région {region}: {e}")
-        return False
-
 def get_cloudkitty_version(region='dc3-a'):
     """Obtient la version de CloudKitty depuis l'API dans la région spécifiée"""
     # Mapper les noms de région aux identifiants d'URL
