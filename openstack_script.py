@@ -8,14 +8,6 @@ import requests
 from datetime import datetime, timedelta
 import os
 
-# Afficher les variables d'environnement OpenStack
-print("OS_AUTH_URL:", os.getenv("OS_AUTH_URL"))
-print("OS_USERNAME:", os.getenv("OS_USERNAME"))
-print("OS_PASSWORD:", os.getenv("OS_PASSWORD"))
-print("OS_USER_DOMAIN_NAME:", os.getenv("OS_USER_DOMAIN_NAME"))
-print("OS_PROJECT_DOMAIN_NAME:", os.getenv("OS_PROJECT_DOMAIN_NAME"))
-print("OS_PROJECT_NAME:", os.getenv("OS_PROJECT_NAME"))
-
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
@@ -430,6 +422,14 @@ def main():
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
     
+    # Afficher les variables d'environnement OpenStack
+    print("OS_AUTH_URL:", os.getenv("OS_AUTH_URL"))
+    print("OS_USERNAME:", os.getenv("OS_USERNAME"))
+    print("OS_PASSWORD:", os.getenv("OS_PASSWORD"))
+    print("OS_USER_DOMAIN_NAME:", os.getenv("OS_USER_DOMAIN_NAME"))
+    print("OS_PROJECT_DOMAIN_NAME:", os.getenv("OS_PROJECT_DOMAIN_NAME"))
+    print("OS_PROJECT_NAME:", os.getenv("OS_PROJECT_NAME"))
+
     # Créer la connexion OpenStack
     conn = openstack.connect(
         auth_url=auth_url,
