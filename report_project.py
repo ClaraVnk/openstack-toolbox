@@ -99,21 +99,22 @@ def load_usages(filepath="fetch_uses.json"):
     with open(filepath, "r") as f:
         data = json.load(f)
 
-    usages = defaultdict(lambda: {"cpu": 0, "ram": 0, "storage": 0})
+    usages_by_project = {}
 
     for entry in data:
-        desc = entry.get("desc", {})
-        project_id = desc.get("project_id", "inconnu")
-        flavor_name = desc.get("flavor_name", "")
-        volume = float(entry.get("volume", 1.0))
+        project_id = entry.get("project_id", "inconnu")
+        cpu = float(entry.get("cpu", 0))
+        ram = float(entry.get("ram", 0))
+        storage = float(entry.get("storage", 0))
 
-        cpu, ram, disk = parse_flavor_name(flavor_name)
+        if project_id not in usages_by_project:
+            usages_by_project[project_id] = {"cpu": 0, "ram": 0, "storage": 0}
 
-        usages[project_id]["cpu"] += cpu * volume
-        usages[project_id]["ram"] += ram * volume
-        usages[project_id]["storage"] += disk * volume
+        usages_by_project[project_id]["cpu"] += cpu
+        usages_by_project[project_id]["ram"] += ram
+        usages_by_project[project_id]["storage"] += storage
 
-    return usages
+    return usages_by_project
 
 def aggregate_costs(data):
     costs_by_project = {}
