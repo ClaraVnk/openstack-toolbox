@@ -70,67 +70,50 @@ from openstack import connection
 creds = load_openstack_credentials()
 conn = connection.Connection(**creds)
 
-# Conversion des tarifs
-TARIFS_ICU = {
-    "vcpu_hour": 2.0,
-    "ram_gb_hour": 0.5,
-    "storage_gb_hour": 0.2,
-    "network_gb": 0.4
-}
-
 # Conversion ICU → EUR et CHF
 ICU_CONVERSION = {
     "icu_to_eur": 1 / 55.5,  # 1 ICU = 0.018018 EUR
     "icu_to_chf": 1 / 50.0   # 1 ICU = 0.02 CHF
 }
 
-# Fonctions métriques
-METRICS_KEYS = {
-    "vcpu_hour": "cpu_hours",
-    "ram_gb_hour": "ram_gb_hours",
-    "storage_gb_hour": "storage_gb_hours",
-    "network_gb": "network_gb"
-}
-
-def load_usages(filepath="weekly_uses.json"):
+# Fonctions 
+def load_billing(filepath="billing.json"):
     with open(filepath, "r") as f:
         return json.load(f)
 
-def load_billing(filepath="weekly_billing.json"):
+def load_usages(filepath="usages.json"):
     with open(filepath, "r") as f:
-        return json.load(f)
+        data = json.load(f)
+    
+    usages_by_project = {}
 
-def find_billing_cost(billing_data, project_id):
-    # Adapte la clé selon la structure de ton JSON de facturation
-    for entry in billing_data:
-        if entry.get("project_id") == project_id:
-            return entry.get("total_cost", 0)  # ou la clé correspondant au coût total
-    return 0
+    for entry in data:
+        project_id = entry.get("project_id") or entry.get("tenant_id") or "inconnu"
+        cpu = float(entry.get("cpu_hours", 0))
+        ram = float(entry.get("ram_gb_hours", 0))
+        storage = float(entry.get("storage_gb_hours", 0))
 
-def calculate_costs(entry):
-    cpu = float(entry.get(METRICS_KEYS["vcpu_hour"], 0))
-    ram = float(entry.get(METRICS_KEYS["ram_gb_hour"], 0))
-    storage = float(entry.get(METRICS_KEYS["storage_gb_hour"], 0))
-    network = float(entry.get(METRICS_KEYS["network_gb"], 0))
+        if project_id not in usages_by_project:
+            usages_by_project[project_id] = {"cpu": 0.0, "ram": 0.0, "storage": 0.0}
+        
+        usages_by_project[project_id]["cpu"] += cpu
+        usages_by_project[project_id]["ram"] += ram
+        usages_by_project[project_id]["storage"] += storage
 
-    total_icu = (
-        cpu * TARIFS_ICU["vcpu_hour"] +
-        ram * TARIFS_ICU["ram_gb_hour"] +
-        storage * TARIFS_ICU["storage_gb_hour"] +
-        network * TARIFS_ICU["network_gb"]
-    )
-    total_eur = total_icu * ICU_CONVERSION["icu_to_eur"]
-    total_chf = total_icu * ICU_CONVERSION["icu_to_chf"]
+    return usages_by_project
 
-    return {
-        "cpu_h": cpu,
-        "ram_h": ram,
-        "storage_h": storage,
-        "network_gb": network,
-        "total_icu": total_icu,
-        "total_eur": total_eur,
-        "total_chf": total_chf
-    }
+def aggregate_costs(data):
+    costs_by_project = {}
+    
+    for entry in data:
+        project_id = entry.get("project_id") or entry.get("tenant_id") or "inconnu"
+        rating = entry.get("rating", 0)  # en ICU
+        if rating is None:
+            continue
+        costs_by_project.setdefault(project_id, 0)
+        costs_by_project[project_id] += float(rating)
+    
+    return costs_by_project
 
 # Récupération des projets
 project_id = input("Entrez l'ID du projet à analyser : ").strip()
@@ -194,48 +177,21 @@ def main():
 
     # Charger usages et facturation
     usages = load_usages()
-    billing = load_billing()
     report = []
+    data = load_billing()
+    aggregated = aggregate_costs(data)
 
-    for entry in usages:
-        if entry.get("project_id") != project_id:
-            continue
-        costs = calculate_costs(entry)
-        billing_cost = find_billing_cost(billing, project_id)
-        report.append({
-            "projet": entry.get("project_name", project_id),
-            **costs,
-            "billing_cost": billing_cost
-        })
-
-    with open('/tmp/openstack_report.txt', 'w') as f:
-        if not report:
-            f.write("⚠️  Aucun usage ou coût détecté pour ce projet.\n")
-        else:
-            f.write(f"{'Projet':20} | {'CPU h':>8} | {'RAM h':>8} | {'Stock h':>8} | {'Net GB':>8} | {'ICU (est)':>10} | {'Facturé':>10}\n")
-            f.write("-" * 100 + "\n")
-            for line in report:
-                f.write(
-                    f"{line['projet'][:20]:20} | "
-                    f"{line['cpu_h']:8.2f} | {line['ram_h']:8.2f} | "
-                    f"{line['storage_h']:8.2f} | {line['network_gb']:8.2f} | "
-                    f"{line['total_icu']:10.2f} | {line['billing_cost']:10.2f}\n"
-                )
+    print(f"{'Projet':36} | EUR     | CHF")
+    print("-" * 65)
+    for project_id, total_icu in aggregated.items():
+        eur = total_icu * ICU_TO_EUR
+        chf = total_icu * ICU_TO_CHF
+        print(f"{project_id:36} | {eur:7.2f} | {chf:7.2f}") 
 
     print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
 
     if not report:
         print("⚠️  Aucun usage ou coût détecté pour ce projet.")
-    else:
-        print(f"{'Projet':20} | {'CPU h':>8} | {'RAM h':>8} | {'Stock h':>8} | {'Net GB':>8} | {'ICU (est)':>10} | {'Facturé':>10}")
-        print("-" * 100)
-        for line in report:
-            print(
-                f"{line['projet'][:20]:20} | "
-                f"{line['cpu_h']:8.2f} | {line['ram_h']:8.2f} | "
-                f"{line['storage_h']:8.2f} | {line['network_gb']:8.2f} | "
-                f"{line['total_icu']:10.2f} | {line['billing_cost']:10.2f}"
-            )
 
 if __name__ == '__main__':
     main()
