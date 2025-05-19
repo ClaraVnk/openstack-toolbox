@@ -221,8 +221,18 @@ def collect_and_analyze_data():
     report_body = header + "\n" + report_body
     return report_body
 
-if __name__ == '__main__':
+def main():
+    # Exécuter le script weekly_billing.py pour récupérer les données de facturation
     subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
+
+    # Collecter et analyser les données
     report_body = collect_and_analyze_data()
+
+    # Enregistrer le rapport dans un fichier
     with open('/tmp/openstack_report.txt', 'w') as f:
         f.write(report_body)
+
+    print("Rapport généré avec succès : /tmp/openstack_report.txt")
+
+if __name__ == '__main__':
+    main()

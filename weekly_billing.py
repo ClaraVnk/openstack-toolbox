@@ -27,13 +27,11 @@ def main():
         "-f", "json"
     ]
 
-    print("Exécution de la commande:", " ".join(cmd))
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
         with open("weekly_billing.json", "w") as f:
             f.write(result.stdout)
-        print("✅ Données enregistrées dans 'billing.json'")
     else:
         print("❌ Échec de la récupération des données")
         print("STDERR:", result.stderr)
