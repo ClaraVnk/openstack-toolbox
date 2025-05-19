@@ -34,7 +34,7 @@ def get_active_instance_ids():
             print("STDERR:", result.stderr)
             return set()
         servers = json.loads(result.stdout)
-        return {s["ID"] for s in servers if s["Status"].upper() == "ACTIVE"}
+        return {s["ID"] for s in servers if s.get("Status", "").upper() == "ACTIVE"}
     except Exception as e:
         print("⚠️ Erreur lors de l'appel à `openstack server list`:", e)
         return set()
@@ -101,7 +101,7 @@ def main():
         for entry in resources:
             desc = entry.get("desc", {})
             instance_id = desc.get("id")
-            if instance_id not in active_ids:
+            if not instance_id or instance_id not in active_ids:
                 continue  # ignorer les VMs inactives
             project_id = desc.get("project_id", "inconnu")
             flavor = desc.get("flavor_name", "")
@@ -115,10 +115,6 @@ def main():
                 usages[project_id]["ram"] += ram * volume
                 usages[project_id]["storage"] += disk * volume
                 counts[project_id] += 1
-
-        print("\nRésumé du cumul par projet (points comptés) :")
-        for pid, count in counts.items():
-            print(f" - {pid}: {count} points de mesure")
 
         # Convertir en liste pour l'export JSON
         usage_list = []
