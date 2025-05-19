@@ -7,6 +7,10 @@
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
+### Disclaimer
+
+These toolbox is configured to match Infomaniak's Public Cloud costs (euros and CHF). Iy fou want, you can reconfigure it to mach your provider's costs.
+
 <!-- GETTING STARTED -->
 ## Getting started
 
@@ -56,6 +60,15 @@ python3 openstack_optimization.py
   "user_domain_name": "default",
   "project_domain_name": "default"
   }
+  ```
+* Configure emails in notification.py :
+  ```sh
+  smtp_server = '<your-smtp-server>'
+  smtp_port = 587
+  smtp_username = '<your-smtp-username>'
+  smtp_password = '<your-smtp-password>'
+  from_email = '<your-email>'
+  to_email = '<recipient-email>'
   ```
 * Add a cron task :
   ```sh
