@@ -115,11 +115,15 @@ def parse_flavor_name(flavor_name):
     return 0, 0, 0
 
 def load_usages(filepath="fetch_uses.json"):
-    with open(filepath, "r") as f:
-        data = json.load(f)
+    try:
+        with open(filepath, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        print(f"⚠️ Le fichier {filepath} est introuvable.")
+        return {}
 
     if not data:
-        print("⚠️  Aucune donnée reçue, fichier fetch_uses.json non généré.")
+        print(f"⚠️ Aucune donnée disponible dans {filepath} (période trop courte ou usages trop faibles).")
         return {}
 
     usages_by_project = {}
@@ -133,6 +137,7 @@ def load_usages(filepath="fetch_uses.json"):
         if project_id not in usages_by_project:
             usages_by_project[project_id] = {"cpu": 0, "ram": 0, "storage": 0}
 
+        # Addition des valeurs cumulées
         usages_by_project[project_id]["cpu"] += cpu
         usages_by_project[project_id]["ram"] += ram
         usages_by_project[project_id]["storage"] += storage
@@ -141,6 +146,7 @@ def load_usages(filepath="fetch_uses.json"):
 
 def aggregate_costs(data):
     costs_by_project = {}
+    costs_by_project[project_id]["total_icu"] += float(rating)
 
     if not data:
         print("⚠️ Le fichier de facturation est vide.")
