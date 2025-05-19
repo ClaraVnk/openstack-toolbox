@@ -128,19 +128,19 @@ def analyze_resource_usage():
     sns.barplot(x='Instance', y='CPU Usage (%)', data=df)
     plt.title('CPU Usage by Instance')
     plt.savefig('cpu_usage.png')
-    plt.show()  # <-- Ajout
+    plt.show() 
 
     plt.figure(figsize=(12, 6))
     sns.barplot(x='Instance', y='RAM Usage (%)', data=df)
     plt.title('RAM Usage by Instance')
     plt.savefig('ram_usage.png')
-    plt.show()  # <-- Ajout
+    plt.show() 
 
     plt.figure(figsize=(12, 6))
     sns.barplot(x='Instance', y='Disk Usage (%)', data=df)
     plt.title('Disk Usage by Instance')
     plt.savefig('disk_usage.png')
-    plt.show()  # <-- Ajout
+    plt.show() 
 
     # Générer un rapport
     report = f"Rapport d'analyse de l'utilisation des ressources:\n\n"
@@ -163,12 +163,6 @@ def calculate_underutilized_costs():
     except json.JSONDecodeError:
         print("Erreur lors de la lecture du fichier weekly_billing.json : format JSON invalide.")
         billing_data = {}
-
-    # Exemple de coûts en ICU (unité interne)
-    underutilized_costs_icu = {
-        'Inactive Instances': 5000,  # Exemple de coût en ICU
-        'Unused Volumes': 3000       # Exemple de coût en ICU
-    }
 
     # Taux de conversion
     ICU_to_CHF = 1 / 50       # 1 CHF = 50 ICU → 1 ICU = 0.02 CHF
