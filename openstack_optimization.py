@@ -128,16 +128,19 @@ def analyze_resource_usage():
     sns.barplot(x='Instance', y='CPU Usage (%)', data=df)
     plt.title('CPU Usage by Instance')
     plt.savefig('cpu_usage.png')
+    plt.show()  # <-- Ajout
 
     plt.figure(figsize=(12, 6))
     sns.barplot(x='Instance', y='RAM Usage (%)', data=df)
     plt.title('RAM Usage by Instance')
     plt.savefig('ram_usage.png')
+    plt.show()  # <-- Ajout
 
     plt.figure(figsize=(12, 6))
     sns.barplot(x='Instance', y='Disk Usage (%)', data=df)
     plt.title('Disk Usage by Instance')
     plt.savefig('disk_usage.png')
+    plt.show()  # <-- Ajout
 
     # Générer un rapport
     report = f"Rapport d'analyse de l'utilisation des ressources:\n\n"
@@ -216,7 +219,7 @@ def collect_and_analyze_data():
     report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
     underutilized_costs = calculate_underutilized_costs()
     for resource, costs in underutilized_costs.items():
-        report_body += f"  - {resource}: {costs['ICU']} ICU / {costs['CHF']} CHF / {costs['EUR']} EUR\n"
+        report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
     report_body += "="*60 + "\n"
 
     return report_body
