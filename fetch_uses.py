@@ -100,16 +100,10 @@ def main():
         # Cumul des ressources consommées sur la période (CPU/Go/h * heures d'utilisation)
         for entry in resources:
             desc = entry.get("desc", {})
-            instance_id = desc.get("id")
-            if not instance_id or instance_id not in active_ids:
-                continue  # ignorer les VMs inactives
             project_id = desc.get("project_id", "inconnu")
             flavor = desc.get("flavor_name", "")
-            volume = float(entry.get("volume", 1.0))  # C’est la durée en heures si l’entrée est fiable
-
+            volume = float(entry.get("volume", 1.0))
             cpu, ram, disk = parse_flavor_name(flavor)
-
-            # 🔁 Cumul par volume (durée d’usage) uniquement si volume > 0
             if volume > 0:
                 usages[project_id]["cpu"] += cpu * volume
                 usages[project_id]["ram"] += ram * volume
