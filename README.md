@@ -18,7 +18,9 @@ These toolbox is configured to match Infomaniak's Public Cloud costs (euros and 
   source ../openstack.sh
   ```
 
-## Openstack summary with instance costs
+## Openstack summary 
+
+This will list instances with their costs, backups, images, volumes, etc.
 
 ### 1. As a client
 
@@ -37,6 +39,8 @@ python3 openstack_admin_script.py
   ```
 
 ## Openstack optimization
+
+This will list inactive instances, unused volumes, and analyze the ressource usage with lost costs.
 
 ### 1. As a user
 
@@ -77,6 +81,8 @@ python3 openstack_optimization.py
   ```
 
 ## Openstack project report
+
+This will allow you to chose a project, and list the uses (CPU, RAM, storage) and the costs.
 
 * List your projects :
   ```sh
