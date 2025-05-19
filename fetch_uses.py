@@ -61,7 +61,10 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
             print("⚠️ Impossible de récupérer la liste des ressources Gnocchi.")
-            print("STDERR:", result.stderr)
+            print("Commande exécutée :", ' '.join(cmd))
+            print("Code retour :", result.returncode)
+            print("STDERR:", result.stderr.strip())
+            print("STDOUT:", result.stdout.strip())
             return set()
 
         resources = json.loads(result.stdout)
