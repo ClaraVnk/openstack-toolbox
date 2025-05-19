@@ -57,6 +57,12 @@ except ImportError:
     print("Installation du package openstack...")
     install_package('openstacksdk')
 
+try:
+    importlib.import_module('dotenv')
+except ImportError:
+    print("Installation du package dotenv...")
+    install_package('python-dotenv')
+
 from dotenv import load_dotenv
 from openstack import connection
 
@@ -175,10 +181,6 @@ def main():
     print(header)
 
     # Demander à l'utilisateur de saisir l'ID du projet
-    project_id = input("Veuillez entrer l'ID du projet: ")
-    get_project_details(conn, project_id)
-
-    # Exécuter le script weekly_billing.py pour récupérer les données de facturation
     subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
 
     # Collecter et analyser les données
@@ -202,7 +204,12 @@ def main():
 
     # Enregistrer le rapport dans un fichier
     with open('/tmp/openstack_report.txt', 'w') as f:
-        f.write(report_body)
+        for line in report:
+            f.write(
+                f"{line['projet']:20} | {line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
+                f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
+                f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}\n"
+            )
 
     print("Rapport généré avec succès : /tmp/openstack_report.txt")
     
