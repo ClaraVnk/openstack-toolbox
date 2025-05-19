@@ -200,7 +200,7 @@ def main():
 
     header = r"""
   ___                       _             _                       
- / _ \ _ __   ___ _ __  ___| |_ _debug_ _  ___| | __                   
+ / _ \ _ __   ___ _ __  ___| |_  _ _  ___| | __                   
 | | | | '_ \ / _ \ '_ \/ __| __/ _` |/ __| |/ /                   
 | |_| | |_) |  __/ | | \__ \ || (_| | (__|   <                    
  \___/| .__/ \___|_| |_|___/\__\__,_|\___|_|\_\               _   
@@ -214,32 +214,6 @@ def main():
 
 """
     print(header)
-
-    usages = load_usages("fetch_uses.json")
-    if not usages:
-        print("⚠️ Aucun usage détecté dans fetch_uses.json, mais on poursuit avec les coûts uniquement.")
-        # Charger les coûts pour proposer le choix projet
-        data = load_billing()
-        aggregated = aggregate_costs(data)
-        if not aggregated:
-            print("⚠️ Aucun coût détecté dans la facturation non plus. Fin du programme.")
-            return
-        # Liste les projets à partir des coûts uniquement
-        projects = list(aggregated.keys())
-        print("\nProjets disponibles (coûts) :")
-        for i, pid in enumerate(projects, start=1):
-            print(f"  {i}. {pid}")
-        # Choix du projet via menu interactif
-        while True:
-            choice = input(f"Choisissez un projet (1-{len(projects)}): ").strip()
-            if choice.isdigit():
-                idx = int(choice)
-                if 1 <= idx <= len(projects):
-                    project_id = projects[idx - 1]
-                    break
-            print("Choix invalide. Veuillez entrer un numéro valide.")
-    else:
-        project_id = select_project_interactive(usages)
 
     # Demander la période à l'utilisateur UNE SEULE FOIS
     from datetime import datetime, timedelta, timezone
@@ -269,13 +243,39 @@ def main():
     start_iso = isoformat(start_dt)
     end_iso = isoformat(end_dt)
 
-    # Passer la période aux scripts
+    # Lancer les scripts pour générer les données
     subprocess.run([sys.executable, 'fetch_uses.py', '--start', start_iso, '--end', end_iso], check=True)
     subprocess.run([sys.executable, 'fetch_billing.py', '--start', start_iso, '--end', end_iso], check=True)
 
-    # Charger usages et facturation
+    # Charger usages APRÈS génération
     usages = load_usages("fetch_uses.json")
-    report = []
+
+    if not usages:
+        print("⚠️ Aucun usage détecté dans fetch_uses.json, mais on poursuit avec les coûts uniquement.")
+        data = load_billing()
+        aggregated = aggregate_costs(data)
+        if not aggregated:
+            print("⚠️ Aucun coût détecté dans la facturation non plus. Fin du programme.")
+            return
+        projects = list(aggregated.keys())
+        print("\nProjets disponibles (coûts) :")
+        for i, pid in enumerate(projects, start=1):
+            print(f"  {i}. {pid}")
+        while True:
+            choice = input(f"Choisissez un projet (1-{len(projects)}): ").strip()
+            if choice.isdigit():
+                idx = int(choice)
+                if 1 <= idx <= len(projects):
+                    project_id = projects[idx - 1]
+                    break
+            print("Choix invalide. Veuillez entrer un numéro valide.")
+    else:
+        print("\nProjets disponibles dans fetch_uses.json :")
+        for i, pid in enumerate(usages.keys(), start=1):
+            print(f"  {i}. {pid}")
+        project_id = select_project_interactive(usages)
+
+    # Charger facturation
     data = load_billing()
     aggregated = aggregate_costs(data)
     # Gérer l'absence de usages : toujours définir usage et cost avec valeurs par défaut si besoin
