@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import subprocess
 import json
-import sys
 
 def load_usages(filename):
     try:
