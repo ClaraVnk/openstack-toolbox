@@ -91,8 +91,9 @@ def get_inactive_instances_from_billing(path="weekly_billing.json"):
     for res in resources:
         desc = res.get("desc", {})
         name = desc.get("name") or desc.get("instance_name") or "Inconnu"
-        vm_status = desc.get("vm_status") or desc.get("status") or "INCONNU"
-        if vm_status != "ACTIVE":
+        raw_status = desc.get("vm_status") or desc.get("status") or "INCONNU"
+        vm_status = raw_status.upper()
+        if vm_status and vm_status != "ACTIVE":
             inactive_instances.append({
                 "id": desc.get("id", "inconnu"),
                 "name": name,
