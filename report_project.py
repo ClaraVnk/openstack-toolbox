@@ -208,26 +208,29 @@ def main():
     data = load_billing()
     aggregated = aggregate_costs(data)
 
-    print("-" * 65)
-    print(f"{'Projet':36} | CPU    | RAM    | Stockage")
-    print("-" * 65)
+    print("-" * 90)
+    print(f"{'Projet':36} | {'CPU':6} | {'RAM':6} | {'Stockage':9} | {'EUR':7} | {'CHF':7}")
+    print("-" * 90)
+
+    if project_id in usages or project_id in aggregated:
+        usage = usages.get(project_id, {"cpu": 0, "ram": 0, "storage": 0})
+        cost = aggregated.get(project_id, {"total_icu": 0, "rate_values": []})
+        icu = cost.get("total_icu", 0)
+        eur = icu * ICU_TO_EUR
+        chf = icu * ICU_TO_CHF
+        print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f} | {eur:7.2f} | {chf:7.2f}")
+    else:
+        print(f"Aucun usage ou coût détecté pour le projet {project_id}.")
+
     if project_id in usages:
         usage = usages[project_id]
         print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f}")
 
-    print(f"{'Projet':36} | EUR     | CHF")
-    print("-" * 65)
-    if project_id in aggregated:
-        icu = aggregated[project_id]["total_icu"]
-        rate_values = aggregated[project_id]["rate_values"]
-        eur = icu * ICU_TO_EUR
-        chf = icu * ICU_TO_CHF
-        print(f"{project_id:36} | {eur:7.2f} | {chf:7.2f}")
         if rate_values:
             avg_rate_icu = sum(rate_values) / len(rate_values)
             avg_rate_eur = avg_rate_icu * ICU_TO_EUR
             avg_rate_chf = avg_rate_icu * ICU_TO_CHF
-            print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_icu:.5f} ICU/h | {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
+            print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
 
     print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
 
