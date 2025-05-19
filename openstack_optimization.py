@@ -221,8 +221,11 @@ def collect_and_analyze_data():
 
     report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
     underutilized_costs = calculate_underutilized_costs()
-    for resource, costs in underutilized_costs.items():
-        report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
+    if not underutilized_costs:
+        report_body += " ⚠️  Aucune donnée de facturation disponible — les coûts affichés seront à 0.\n"
+    else:
+        for resource, costs in underutilized_costs.items():
+            report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
     report_body += "="*60 + "\n"
 
     return report_body
