@@ -124,45 +124,14 @@ def calculate_costs(entry):
 # Récupération des projets
 project_id = input("Entrez l'ID du projet à analyser : ").strip()
 
-# Traitement
-report = []
-
-for project_id, name in projects.items():
-    cpu_h = get_ceilometer_stats("cpu_util", project_id)
-    ram_h = get_ceilometer_stats("memory.usage", project_id, unit_conversion=1 / 1024)
-    storage_h = get_ceilometer_stats("volume.size", project_id)
-    net_gb = get_ceilometer_stats("network.outgoing.bytes", project_id, unit_conversion=1 / 1024**3)
-
-    total_icu = (
-        cpu_h * TARIFS_ICU["vcpu_hour"] +
-        ram_h * TARIFS_ICU["ram_gb_hour"] +
-        storage_h * TARIFS_ICU["storage_gb_hour"] +
-        net_gb * TARIFS_ICU["network_gb"]
-    )
-
-    total_eur = total_icu * ICU_CONVERSION["icu_to_eur"]
-    total_chf = total_icu * ICU_CONVERSION["icu_to_chf"]
-
-    report.append({
-        "projet": name,
-        "cpu_h": round(cpu_h, 2),
-        "ram_h": round(ram_h, 2),
-        "stockage_h": round(storage_h, 2),
-        "réseau_gb": round(net_gb, 2),
-        "total_icu": round(total_icu, 2),
-        "total_eur": round(total_eur, 2),
-        "total_chf": round(total_chf, 2)
-    })
-
 # Affichage du rapport
 def main():
-    # Test de connection à OpenStack
     if not conn.authorize():
         print("Échec de la connexion à OpenStack")
         return
-    
+
     print("Connexion réussie à OpenStack")
-    
+
     header = r"""
   ___                       _             _                       
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __                   
@@ -180,29 +149,19 @@ def main():
 """
     print(header)
 
-    # Demander à l'utilisateur de saisir l'ID du projet
     subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
-
-    # Collecter et analyser les données
     data = load_billing_data()
-    
-    # Structure de data attendue : une liste de dictionnaires,
-    # chaque dictionnaire contient au minimum :
-    # project_id ou project_name, et les métriques CPU, RAM, stockage, réseau.
-    
     report = []
-    
+
     for entry in data:
         if entry.get("project_id") != project_id:
             continue
+        costs = calculate_costs(entry)
+        report.append({
+            "projet": entry.get("project_name", project_id),
+            **costs
+        })
 
-    costs = calculate_costs(entry)
-    report.append({
-        "projet": project,
-        **costs
-    })
-
-    # Enregistrer le rapport dans un fichier
     with open('/tmp/openstack_report.txt', 'w') as f:
         for line in report:
             f.write(
@@ -212,15 +171,14 @@ def main():
             )
 
     print("Rapport généré avec succès : /tmp/openstack_report.txt")
-    
-    # Afficher le rapport
-print(f"{'Projet':20} | CPU h | RAM h | Stock h | Net GB | ICU | EUR | CHF")
-print("-" * 90)
-for line in report:
-    print(f"{line['projet'][:20]:20} | "
-          f"{line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
-          f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
-          f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}")
+
+    print(f"{'Projet':20} | CPU h | RAM h | Stock h | Net GB | ICU | EUR | CHF")
+    print("-" * 90)
+    for line in report:
+        print(f"{line['projet'][:20]:20} | "
+              f"{line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
+              f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
+              f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}")
 
 if __name__ == '__main__':
     main()
