@@ -182,6 +182,21 @@ def collect_and_analyze_data():
     for resource, costs in underutilized_costs.items():
         report_body += f"{resource}: {costs['ICU']} ICU / {costs['CHF']} CHF / {costs['EUR']} EUR\n"
 
+    header = r"""
+  ___                       _             _               
+ / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __           
+| | | | '_ \ / _ \ '_ \/ __| __/ _` |/ __| |/ /           
+| |_| | |_) |  __/ | | \__ \ || (_| | (__|   <            
+ \___/| .__/ \___|_| |_|___/\__\__,_|\___|_|\_\           
+ / _ \|_|__ | |_(_)_ __ ___ (_)______ _| |_(_) ___  _ __  
+| | | | '_ \| __| | '_ ` _ \| |_  / _` | __| |/ _ \| '_ \ 
+| |_| | |_) | |_| | | | | | | |/ / (_| | |_| | (_) | | | |
+ \___/| .__/ \__|_|_| |_| |_|_/___\__,_|\__|_|\___/|_| |_|
+      |_|                                                 
+         Openstack SysAdmin Toolbox
+
+"""
+    report_body = header + "\n" + report_body
     return report_body
 
 if __name__ == '__main__':
