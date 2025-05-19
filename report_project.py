@@ -198,15 +198,6 @@ def main():
 
     print("Connexion réussie à OpenStack")
 
-    usages = load_usages("fetch_uses.json")
-    print("\nProjets disponibles dans fetch_uses.json :")
-    for pid in usages.keys():
-        print(f" - {pid}")
-
-    with open("fetch_uses.json", "r") as f:
-        print("\nContenu complet de fetch_uses.json :")
-        print(f.read())
-
     header = r"""
   ___                       _             _                       
  / _ \ _ __   ___ _ __  ___| |_ _debug_ _  ___| | __                   
@@ -226,9 +217,29 @@ def main():
 
     usages = load_usages("fetch_uses.json")
     if not usages:
-        print("⚠️ Aucun projet disponible.")
-        return
-    project_id = select_project_interactive(usages)
+        print("⚠️ Aucun usage détecté dans fetch_uses.json, mais on poursuit avec les coûts uniquement.")
+        # Charger les coûts pour proposer le choix projet
+        data = load_billing()
+        aggregated = aggregate_costs(data)
+        if not aggregated:
+            print("⚠️ Aucun coût détecté dans la facturation non plus. Fin du programme.")
+            return
+        # Liste les projets à partir des coûts uniquement
+        projects = list(aggregated.keys())
+        print("\nProjets disponibles (coûts) :")
+        for i, pid in enumerate(projects, start=1):
+            print(f"  {i}. {pid}")
+        # Choix du projet via menu interactif
+        while True:
+            choice = input(f"Choisissez un projet (1-{len(projects)}): ").strip()
+            if choice.isdigit():
+                idx = int(choice)
+                if 1 <= idx <= len(projects):
+                    project_id = projects[idx - 1]
+                    break
+            print("Choix invalide. Veuillez entrer un numéro valide.")
+    else:
+        project_id = select_project_interactive(usages)
 
     # Demander la période à l'utilisateur UNE SEULE FOIS
     from datetime import datetime, timedelta, timezone
@@ -267,6 +278,9 @@ def main():
     report = []
     data = load_billing()
     aggregated = aggregate_costs(data)
+    # Gérer l'absence de usages : toujours définir usage et cost avec valeurs par défaut si besoin
+    usage = usages.get(project_id, {"cpu": 0, "ram": 0, "storage": 0, "icu": 0})
+    cost = aggregated.get(project_id, {"total_icu": 0, "rate_values": []})
 
     # Calcul de la durée entre start_dt et end_dt
     duration = end_dt - start_dt
@@ -281,8 +295,6 @@ def main():
     print("-" * 90)
 
     if project_id in usages or project_id in aggregated:
-        usage = usages.get(project_id, {"cpu": 0, "ram": 0, "storage": 0, "icu": 0})
-        cost = aggregated.get(project_id, {"total_icu": 0, "rate_values": []})
         icu = cost.get("total_icu", 0)
         eur = icu * ICU_TO_EUR
         chf = icu * ICU_TO_CHF
