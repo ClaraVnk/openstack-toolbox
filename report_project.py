@@ -92,9 +92,20 @@ METRICS_KEYS = {
     "network_gb": "network_gb"
 }
 
-def load_billing_data(filepath="weekly_billing.json"):
+def load_usages(filepath="weekly_uses.json"):
     with open(filepath, "r") as f:
         return json.load(f)
+
+def load_billing(filepath="weekly_billing.json"):
+    with open(filepath, "r") as f:
+        return json.load(f)
+
+def find_billing_cost(billing_data, project_id):
+    # Adapte la clé selon la structure de ton JSON de facturation
+    for entry in billing_data:
+        if entry.get("project_id") == project_id:
+            return entry.get("total_cost", 0)  # ou la clé correspondant au coût total
+    return 0
 
 def calculate_costs(entry):
     cpu = float(entry.get(METRICS_KEYS["vcpu_hour"], 0))
@@ -149,46 +160,49 @@ def main():
 """
     print(header)
 
-    subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
-    data = load_billing_data()
+    # Charger usages et facturation
+    usages = load_usages()
+    billing = load_billing()
     report = []
 
-    for entry in data:
+    for entry in usages:
         if entry.get("project_id") != project_id:
             continue
         costs = calculate_costs(entry)
+        billing_cost = find_billing_cost(billing, project_id)
         report.append({
             "projet": entry.get("project_name", project_id),
-            **costs
+            **costs,
+            "billing_cost": billing_cost
         })
 
     with open('/tmp/openstack_report.txt', 'w') as f:
         if not report:
-            f.write("⚠️  Aucun coût détecté pour ce projet (peut-être trop faible ou inexistant).\n")
+            f.write("⚠️  Aucun usage ou coût détecté pour ce projet.\n")
         else:
-            f.write(f"{'Projet':20} | {'CPU h':>8} | {'RAM h':>8} | {'Stock h':>8} | {'Net GB':>8} | {'ICU':>8} | {'EUR':>8} | {'CHF':>8}\n")
-            f.write("-" * 90 + "\n")
+            f.write(f"{'Projet':20} | {'CPU h':>8} | {'RAM h':>8} | {'Stock h':>8} | {'Net GB':>8} | {'ICU (est)':>10} | {'Facturé':>10}\n")
+            f.write("-" * 100 + "\n")
             for line in report:
                 f.write(
                     f"{line['projet'][:20]:20} | "
                     f"{line['cpu_h']:8.2f} | {line['ram_h']:8.2f} | "
                     f"{line['storage_h']:8.2f} | {line['network_gb']:8.2f} | "
-                    f"{line['total_icu']:8.2f} | {line['total_eur']:8.2f} | {line['total_chf']:8.2f}\n"
+                    f"{line['total_icu']:10.2f} | {line['billing_cost']:10.2f}\n"
                 )
 
     print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
 
     if not report:
-        print("⚠️  Aucun coût détecté pour ce projet (peut-être trop faible ou inexistant).")
+        print("⚠️  Aucun usage ou coût détecté pour ce projet.")
     else:
-        print(f"{'Projet':20} | {'CPU h':>8} | {'RAM h':>8} | {'Stock h':>8} | {'Net GB':>8} | {'ICU':>8} | {'EUR':>8} | {'CHF':>8}")
-        print("-" * 90)
+        print(f"{'Projet':20} | {'CPU h':>8} | {'RAM h':>8} | {'Stock h':>8} | {'Net GB':>8} | {'ICU (est)':>10} | {'Facturé':>10}")
+        print("-" * 100)
         for line in report:
             print(
                 f"{line['projet'][:20]:20} | "
                 f"{line['cpu_h']:8.2f} | {line['ram_h']:8.2f} | "
                 f"{line['storage_h']:8.2f} | {line['network_gb']:8.2f} | "
-                f"{line['total_icu']:8.2f} | {line['total_eur']:8.2f} | {line['total_chf']:8.2f}"
+                f"{line['total_icu']:10.2f} | {line['billing_cost']:10.2f}"
             )
 
 if __name__ == '__main__':
