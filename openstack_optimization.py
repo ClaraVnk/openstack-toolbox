@@ -48,19 +48,19 @@ try:
     importlib.import_module('pandas')
 except ImportError:
     print("Installation du package Pandas...")
-    install_package('python-pandas')
+    install_package('pandas')
 
 try:
     importlib.import_module('matplotlib')
 except ImportError:
     print("Installation du package Matplotlib...")
-    install_package('python-matplotlib')
+    install_package('matplotlib')
 
 try:
     importlib.import_module('seaborn')
 except ImportError:
     print("Installation du package Seaborn...")
-    install_package('python-seaborn')
+    install_package('seaborn')
 
 import pandas as pd
 import matplotlib.pyplot as plt
