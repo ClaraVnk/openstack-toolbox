@@ -99,9 +99,13 @@ def load_usages(filepath="fetch_uses.json"):
     with open(filepath, "r") as f:
         data = json.load(f)
 
+    if not data:
+        print("⚠️  Aucune donnée reçue, fichier fetch_uses.json non généré.")
+        return {}
+
     usages_by_project = {}
 
-    for entry in data:
+    for entry in data[0].get("Resources", []):
         project_id = entry.get("project_id", "inconnu")
         cpu = float(entry.get("cpu", 0))
         ram = float(entry.get("ram", 0))
