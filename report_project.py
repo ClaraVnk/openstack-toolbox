@@ -165,7 +165,7 @@ def main():
     def trim_to_minute(dt_str):
         # dt_str est du type '2025-05-19T13:00:00+00:00'
         # On veut '2025-05-19 13:00'
-        dt = datetime.strptime(dt_str[:16], "%Y-%m-%dT%H:%M")
+        dt = datetime.strptime(dt_str[:16].replace("T", " "), "%Y-%m-%d %H:%M")
         return dt.strftime("%Y-%m-%d %H:%M")
 
     def isoformat(dt):
