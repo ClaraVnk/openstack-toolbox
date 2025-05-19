@@ -12,12 +12,6 @@ def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 try:
-    importlib.import_module('gnocchiclient')
-except ImportError:
-    print("Installation du package Gnocchi...")
-    install_package('gnocchiclient')
-
-try:
     importlib.import_module('dotenv')
 except ImportError:
     print("Installation du package dotenv...")
@@ -104,7 +98,6 @@ def get_keystone_token():
         return None, None
 
 def get_active_instances_from_gnocchi(start_iso, end_iso):
-    print("📡 Interrogation de Gnocchi (via API) pour récupérer l’historique des VM actives...")
 
     token, _ = get_keystone_token()
     if not token:
@@ -126,6 +119,9 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
             return set()
 
         resources = response.json()
+        print(f"🔍 {len(resources)} ressources de type 'instance' détectées.")
+        for res in resources:
+            print(f" - Gnocchi ID: {res['id']}, original: {res.get('original_resource_id')}, metrics: {list(res.get('metrics', {}).keys())}")
         active_ids = set()
 
         for res in resources:
@@ -143,7 +139,7 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
                 print(f"    Nombre de points : {len(measure_resp.json())}")
 
             if measure_resp.status_code == 200 and measure_resp.json():
-                active_ids.add(res["id"])
+                active_ids.add(res["original_resource_id"])
 
         return active_ids
     except Exception as e:
