@@ -4,6 +4,12 @@ import subprocess
 import sys
 import importlib
 import json
+import os
+
+def print_header(header):
+    print("\n" + "=" * 50)
+    print(header.center(50))
+    print("=" * 50 + "\n")
 
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
@@ -57,7 +63,6 @@ from openstack import connection
 # Connexion à OpenStack
 creds = load_openstack_credentials()
 conn = connection.Connection(**creds)
-gnocchi = gnocchi_client.Client(session=sess)
 
 # Conversion des tarifs
 TARIFS_ICU = {
