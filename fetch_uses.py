@@ -238,7 +238,7 @@ def main():
 
         print("\nContenu de fetch_uses.json en préparation :")
         for usage in usage_list:
-            print(f"- Projet {usage['project_id']}: CPU={usage['cpu']:.2f}, RAM={usage['ram']:.2f}, Storage={usage['storage']:.2f}")
+            print(f"- Projet {usage['project_id']}: CPU={usage['cpu']:.2f}, RAM={usage['ram']:.2f}, Storage={usage['storage']:.2f}, ICU={usage['icu']:.2f}")
 
         with open("fetch_uses.json", "w") as f:
             json.dump(usage_list, f, indent=2)
