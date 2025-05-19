@@ -193,8 +193,8 @@ def main():
     report = []
     
     for entry in data:
-    if entry.get("project_id") != project_id:
-        continue
+        if entry.get("project_id") != project_id:
+            continue
 
     costs = calculate_costs(entry)
     report.append({
