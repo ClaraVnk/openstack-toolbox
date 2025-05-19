@@ -31,6 +31,15 @@ def main():
 
     if result.returncode == 0:
         data = json.loads(result.stdout)
+
+        # ✅ Ajoute ceci pour voir la structure réelle
+        print("=== PREMIÈRE ENTRÉE DU JSON ===")
+        if data:
+            import pprint
+            pprint.pprint(data[0])
+        else:
+            print("Aucune donnée retournée.")
+
         usages = []
         for entry in data:
             usages.append({
