@@ -1,6 +1,6 @@
 <br />
 <div align="center">
-  <h3 align="center">Openstack summary with instance costs !</h3>
+  <h3 align="center">Openstack Sysadmin Toolbox 🧰</h3>
 </div>
 
 ### Built With
@@ -13,7 +13,12 @@
 * Log in your Openstack environnement
 * Clone this repo in your Openstack directory
 
-## Openstack summary
+  ```sh
+source openstack/bin/activate
+source ../openstack.sh
+  ```
+
+## Openstack summary with instance costs
 
 ### 1. As a client
 

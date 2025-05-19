@@ -1,10 +1,32 @@
 #!/usr/bin/env python3
 
-from openstack import connection
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import json
+import os
+
+def load_openstack_credentials():
+    load_dotenv()  # essaie de charger depuis .env s’il existe
+
+    creds = {
+        "auth_url": os.getenv("OS_AUTH_URL"),
+        "project_name": os.getenv("OS_PROJECT_NAME"),
+        "username": os.getenv("OS_USERNAME"),
+        "password": os.getenv("OS_PASSWORD"),
+        "user_domain_name": os.getenv("OS_USER_DOMAIN_NAME"),
+        "project_domain_name": os.getenv("OS_PROJECT_DOMAIN_NAME"),
+    }
+
+    # Si une des variables est absente, on essaie de charger depuis un fichier JSON
+    if not all(creds.values()):
+        try:
+            with open("secrets.json") as f:
+                creds = json.load(f)
+        except FileNotFoundError:
+            raise RuntimeError("Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
+
+    return creds
 
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
@@ -16,23 +38,17 @@ except ImportError:
     print("Installation du package openstack...")
     install_package('openstacksdk')
 
-# Configuration de la connexion à OpenStack
-auth_url = 'http://<your-openstack-auth-url>/v3'
-project_name = '<your-project-name>'
-username = '<your-username>'
-password = '<your-password>'
-user_domain_name = '<your-user-domain-name>'
-project_domain_name = '<your-project-domain-name>'
+try:
+    importlib.import_module('dotenv')
+except ImportError:
+    print("Installation du package dotenv...")
+    install_package('python-dotenv')
+
+from dotenv import load_dotenv
 
 # Connexion à OpenStack
-conn = connection.Connection(
-    auth_url=auth_url,
-    project_name=project_name,
-    username=username,
-    password=password,
-    user_domain_name=user_domain_name,
-    project_domain_name=project_domain_name
-)
+creds = load_openstack_credentials()
+conn = connection.Connection(**creds)
 
 def get_inactive_instances():
     # Récupérer la liste des instances

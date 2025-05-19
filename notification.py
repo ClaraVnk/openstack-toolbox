@@ -1,10 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 
 # Configuration de l'envoi d'e-mails
 smtp_server = '<your-smtp-server>'
