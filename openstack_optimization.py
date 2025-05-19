@@ -72,18 +72,32 @@ from openstack import connection
 creds = load_openstack_credentials()
 conn = connection.Connection(**creds)
 
-def get_inactive_instances():
-    # Récupérer la liste des instances
-    servers = conn.compute.servers()
+# Liste des statuts de VM à vérifier
+def get_inactive_instances_from_billing(path="weekly_billing.json"):
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Erreur lors de la lecture de {path} : {e}")
+        return []
 
+    # Gérer la structure ['Resources'] dans un objet unique ou dans une liste
+    if isinstance(data, list):
+        data = data[0] if data else {}
+
+    resources = data.get("Resources", [])
     inactive_instances = []
-    for server in servers:
-        # Vérifier si l'instance est inactive (par exemple, CPU usage faible)
-        # Ici, vous pouvez ajouter des critères spécifiques pour déterminer si une instance est inactive
-        if server.status == 'ACTIVE':
-            # Ajoutez votre logique pour vérifier l'inactivité ici
-            # Par exemple, vérifier les métriques de performance via l'API de surveillance
-            inactive_instances.append(server)
+
+    for res in resources:
+        desc = res.get("desc", {})
+        name = desc.get("name") or desc.get("instance_name", "Inconnu")
+        vm_status = desc.get("vm_status", "INCONNU")
+        if vm_status != "ACTIVE":
+            inactive_instances.append({
+                "id": desc.get("id", "inconnu"),
+                "name": name,
+                "status": vm_status
+            })
 
     return inactive_instances
 
@@ -101,8 +115,6 @@ def get_unused_volumes():
 
 def analyze_resource_usage():
     # Collecter les données d'utilisation des ressources
-    # Ici, vous pouvez ajouter votre logique pour collecter les données d'utilisation des ressources
-    # Par exemple, utiliser l'API de surveillance pour obtenir les métriques de performance
     data = {
         'Instance': ['Instance1', 'Instance2', 'Instance3'],
         'CPU Usage (%)': [10, 20, 30],
@@ -190,7 +202,7 @@ def calculate_underutilized_costs():
     return underutilized_costs
 
 def collect_and_analyze_data():
-    inactive_instances = get_inactive_instances()
+    inactive_instances = get_inactive_instances_from_billing()
     unused_volumes = get_unused_volumes()
 
     report_body = ""
@@ -201,7 +213,7 @@ def collect_and_analyze_data():
     report_body += "[INSTANCES INACTIVES]\n"
     if inactive_instances:
         for instance in inactive_instances:
-            report_body += f"  - ID: {instance.id}, Nom: {instance.name}\n"
+            report_body += f"  - ID: {instance['id']}, Nom: {instance['name']}, Statut: {instance['status']}\n"
     else:
         report_body += "  Aucune instance inactive détectée.\n"
     report_body += "\n" + "-"*50 + "\n"
