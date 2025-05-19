@@ -60,7 +60,6 @@ def main():
             })
         with open("weekly_uses.json", "w") as f:
             json.dump(usages, f, indent=2)
-        print("Usages sauvegardés dans uses.json")
     else:
         print("❌ Échec de la récupération des données")
         print("STDERR:", result.stderr)
