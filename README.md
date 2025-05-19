@@ -14,8 +14,8 @@
 * Clone this repo in your Openstack directory
 
   ```sh
-source openstack/bin/activate
-source ../openstack.sh
+  source openstack/bin/activate
+  source ../openstack.sh
   ```
 
 ## Openstack summary with instance costs
