@@ -24,7 +24,7 @@ def main():
     if args.start and args.end:
         start_iso = args.start
         end_iso = args.end
-        print(f"Période reçue en argument: {start_iso} → {end_iso}")
+        print(f"Période reçue pour le billing: {start_iso} → {end_iso}")
     else:
         default_start = isoformat(datetime.now(timezone.utc) - timedelta(hours=2))
         default_end = isoformat(datetime.now(timezone.utc))

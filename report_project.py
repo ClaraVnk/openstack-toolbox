@@ -171,8 +171,6 @@ def main():
     start_iso = isoformat(start_dt)
     end_iso = isoformat(end_dt)
 
-    print(f"Période choisie: {start_iso} → {end_iso}")
-
     # Passer la période aux scripts
     subprocess.run([sys.executable, 'fetch_uses.py', '--start', start_iso, '--end', end_iso], check=True)
     subprocess.run([sys.executable, 'fetch_billing.py', '--start', start_iso, '--end', end_iso], check=True)

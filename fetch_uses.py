@@ -27,7 +27,7 @@ def main():
     args = parse_args()
     start_iso = args.start
     end_iso = args.end
-    print(f"Période reçue: {start_iso} → {end_iso}")
+    print(f"Période reçue pour les usages: {start_iso} → {end_iso}")
 
     # Conversion en datetime
     start_dt = datetime.strptime(start_iso, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=timezone.utc)
