@@ -101,7 +101,7 @@ def load_usages(filepath="fetch_uses.json"):
 
     usages = defaultdict(lambda: {"cpu": 0, "ram": 0, "storage": 0})
 
-    for entry in data.get("Resources", []):
+    for entry in data:
         desc = entry.get("desc", {})
         project_id = desc.get("project_id", "inconnu")
         flavor_name = desc.get("flavor_name", "")
