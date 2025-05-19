@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import subprocess
+import sys
+import importlib
 import json
 import os
 
