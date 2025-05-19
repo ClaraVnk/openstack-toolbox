@@ -209,6 +209,14 @@ def main():
     data = load_billing()
     aggregated = aggregate_costs(data)
 
+    # Calcul de la durée entre start_dt et end_dt
+    duration = end_dt - start_dt
+    days = duration.days
+    hours, remainder = divmod(duration.seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+
+    print(f"\nPériode sélectionnée pour ce projet : {days} jours, {hours} heures, {minutes} minutes\n")
+
     print("-" * 90)
     print(f"{'Projet':36} | {'CPU':6} | {'RAM':6} | {'Stockage':9} | {'EUR':7} | {'CHF':7}")
     print("-" * 90)
