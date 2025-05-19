@@ -140,7 +140,6 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
             params = {"start": start_iso, "end": end_iso}
             measure_resp = requests.get(measures_url, headers=headers, params=params)
 
-            if measure_resp.status_code == 200:
             if measure_resp.status_code == 200 and measure_resp.json():
                 active_ids.add(res["original_resource_id"])
 
