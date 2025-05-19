@@ -166,11 +166,14 @@ def main():
         if not report:
             f.write("⚠️  Aucun coût détecté pour ce projet (peut-être trop faible ou inexistant).\n")
         else:
+            f.write(f"{'Projet':20} | {'CPU h':>8} | {'RAM h':>8} | {'Stock h':>8} | {'Net GB':>8} | {'ICU':>8} | {'EUR':>8} | {'CHF':>8}\n")
+            f.write("-" * 90 + "\n")
             for line in report:
                 f.write(
-                    f"{line['projet']:20} | {line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
-                    f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
-                    f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}\n"
+                    f"{line['projet'][:20]:20} | "
+                    f"{line['cpu_h']:8.2f} | {line['ram_h']:8.2f} | "
+                    f"{line['storage_h']:8.2f} | {line['network_gb']:8.2f} | "
+                    f"{line['total_icu']:8.2f} | {line['total_eur']:8.2f} | {line['total_chf']:8.2f}\n"
                 )
 
     print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
@@ -178,13 +181,15 @@ def main():
     if not report:
         print("⚠️  Aucun coût détecté pour ce projet (peut-être trop faible ou inexistant).")
     else:
-        print(f"{'Projet':20} | CPU h | RAM h | Stock h | Net GB | ICU | EUR | CHF")
+        print(f"{'Projet':20} | {'CPU h':>8} | {'RAM h':>8} | {'Stock h':>8} | {'Net GB':>8} | {'ICU':>8} | {'EUR':>8} | {'CHF':>8}")
         print("-" * 90)
         for line in report:
-            print(f"{line['projet'][:20]:20} | "
-                  f"{line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
-                  f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
-                  f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}")
+            print(
+                f"{line['projet'][:20]:20} | "
+                f"{line['cpu_h']:8.2f} | {line['ram_h']:8.2f} | "
+                f"{line['storage_h']:8.2f} | {line['network_gb']:8.2f} | "
+                f"{line['total_icu']:8.2f} | {line['total_eur']:8.2f} | {line['total_chf']:8.2f}"
+            )
 
 if __name__ == '__main__':
     main()
