@@ -159,27 +159,33 @@ def calculate_underutilized_costs():
             billing_data = json.load(f)
     except FileNotFoundError:
         print("Le fichier weekly_billing.json est introuvable.")
-        billing_data = {}
+        billing_data = []
     except json.JSONDecodeError:
         print("Erreur lors de la lecture du fichier weekly_billing.json : format JSON invalide.")
-        billing_data = {}
+        billing_data = []
 
-    # Taux de conversion
-    ICU_to_CHF = 1 / 50       # 1 CHF = 50 ICU → 1 ICU = 0.02 CHF
-    ICU_to_EUR = 1 / 55.5     # 1 EUR = 55.5 ICU → 1 ICU ≈ 0.01802 EUR
-
-    # On suppose que billing_data contient les coûts ICU par ressource
-    underutilized_costs_icu = billing_data.get("underutilized_costs_icu", {})
+    ICU_to_CHF = 1 / 50
+    ICU_to_EUR = 1 / 55.5
 
     underutilized_costs = {}
-    for resource, cost_icu in underutilized_costs_icu.items():
-        cost_chf = cost_icu * ICU_to_CHF
-        cost_eur = cost_icu * ICU_to_EUR
-        underutilized_costs[resource] = {
-            'ICU': cost_icu,
-            'CHF': round(cost_chf, 2),
-            'EUR': round(cost_eur, 2)
-        }
+    # Parcours de la liste d'objets retournée par OpenStack
+    for entry in billing_data:
+        # Adapte ici les clés selon la structure exacte de chaque dict
+        resource = entry.get("name") or entry.get("resource") or entry.get("ID") or entry.get("id")
+        cost_icu = entry.get("rate:unit") or entry.get("ICU") or entry.get("icu") or entry.get("cost") or entry.get("rate:sum")
+        # Si tu connais la clé exacte pour le coût ICU, remplace la ligne ci-dessus par entry["<clé>"]
+        if resource is not None and cost_icu is not None:
+            try:
+                cost_icu = float(cost_icu)
+            except Exception:
+                continue
+            cost_chf = cost_icu * ICU_to_CHF
+            cost_eur = cost_icu * ICU_to_EUR
+            underutilized_costs[resource] = {
+                'ICU': cost_icu,
+                'CHF': round(cost_chf, 2),
+                'EUR': round(cost_eur, 2)
+            }
 
     return underutilized_costs
 
