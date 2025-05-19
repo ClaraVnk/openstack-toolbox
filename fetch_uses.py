@@ -17,6 +17,14 @@ except ImportError:
     print("Installation du package Gnocchi...")
     install_package('gnocchiclient')
 
+try:
+    importlib.import_module('dotenv')
+except ImportError:
+    print("Installation du package dotenv...")
+    install_package('python-dotenv')
+
+from dotenv import load_dotenv
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--start', required=True)
@@ -52,18 +60,63 @@ def get_active_instance_ids():
         print("⚠️ Erreur lors de l'appel à `openstack server list`:", e)
         return set()
 
+def get_keystone_token():
+    auth_url = os.environ.get("OS_AUTH_URL")
+    username = os.environ.get("OS_USERNAME")
+    password = os.environ.get("OS_PASSWORD")
+    project_name = os.environ.get("OS_PROJECT_NAME")
+    user_domain = os.environ.get("OS_USER_DOMAIN_NAME", "Default")
+    project_domain = os.environ.get("OS_PROJECT_DOMAIN_NAME", "Default")
+
+    if not all([auth_url, username, password, project_name]):
+        print("❌ Variables d'environnement Keystone incomplètes.")
+        return None, None
+
+    payload = {
+        "auth": {
+            "identity": {
+                "methods": ["password"],
+                "password": {
+                    "user": {
+                        "name": username,
+                        "domain": {"name": user_domain},
+                        "password": password
+                    }
+                }
+            },
+            "scope": {
+                "project": {
+                    "name": project_name,
+                    "domain": {"name": project_domain}
+                }
+            }
+        }
+    }
+
+    headers = {"Content-Type": "application/json"}
+    try:
+        resp = requests.post(f"{auth_url}/auth/tokens", headers=headers, json=payload)
+        resp.raise_for_status()
+        token = resp.headers.get("X-Subject-Token")
+        return token, resp.json()
+    except Exception as e:
+        print("❌ Authentification Keystone échouée :", e)
+        return None, None
+
 def get_active_instances_from_gnocchi(start_iso, end_iso):
     print("📡 Interrogation de Gnocchi (via API) pour récupérer l’historique des VM actives...")
+
+    token, _ = get_keystone_token()
+    if not token:
+        return set()
+    headers = {
+        "X-Auth-Token": token,
+        "Content-Type": "application/json"
+    }
 
     try:
         # ⚠️ À adapter selon ton endpoint réel Gnocchi + token Keystone
         GNOCCHI_ENDPOINT = os.environ.get("GNOCCHI_ENDPOINT", "https://api.pub1.infomaniak.cloud/metric")
-        TOKEN = os.environ.get("OS_TOKEN")
-
-        headers = {
-            "X-Auth-Token": TOKEN,
-            "Content-Type": "application/json"
-        }
 
         # Récupérer toutes les ressources de type "instance"
         url = f"{GNOCCHI_ENDPOINT}/v1/resource/instance"
