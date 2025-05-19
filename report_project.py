@@ -83,7 +83,7 @@ def load_billing(filepath="billing.json"):
     with open(filepath, "r") as f:
         return json.load(f)
 
-def load_usages(filepath="usages.json"):
+def load_usages(filepath="uses.json"):
     with open(filepath, "r") as f:
         data = json.load(f)
     
