@@ -173,7 +173,7 @@ def main():
     subprocess.run([sys.executable, 'fetch_billing.py', '--start', start_iso, '--end', end_iso], check=True)
 
     # Charger usages et facturation
-    usages = load_usages("weekly_uses.json")
+    usages = load_usages("fetch_uses.json")
     report = []
     data = load_billing()
     aggregated = aggregate_costs(data)
