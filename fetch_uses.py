@@ -72,6 +72,7 @@ def main():
             return 0, 0, 0
 
         usages = defaultdict(lambda: {"cpu": 0, "ram": 0, "storage": 0})
+        counts = defaultdict(int)
 
         if isinstance(data, dict):
             resources = data.get("Resources", [])
@@ -92,6 +93,11 @@ def main():
                 usages[project_id]["cpu"] += cpu * volume
                 usages[project_id]["ram"] += ram * volume
                 usages[project_id]["storage"] += disk * volume
+                counts[project_id] += 1
+
+        print("\nRésumé du cumul par projet (points comptés) :")
+        for pid, count in counts.items():
+            print(f" - {pid}: {count} points de mesure")
 
         # Convertir en liste pour l'export JSON
         usage_list = []
