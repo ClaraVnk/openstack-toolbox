@@ -187,6 +187,12 @@ def main():
 
     # Charger usages et facturation
     usages = load_usages("fetch_uses.json")
+
+    # DEBUUUUUUUUG
+    print("Contenu de fetch_uses.json chargé :")
+    for entry in usages.items():
+        print(entry)
+        
     report = []
     data = load_billing()
     aggregated = aggregate_costs(data)
