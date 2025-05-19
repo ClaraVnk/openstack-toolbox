@@ -105,7 +105,7 @@ def load_usages(filepath="fetch_uses.json"):
 
     usages_by_project = {}
 
-    for entry in data.get("Resources", []):
+    for entry in data:
         project_id = entry.get("project_id", "inconnu")
         cpu = float(entry.get("cpu", 0))
         ram = float(entry.get("ram", 0))
@@ -192,12 +192,6 @@ def main():
 
     # Charger usages et facturation
     usages = load_usages("fetch_uses.json")
-
-    # DEBUUUUUUUUG
-    print("Contenu de fetch_uses.json chargé :")
-    for entry in usages.items():
-        print(entry)
-        
     report = []
     data = load_billing()
     aggregated = aggregate_costs(data)
