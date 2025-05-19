@@ -122,15 +122,26 @@ def load_usages(filepath="fetch_uses.json"):
 
 def aggregate_costs(data):
     costs_by_project = {}
-    
-    for entry in data:
-        project_id = entry.get("project_id") or entry.get("tenant_id") or "inconnu"
-        rating = entry.get("rating", 0)  # en ICU
+
+    for entry in data.get("Resources", []):
+        desc = entry.get("desc", {})
+        project_id = desc.get("project_id", "inconnu")
+        rating = entry.get("rating")
+        rate_value = entry.get("rate_value")
+
         if rating is None:
             continue
-        costs_by_project.setdefault(project_id, 0)
-        costs_by_project[project_id] += float(rating)
-    
+
+        if project_id not in costs_by_project:
+            costs_by_project[project_id] = {
+                "total_icu": 0.0,
+                "rate_values": []
+            }
+
+        costs_by_project[project_id]["total_icu"] += float(rating)
+        if rate_value is not None:
+            costs_by_project[project_id]["rate_values"].append(float(rate_value))
+
     return costs_by_project
 
 # Affichage du rapport
@@ -199,7 +210,11 @@ def main():
     if data:
         print("\nAperçu de billing.json :")
         import pprint
-        pprint.pprint(data[0])
+        # Pour la nouvelle structure, on affiche le premier élément de Resources s'il existe
+        if "Resources" in data and data["Resources"]:
+            pprint.pprint(data["Resources"][0])
+        else:
+            pprint.pprint(data)
     else:
         print("⚠️  Le fichier billing.json est vide.")
     aggregated = aggregate_costs(data)
@@ -214,10 +229,16 @@ def main():
     print(f"{'Projet':36} | EUR     | CHF")
     print("-" * 65)
     if project_id in aggregated:
-        total_icu = aggregated[project_id]
-        eur = total_icu * ICU_TO_EUR
-        chf = total_icu * ICU_TO_CHF
+        icu = aggregated[project_id]["total_icu"]
+        rate_values = aggregated[project_id]["rate_values"]
+        eur = icu * ICU_TO_EUR
+        chf = icu * ICU_TO_CHF
         print(f"{project_id:36} | {eur:7.2f} | {chf:7.2f}")
+        if rate_values:
+            avg_rate_icu = sum(rate_values) / len(rate_values)
+            avg_rate_eur = avg_rate_icu * ICU_TO_EUR
+            avg_rate_chf = avg_rate_icu * ICU_TO_CHF
+            print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_icu:.5f} ICU/h | {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
 
     print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
 
