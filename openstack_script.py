@@ -38,7 +38,6 @@ def get_billing_data_from_file(filepath):
 
 def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
-        print(f"N/A")
         return 0.0, 0.0
 
     total_icu = 0.0
@@ -97,6 +96,8 @@ def list_images(conn):
 # Lister les instances
 def list_instances(conn, billing_data):
     print_header("LISTE DES INSTANCES")
+    if not billing_data:
+        print("⚠️  Aucune donnée de facturation disponible — les coûts affichés seront à 0.\n")
     # Récupérer les instances
     instances = list(conn.compute.servers())  # Assurez-vous que cette ligne est exécutée
     # Taux de conversion ICU vers monnaies
@@ -106,11 +107,6 @@ def list_instances(conn, billing_data):
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
     print("-" * 130)
-
-    # Définir la période pour les données de facturation (30 derniers jours)
-    #start_time = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:00:00+00:00")
-    #end_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00:00+00:00")
-    #print(f"Période de facturation: {start_time} à {end_time}")  # Ajout pour le débogage
 
     for instance in instances:
         flavor_id = instance.flavor['id']
