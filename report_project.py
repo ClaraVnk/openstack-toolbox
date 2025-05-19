@@ -166,7 +166,8 @@ def main():
         # dt_str est du type '2025-05-19T13:00:00+00:00'
         # On veut '2025-05-19 13:00'
         # Corrige les formats invalides du type '2025-03:01' → '2025-03-01'
-        dt = datetime.strptime(dt_str[:16].replace("T", " "), "%Y-%m-%d %H:%M")
+        corrected = re.sub(r"(\d{4})-(\d{2}):(\d{2})", r"\1-\2-\3", dt_str[:16])
+        dt = datetime.strptime(corrected.replace("T", " "), "%Y-%m-%d %H:%M")
         return dt.strftime("%Y-%m-%d %H:%M")
 
     def isoformat(dt):
