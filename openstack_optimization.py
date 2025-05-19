@@ -90,8 +90,8 @@ def get_inactive_instances_from_billing(path="weekly_billing.json"):
 
     for res in resources:
         desc = res.get("desc", {})
-        name = desc.get("name") or desc.get("instance_name", "Inconnu")
-        vm_status = desc.get("vm_status", "INCONNU")
+        name = desc.get("name") or desc.get("instance_name") or "Inconnu"
+        vm_status = desc.get("vm_status") or desc.get("status") or "INCONNU"
         if vm_status != "ACTIVE":
             inactive_instances.append({
                 "id": desc.get("id", "inconnu"),
@@ -234,7 +234,7 @@ def collect_and_analyze_data():
     report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
     underutilized_costs = calculate_underutilized_costs()
     if not underutilized_costs:
-        report_body += " ⚠️  Aucune donnée de facturation disponible — les coûts affichés seront à 0.\n"
+        report_body += " ⚠️  Aucune donnée de facturation disponible (trop faibles ou non disponibles).\n"
     else:
         for resource, costs in underutilized_costs.items():
             report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
