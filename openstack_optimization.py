@@ -77,8 +77,12 @@ def get_vm_statuses_from_cli():
     try:
         result = subprocess.run(
             ["openstack", "server", "list", "--all-projects", "-f", "json"],
-            capture_output=True, text=True, check=True
+            capture_output=True, text=True
         )
+        if result.returncode != 0:
+            print("❌ La commande `openstack server list` a échoué.")
+            print("STDERR:", result.stderr)
+            return []
         servers = json.loads(result.stdout)
         return [
             {
@@ -89,7 +93,7 @@ def get_vm_statuses_from_cli():
             }
             for s in servers
         ]
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         print("❌ Erreur lors de l'appel à `openstack server list`:", e)
         return []
 
