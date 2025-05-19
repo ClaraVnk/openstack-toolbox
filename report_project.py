@@ -151,7 +151,6 @@ def main():
         return
 
     print("Connexion réussie à OpenStack")
-    project_id = input("Entrez l'ID du projet à analyser : ").strip()
 
     header = r"""
   ___                       _             _                       
@@ -169,6 +168,8 @@ def main():
 
 """
     print(header)
+
+    project_id = input("Entrez l'ID du projet à analyser : ").strip()
 
     # Demander la période à l'utilisateur UNE SEULE FOIS
     from datetime import datetime, timedelta, timezone
@@ -219,26 +220,16 @@ def main():
         eur = icu * ICU_TO_EUR
         chf = icu * ICU_TO_CHF
         print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f} | {eur:7.2f} | {chf:7.2f}")
-    else:
-        print(f"Aucun usage ou coût détecté pour le projet {project_id}.")
-
-    if project_id in usages:
-        usage = usages[project_id]
-        cost = aggregated.get(project_id, {"rate_values": []})
         rate_values = cost.get("rate_values", [])
-
-        print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f}")
-
         if rate_values:
             avg_rate_icu = sum(rate_values) / len(rate_values)
             avg_rate_eur = avg_rate_icu * ICU_TO_EUR
             avg_rate_chf = avg_rate_icu * ICU_TO_CHF
-        print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
+            print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
+    else:
+        print(f"⚠️ Aucun usage ou coût détecté pour le projet (soit usages ou coûts nuls, soit trop faibles) {project_id}.")
 
     print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
-
-    if not report:
-        print("⚠️  Aucun usage ou coût détecté pour ce projet.")
 
 if __name__ == '__main__':
     main()
