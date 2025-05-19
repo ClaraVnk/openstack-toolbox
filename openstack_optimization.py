@@ -4,7 +4,7 @@ from openstack import connection
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from weekly_billing import weekly_billing_data  # Importer la fonction pour récupérer les données de facturation
+import json
 
 # Configuration de la connexion à OpenStack
 auth_url = 'http://<your-openstack-auth-url>/v3'
@@ -103,16 +103,35 @@ def analyze_resource_usage():
     return report
 
 def calculate_underutilized_costs():
-    # Récupérer les données de facturation
-    billing_data = fetch_billing_data()
+    try:
+        with open('weekly_billing.json', 'r') as f:
+            billing_data = json.load(f)
+    except FileNotFoundError:
+        print("Le fichier weekly_billing.json est introuvable.")
+        billing_data = {}
+    except json.JSONDecodeError:
+        print("Erreur lors de la lecture du fichier weekly_billing.json : format JSON invalide.")
+        billing_data = {}
 
-    # Calculer les coûts des ressources sous-utilisées
-    # Ici, vous pouvez ajouter votre logique pour calculer les coûts des ressources sous-utilisées
-    # Par exemple, utiliser les données de facturation pour calculer les coûts
-    underutilized_costs = {
-        'Inactive Instances': 100.0,  # Exemple de coût
-        'Unused Volumes': 50.0        # Exemple de coût
+    # Exemple de coûts en ICU (unité interne)
+    underutilized_costs_icu = {
+        'Inactive Instances': 5000,  # Exemple de coût en ICU
+        'Unused Volumes': 3000       # Exemple de coût en ICU
     }
+
+    # Taux de conversion
+    ICU_to_CHF = 1 / 50       # 1 CHF = 50 ICU → 1 ICU = 0.02 CHF
+    ICU_to_EUR = 1 / 55.5     # 1 EUR = 55.5 ICU → 1 ICU ≈ 0.01802 EUR
+
+    underutilized_costs = {}
+    for resource, cost_icu in underutilized_costs_icu.items():
+        cost_chf = cost_icu * ICU_to_CHF
+        cost_eur = cost_icu * ICU_to_EUR
+        underutilized_costs[resource] = {
+            'ICU': cost_icu,
+            'CHF': round(cost_chf, 2),
+            'EUR': round(cost_eur, 2)
+        }
 
     return underutilized_costs
 
@@ -134,8 +153,8 @@ def collect_and_analyze_data():
 
     underutilized_costs = calculate_underutilized_costs()
     report_body += "\nCoûts des ressources sous-utilisées:\n"
-    for resource, cost in underutilized_costs.items():
-        report_body += f"{resource}: {cost} $\n"
+    for resource, costs in underutilized_costs.items():
+        report_body += f"{resource}: {costs['ICU']} ICU / {costs['CHF']} CHF / {costs['EUR']} EUR\n"
 
     return report_body
 

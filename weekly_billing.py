@@ -31,7 +31,7 @@ def main():
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
-        with open("billing.json", "w") as f:
+        with open("weekly_billing.json", "w") as f:
             f.write(result.stdout)
         print("✅ Données enregistrées dans 'billing.json'")
     else:
