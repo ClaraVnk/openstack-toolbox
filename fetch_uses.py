@@ -87,10 +87,11 @@ def main():
 
             cpu, ram, disk = parse_flavor_name(flavor)
 
-            # 🔁 Cumul par volume (durée d’usage)
-            usages[project_id]["cpu"] += cpu * volume
-            usages[project_id]["ram"] += ram * volume
-            usages[project_id]["storage"] += disk * volume
+            # 🔁 Cumul par volume (durée d’usage) uniquement si volume > 0
+            if volume > 0:
+                usages[project_id]["cpu"] += cpu * volume
+                usages[project_id]["ram"] += ram * volume
+                usages[project_id]["storage"] += disk * volume
 
         # Convertir en liste pour l'export JSON
         usage_list = []
