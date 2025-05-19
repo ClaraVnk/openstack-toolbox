@@ -109,7 +109,7 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
 
     try:
         # ⚠️ À adapter selon ton endpoint réel Gnocchi + token Keystone
-        GNOCCHI_ENDPOINT = os.environ.get("GNOCCHI_ENDPOINT", "https://api.pub1.infomaniak.cloud/metric")
+        GNOCCHI_ENDPOINT = os.environ.get("GNOCCHI_ENDPOINT", "https://api.pub2.infomaniak.cloud/metric")
 
         # Récupérer toutes les ressources de type "instance"
         url = f"{GNOCCHI_ENDPOINT}/v1/resource/instance"
