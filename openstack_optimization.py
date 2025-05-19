@@ -234,6 +234,7 @@ def main():
          Openstack SysAdmin Toolbox
 
 """
+    print(print_header(header))
 
     # Exécuter le script weekly_billing.py pour récupérer les données de facturation
     subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
