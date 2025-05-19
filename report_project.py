@@ -75,6 +75,8 @@ ICU_CONVERSION = {
     "icu_to_eur": 1 / 55.5,  # 1 ICU = 0.018018 EUR
     "icu_to_chf": 1 / 50.0   # 1 ICU = 0.02 CHF
 }
+ICU_TO_EUR = ICU_CONVERSION["icu_to_eur"]
+ICU_TO_CHF = ICU_CONVERSION["icu_to_chf"]
 
 # Fonctions 
 def load_billing(filepath="billing.json"):
@@ -180,6 +182,18 @@ def main():
     report = []
     data = load_billing()
     aggregated = aggregate_costs(data)
+
+    print("-" * 65)
+    for project_id, usage in usages.items():
+        if project_id not in aggregated:
+            continue
+        report.append({
+            "project_id": project_id,
+            "cpu": usage["cpu"],
+            "ram": usage["ram"],
+            "storage": usage["storage"],
+        })
+        print(f"Projet: {project_id} | CPU: {usage['cpu']} | RAM: {usage['ram']} | Storage: {usage['storage']}")
 
     print(f"{'Projet':36} | EUR     | CHF")
     print("-" * 65)
