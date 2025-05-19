@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import json
 import os
 
@@ -44,6 +41,27 @@ except ImportError:
     print("Installation du package dotenv...")
     install_package('python-dotenv')
 
+try:
+    importlib.import_module('pandas')
+except ImportError:
+    print("Installation du package Pandas...")
+    install_package('python-pandas')
+
+try:
+    importlib.import_module('matplotlib')
+except ImportError:
+    print("Installation du package Matplotlib...")
+    install_package('python-matplotlib')
+
+try:
+    importlib.import_module('seaborn')
+except ImportError:
+    print("Installation du package Seaborn...")
+    install_package('python-seaborn')
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from dotenv import load_dotenv
 
 # Connexion à OpenStack
