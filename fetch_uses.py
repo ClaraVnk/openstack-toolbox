@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import requests
 
 def load_usages(filename):
     try:
@@ -36,22 +37,26 @@ def main():
     start_iso = "2025-05-18T14:00:00+00:00"
     end_iso = "2025-05-18T15:00:00+00:00"
 
-
     # Charger usages APRÈS génération
     usages = load_usages("fetch_uses.json")
 
-    # Example of where measure_resp might be handled; adding debug print
-    # This is a placeholder snippet to show where to add the debug prints
-    # Replace with actual code where measure_resp is obtained
-    # For demonstration, assume measure_resp is obtained here:
-    # measure_resp = requests.get(...)
-    # Add debug prints as requested:
-    # print(f"↪️ Vérification des mesures pour {resource_id} : {measure_resp.status_code}")
-    # if measure_resp.status_code == 200:
-    #     data_points = measure_resp.json()
-    #     print(f"  Nombre de points : {len(data_points)}")
-    #     if data_points:
-    #         print("  Premier point :", data_points[0])
+    # Exemple d'ajout des logs pour la récupération des mesures depuis Gnocchi
+    # Supposons que nous avons une structure usages qui contient des resource_id et metrics
+    # Cette partie simule la récupération des mesures et affiche les logs demandés
+    for resource_id, metrics in usages.items():
+        for metric in ['cpu', 'ram', 'storage', 'icu']:
+            if metric in metrics:
+                url = f"http://gnocchi.example.com/v1/metric/{resource_id}/{metric}/measures"
+                try:
+                    measure_resp = requests.get(url)
+                    print(f"↪️ Récupération des mesures pour {resource_id} / {metric}: status={measure_resp.status_code}")
+                    if measure_resp.status_code == 200:
+                        data_points = measure_resp.json()
+                        print(f"  - {len(data_points)} points")
+                        if data_points:
+                            print("    Premier point :", data_points[0])
+                except Exception as e:
+                    print(f"Erreur lors de la récupération des mesures pour {resource_id} / {metric}: {e}")
 
     if not usages:
         print("⚠️ Aucun usage détecté dans fetch_uses.json, mais on poursuit avec les coûts uniquement.")
