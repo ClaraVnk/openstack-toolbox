@@ -66,7 +66,7 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
         }
 
         # Récupérer toutes les ressources de type "instance"
-        url = f"{GNOCCHI_ENDPOINT}/resource/instance"
+        url = f"{GNOCCHI_ENDPOINT}/v1/resource/instance"
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
             print("⚠️ Erreur lors de l'interrogation de /resource/instance :", response.text)
