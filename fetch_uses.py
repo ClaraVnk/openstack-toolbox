@@ -140,10 +140,7 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
             params = {"start": start_iso, "end": end_iso}
             measure_resp = requests.get(measures_url, headers=headers, params=params)
 
-            print(f"↪️ Vérification des mesures pour {res['id']} ({res.get('original_resource_id')}): {measure_resp.status_code}")
             if measure_resp.status_code == 200:
-                print(f"    Nombre de points : {len(measure_resp.json())}")
-
             if measure_resp.status_code == 200 and measure_resp.json():
                 active_ids.add(res["original_resource_id"])
 
@@ -222,9 +219,9 @@ def main():
             cpu, ram, disk = parse_flavor_name(flavor)
             interval_hours = 5 / 60  # 5 minutes exprimées en heures
             if volume > 0:
-                usages[project_id]["cpu"] += cpu * volume * interval_hours
-                usages[project_id]["ram"] += ram * volume * interval_hours
-                usages[project_id]["storage"] += disk * volume * interval_hours
+                usages[project_id]["cpu"] += cpu * interval_hours
+                usages[project_id]["ram"] += ram * interval_hours
+                usages[project_id]["storage"] += disk * interval_hours
                 counts[project_id] += 1
 
         # Convertir en liste pour l'export JSON
