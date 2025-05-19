@@ -3,6 +3,17 @@ import subprocess
 import json
 from datetime import datetime, timedelta, timezone
 import argparse
+import sys
+import importlib
+
+def install_package(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+try:
+    importlib.import_module('gnocchiclient')
+except ImportError:
+    print("Installation du package Gnocchi...")
+    install_package('gnocchiclient')
 
 def parse_args():
     parser = argparse.ArgumentParser()
