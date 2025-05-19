@@ -33,8 +33,6 @@ def main():
     start_dt = datetime.strptime(start_iso, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=timezone.utc)
     end_dt = datetime.strptime(end_iso, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=timezone.utc)
 
-    print(f"Période choisie: {start_iso} → {end_iso}")
-
     # Construire la commande openstack
     cmd = [
         "openstack", "rating", "dataframes", "get",
