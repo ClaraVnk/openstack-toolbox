@@ -6,6 +6,11 @@ import importlib
 import json
 import os
 
+def print_header(header):
+    print("\n" + "=" * 50)
+    print(header.center(50))
+    print("=" * 50 + "\n")
+
 def load_openstack_credentials():
     load_dotenv()  # essaie de charger depuis .env s’il existe
 
