@@ -6,6 +6,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import json
 
+def install_package(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# Vérifier et installer les dépendances manquantes
+try:
+    importlib.import_module('openstack')
+except ImportError:
+    print("Installation du package openstack...")
+    install_package('openstacksdk')
+
 # Configuration de la connexion à OpenStack
 auth_url = 'http://<your-openstack-auth-url>/v3'
 project_name = '<your-project-name>'
