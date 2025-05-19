@@ -95,7 +95,7 @@ def parse_flavor_name(flavor_name):
         return cpu, ram, disk
     return 0, 0, 0
 
-def load_usages(filepath="weekly_uses.json"):
+def load_usages(filepath="fetch_uses.json"):
     with open(filepath, "r") as f:
         data = json.load(f)
 
