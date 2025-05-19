@@ -62,8 +62,8 @@ def main():
         usages = defaultdict(lambda: {"cpu": 0, "ram": 0, "storage": 0})
 
         for entry in data:
-            project_id = entry.get("project_id", "inconnu")
-            flavor = entry.get("flavor_name", "")
+            project_id = entry.get("desc", {}).get("project_id", "inconnu")
+            flavor = entry.get("desc", {}).get("flavor_name", "")
             volume = float(entry.get("volume", 1.0))
 
             cpu, ram, disk = parse_flavor_name(flavor)
