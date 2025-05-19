@@ -164,7 +164,10 @@ def main():
     from datetime import datetime, timedelta, timezone
 
     def trim_to_minute(dt_str):
-        return dt_str.replace("T", " ")[:16]
+        # dt_str est du type '2025-05-19T13:00:00+00:00'
+        # On veut '2025-05-19 13:00'
+        dt = datetime.strptime(dt_str[:16], "%Y-%m-%dT%H:%M")
+        return dt.strftime("%Y-%m-%d %H:%M")
 
     def isoformat(dt):
         return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
