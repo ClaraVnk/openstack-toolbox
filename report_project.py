@@ -105,7 +105,7 @@ def load_usages(filepath="fetch_uses.json"):
 
     usages_by_project = {}
 
-    for entry in data[0].get("Resources", []):
+    for entry in data.get("Resources", []):
         project_id = entry.get("project_id", "inconnu")
         cpu = float(entry.get("cpu", 0))
         ram = float(entry.get("ram", 0))

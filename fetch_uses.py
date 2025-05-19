@@ -47,7 +47,7 @@ def main():
     if result.returncode == 0:
         data = json.loads(result.stdout)
         # DEBUUUUUUUG
-        print("Premier élément JSON reçu :", data[0] if data else "Aucune donnée")
+        print("Premier élément JSON reçu :", data if isinstance(data, dict) else (data[0] if data else "Aucune donnée"))
 
         if not data:
             print("⚠️  Aucune donnée reçue, fichier fetch_uses.json non généré.")
@@ -67,7 +67,12 @@ def main():
 
         usages = defaultdict(lambda: {"cpu": 0, "ram": 0, "storage": 0})
 
-        for entry in data[0].get("Resources", []):
+        if isinstance(data, dict):
+            resources = data.get("Resources", [])
+        else:
+            resources = data[0].get("Resources", []) if data else []
+
+        for entry in resources:
             project_id = entry.get("desc", {}).get("project_id", "inconnu")
             flavor = entry.get("desc", {}).get("flavor_name", "")
             volume = float(entry.get("volume", 1.0))
