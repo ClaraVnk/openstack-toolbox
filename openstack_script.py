@@ -104,7 +104,7 @@ def list_instances(conn, billing_data):
     icu_to_euro = 55.5  # Taux de conversion ICU vers EUR
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':<12} {'Coût (EUR)':<12}")
+    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
     print("-" * 130)
 
     # Définir la période pour les données de facturation (30 derniers jours)
@@ -123,7 +123,7 @@ def list_instances(conn, billing_data):
 
         # Calculer le coût en CHF et EUR
         cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
-        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:.2f} CHF {cost_euro:.2f} EUR")
+        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
 
 
 # Lister les snapshots
@@ -157,8 +157,8 @@ def list_volumes(conn):
     volumes = list(conn.block_storage.volumes())
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Taille (Go)':<20} {'Type':<20} {'Attaché':<20} {'Snapshot associé':<20}")
-    print("-" * 116)
+    print(f"{'ID':<12} {'Nom':<15} {'Taille':<6} {'Type':<10} {'Attaché':<8} {'Snapshot':<12}")
+    print("-" * 70)
     for volume in volumes:
         attached = "Oui" if volume.attachments else "Non"
         # Remplacer None par une chaîne vide pour snapshot_id
