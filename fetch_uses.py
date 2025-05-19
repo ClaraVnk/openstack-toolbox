@@ -25,13 +25,21 @@ def isoformat(dt):
 
 def main():
     args = parse_args()
-    start_iso = args.start
-    end_iso = args.end
-    print(f"Période reçue pour les usages: {start_iso} → {end_iso}")
-
-    # Conversion en datetime
-    start_dt = datetime.strptime(start_iso, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=timezone.utc)
-    end_dt = datetime.strptime(end_iso, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=timezone.utc)
+    if args.start and args.end:
+        start_iso = args.start
+        end_iso = args.end
+        print(f"Période reçue pour les usages: {start_iso} → {end_iso}")
+    else:
+        default_start = isoformat(datetime.now(timezone.utc) - timedelta(hours=2))
+        default_end = isoformat(datetime.now(timezone.utc))
+        print("Entrez la période souhaitée (format: YYYY-MM-DD HH:MM)")
+        start_input = input_with_default("Date de début", trim_to_minute(default_start))
+        end_input = input_with_default("Date de fin", trim_to_minute(default_end))
+        start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+        start_iso = isoformat(start_dt)
+        end_iso = isoformat(end_dt)
+        print(f"Période choisie: {start_iso} → {end_iso}")
 
     # Construire la commande openstack
     cmd = [
