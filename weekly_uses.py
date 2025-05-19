@@ -2,6 +2,8 @@
 import subprocess
 import json
 from datetime import datetime, timedelta, timezone
+import re
+from collections import defaultdict
 
 def isoformat(dt):
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
@@ -31,17 +33,6 @@ def main():
 
     if result.returncode == 0:
         data = json.loads(result.stdout)
-
-        # ✅ Ajoute ceci pour voir la structure réelle
-        print("=== PREMIÈRE ENTRÉE DU JSON ===")
-        if data:
-            import pprint
-            pprint.pprint(data[0])
-        else:
-            print("Aucune donnée retournée.")
-
-        import re
-        from collections import defaultdict
 
         def parse_flavor_name(flavor_name):
             match = re.match(r"[a-zA-Z]?(\d+)-ram(\d+)-disk(\d+)", flavor_name)

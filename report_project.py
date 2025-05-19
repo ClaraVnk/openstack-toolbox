@@ -5,6 +5,8 @@ import sys
 import importlib
 import json
 import os
+import re
+from collections import defaultdict
 
 def print_header(header):
     print("\n" + "=" * 50)
@@ -83,26 +85,35 @@ def load_billing(filepath="billing.json"):
     with open(filepath, "r") as f:
         return json.load(f)
 
+def parse_flavor_name(flavor_name):
+    # Parse flavor_name du style 'a2-ram4-disk50-perf1'
+    match = re.match(r"[a-zA-Z]?(\d+)-ram(\d+)-disk(\d+)", flavor_name)
+    if match:
+        cpu = int(match.group(1))
+        ram = int(match.group(2))
+        disk = int(match.group(3))
+        return cpu, ram, disk
+    return 0, 0, 0
+
 def load_usages(filepath="weekly_uses.json"):
     with open(filepath, "r") as f:
         data = json.load(f)
 
-    usages_by_project = {}
+    usages = defaultdict(lambda: {"cpu": 0, "ram": 0, "storage": 0})
 
-    for entry in data:
-        project_id = entry.get("project_id") or "inconnu"
-        cpu = float(entry.get("cpu", 0))
-        ram = float(entry.get("ram", 0))
-        storage = float(entry.get("storage", 0))
+    for entry in data.get("Resources", []):
+        desc = entry.get("desc", {})
+        project_id = desc.get("project_id", "inconnu")
+        flavor_name = desc.get("flavor_name", "")
+        volume = float(entry.get("volume", 1.0))
 
-        if project_id not in usages_by_project:
-            usages_by_project[project_id] = {"cpu": 0.0, "ram": 0.0, "storage": 0.0}
+        cpu, ram, disk = parse_flavor_name(flavor_name)
 
-        usages_by_project[project_id]["cpu"] += cpu
-        usages_by_project[project_id]["ram"] += ram
-        usages_by_project[project_id]["storage"] += storage
+        usages[project_id]["cpu"] += cpu * volume
+        usages[project_id]["ram"] += ram * volume
+        usages[project_id]["storage"] += disk * volume
 
-    return usages_by_project
+    return usages
 
 def aggregate_costs(data):
     costs_by_project = {}
