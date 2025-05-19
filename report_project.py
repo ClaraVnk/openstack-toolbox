@@ -6,7 +6,6 @@ import importlib
 import json
 import os
 import re
-from collections import defaultdict
 
 def print_header(header):
     print("\n" + "=" * 50)
@@ -146,7 +145,6 @@ def load_usages(filepath="fetch_uses.json"):
 
 def aggregate_costs(data):
     costs_by_project = {}
-    costs_by_project[project_id]["total_icu"] += float(rating)
 
     if not data:
         print("⚠️ Le fichier de facturation est vide.")
