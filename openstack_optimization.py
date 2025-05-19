@@ -168,6 +168,9 @@ def calculate_underutilized_costs():
     ICU_to_CHF = 1 / 50       # 1 CHF = 50 ICU → 1 ICU = 0.02 CHF
     ICU_to_EUR = 1 / 55.5     # 1 EUR = 55.5 ICU → 1 ICU ≈ 0.01802 EUR
 
+    # On suppose que billing_data contient les coûts ICU par ressource
+    underutilized_costs_icu = billing_data.get("underutilized_costs_icu", {})
+
     underutilized_costs = {}
     for resource, cost_icu in underutilized_costs_icu.items():
         cost_chf = cost_icu * ICU_to_CHF
