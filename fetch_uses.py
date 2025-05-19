@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 import argparse
 import sys
 import importlib
+import os
+import requests
 
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
@@ -51,44 +53,44 @@ def get_active_instance_ids():
         return set()
 
 def get_active_instances_from_gnocchi(start_iso, end_iso):
-    print("📡 Interrogation de Gnocchi pour récupérer l’historique des VM actives...")
+    print("📡 Interrogation de Gnocchi (via API) pour récupérer l’historique des VM actives...")
+
     try:
-        cmd = [
-            "openstack", "metric", "resource", "list",
-            "--type", "instance",
-            "-f", "json"
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            print("⚠️ Impossible de récupérer la liste des ressources Gnocchi.")
-            print("Commande exécutée :", ' '.join(cmd))
-            print("Code retour :", result.returncode)
-            print("STDERR:", result.stderr.strip())
-            print("STDOUT:", result.stdout.strip())
+        # ⚠️ À adapter selon ton endpoint réel Gnocchi + token Keystone
+        GNOCCHI_ENDPOINT = os.environ.get("GNOCCHI_ENDPOINT", "https://gnocchi.example.com/v1")
+        TOKEN = os.environ.get("OS_TOKEN")
+
+        headers = {
+            "X-Auth-Token": TOKEN,
+            "Content-Type": "application/json"
+        }
+
+        # Récupérer toutes les ressources de type "instance"
+        url = f"{GNOCCHI_ENDPOINT}/resource/instance"
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            print("⚠️ Erreur lors de l'interrogation de /resource/instance :", response.text)
             return set()
 
-        resources = json.loads(result.stdout)
+        resources = response.json()
         active_ids = set()
 
         for res in resources:
-            resource_id = res["id"]
-            metric_cmd = [
-                "openstack", "metric", "measures", "show",
-                res["metrics"]["cpu"],
-                "--start", start_iso,
-                "--end", end_iso,
-                "-f", "json"
-            ]
-            metric_result = subprocess.run(metric_cmd, capture_output=True, text=True)
-            if metric_result.returncode != 0:
+            cpu_metric = res.get("metrics", {}).get("cpu")
+            if not cpu_metric:
                 continue
 
-            measures = json.loads(metric_result.stdout)
-            if measures:
-                active_ids.add(resource_id)
+            # Requête sur les mesures de la métrique CPU
+            measures_url = f"{GNOCCHI_ENDPOINT}/v1/metric/{cpu_metric}/measures"
+            params = {"start": start_iso, "end": end_iso}
+            measure_resp = requests.get(measures_url, headers=headers, params=params)
+
+            if measure_resp.status_code == 200 and measure_resp.json():
+                active_ids.add(res["id"])
+
         return active_ids
     except Exception as e:
-        print("❌ Erreur lors de l’accès à Gnocchi :", e)
+        print("❌ Erreur lors de l’accès à l’API Gnocchi :", e)
         return set()
 
 def main():
