@@ -4,7 +4,6 @@ import subprocess
 import sys
 import importlib
 import json
-from keystoneauth1 import loading, session
 
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
