@@ -23,6 +23,22 @@ def input_with_default(prompt, default):
 def isoformat(dt):
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
+def get_active_instance_ids():
+    try:
+        result = subprocess.run(
+            ["openstack", "server", "list", "-f", "json"],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print("⚠️ Impossible de récupérer les statuts des VMs.")
+            print("STDERR:", result.stderr)
+            return set()
+        servers = json.loads(result.stdout)
+        return {s["ID"] for s in servers if s["Status"].upper() == "ACTIVE"}
+    except Exception as e:
+        print("⚠️ Erreur lors de l'appel à `openstack server list`:", e)
+        return set()
+
 def main():
     args = parse_args()
     if args.start and args.end:
@@ -79,9 +95,14 @@ def main():
         else:
             resources = data[0].get("Resources", []) if data else []
 
+        active_ids = get_active_instance_ids()
+
         # Cumul des ressources consommées sur la période (CPU/Go/h * heures d'utilisation)
         for entry in resources:
             desc = entry.get("desc", {})
+            instance_id = desc.get("id")
+            if instance_id not in active_ids:
+                continue  # ignorer les VMs inactives
             project_id = desc.get("project_id", "inconnu")
             flavor = desc.get("flavor_name", "")
             volume = float(entry.get("volume", 1.0))  # C’est la durée en heures si l’entrée est fiable
