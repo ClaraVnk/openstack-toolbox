@@ -134,12 +134,13 @@ def load_usages(filepath="fetch_uses.json"):
         storage = float(entry.get("storage", 0))
 
         if project_id not in usages_by_project:
-            usages_by_project[project_id] = {"cpu": 0, "ram": 0, "storage": 0}
+            usages_by_project[project_id] = {"cpu": 0, "ram": 0, "storage": 0, "icu": 0}
 
         # Addition des valeurs cumulées
         usages_by_project[project_id]["cpu"] += cpu
         usages_by_project[project_id]["ram"] += ram
         usages_by_project[project_id]["storage"] += storage
+        usages_by_project[project_id]["icu"] += float(entry.get("icu", 0))
 
     return usages_by_project
 
@@ -254,12 +255,12 @@ def main():
     print("-" * 90)
 
     if project_id in usages or project_id in aggregated:
-        usage = usages.get(project_id, {"cpu": 0, "ram": 0, "storage": 0})
+        usage = usages.get(project_id, {"cpu": 0, "ram": 0, "storage": 0, "icu": 0})
         cost = aggregated.get(project_id, {"total_icu": 0, "rate_values": []})
         icu = cost.get("total_icu", 0)
         eur = icu * ICU_TO_EUR
         chf = icu * ICU_TO_CHF
-        print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f} | {eur:7.2f} | {chf:7.2f}")
+        print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f} | {eur:7.2f} | {chf:7.2f} (ICU: {usage['icu']:.2f})")
         rate_values = cost.get("rate_values", [])
         if rate_values:
             avg_rate_icu = sum(rate_values) / len(rate_values)
