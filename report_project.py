@@ -206,17 +206,6 @@ def main():
     usages = load_usages("fetch_uses.json")
     report = []
     data = load_billing()
-    # Affichage d'un aperçu des données de facturation
-    if data:
-        print("\nAperçu de billing.json :")
-        import pprint
-        # Pour la nouvelle structure, on affiche le premier élément de Resources s'il existe
-        if "Resources" in data and data["Resources"]:
-            pprint.pprint(data["Resources"][0])
-        else:
-            pprint.pprint(data)
-    else:
-        print("⚠️  Le fichier billing.json est vide.")
     aggregated = aggregate_costs(data)
 
     print("-" * 65)
