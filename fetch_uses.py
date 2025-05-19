@@ -2,6 +2,13 @@
 import subprocess
 import json
 from datetime import datetime, timedelta, timezone
+import argparse
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--start', required=True)
+    parser.add_argument('--end', required=True)
+    return parser.parse_args()
 
 def trim_to_minute(dt_str):
       # Extrait "YYYY-MM-DD HH:MM" de la chaîne ISO complète
@@ -17,19 +24,14 @@ def isoformat(dt):
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
 def main():
-    default_start = isoformat(datetime.now(timezone.utc) - timedelta(hours=2))
-    default_end = isoformat(datetime.now(timezone.utc))
-
-    print("Entrez la période de facturation souhaitée (format: YYYY-MM-DD HH:MM)")
-    start_input = input_with_default("Date de début", trim_to_minute(default_start))
-    end_input = input_with_default("Date de fin", trim_to_minute(default_end))
+    args = parse_args()
+    start_iso = args.start
+    end_iso = args.end
+    print(f"Période reçue: {start_iso} → {end_iso}")
 
     # Conversion en datetime
-    start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
-    end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
-
-    start_iso = isoformat(start_dt)
-    end_iso = isoformat(end_dt)
+    start_dt = datetime.strptime(start_iso, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=timezone.utc)
+    end_dt = datetime.strptime(end_iso, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=timezone.utc)
 
     print(f"Période choisie: {start_iso} → {end_iso}")
 

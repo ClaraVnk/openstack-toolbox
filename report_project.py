@@ -160,10 +160,34 @@ def main():
 """
     print(header)
 
-    # Exécuter le script weekly_uses.py pour récupérer les données des usages
-    subprocess.run([sys.executable, 'weekly_uses.py'], check=True)
-    # Exécuter le script weekly_billing.py pour récupérer les données de facturation
-    subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
+    # Demander la période à l'utilisateur UNE SEULE FOIS
+    from datetime import datetime, timedelta, timezone
+
+    def trim_to_minute(dt_str):
+        return dt_str.replace("T", " ")[:16]
+
+    def isoformat(dt):
+        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    default_start = isoformat(datetime.now(timezone.utc) - timedelta(hours=2))
+    default_end = isoformat(datetime.now(timezone.utc))
+
+    print("Entrez la période de facturation souhaitée (format: YYYY-MM-DD HH:MM)")
+    start_input = input(f"Date de début [Défaut: {trim_to_minute(default_start)}]: ").strip() or trim_to_minute(default_start)
+    end_input = input(f"Date de fin [Défaut: {trim_to_minute(default_end)}]: ").strip() or trim_to_minute(default_end)
+
+    # Conversion en datetime
+    start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+    end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+
+    start_iso = isoformat(start_dt)
+    end_iso = isoformat(end_dt)
+
+    print(f"Période choisie: {start_iso} → {end_iso}")
+
+    # Passer la période aux scripts
+    subprocess.run([sys.executable, 'fetch_uses.py', '--start', start_iso, '--end', end_iso], check=True)
+    subprocess.run([sys.executable, 'fetch_billing.py', '--start', start_iso, '--end', end_iso], check=True)
 
     # Charger usages et facturation
     usages = load_usages()
