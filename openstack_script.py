@@ -162,8 +162,8 @@ def list_volumes(conn):
     for volume in volumes:
         attached = "Oui" if volume.attachments else "Non"
         # Remplacer None par une chaîne vide pour snapshot_id
-        snapshot_id = volume.snapshot_id if volume.snapshot_id else 'Aucun'
-        print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20} {snapshot_id:<20}")
+        snapshot_id = volume.snapshot_id[:6] if volume.snapshot_id else 'Aucun'
+        print(f"{volume.id:<36} {volume.name:<20} {volume.size:>4} {volume.volume_type[:10]:<10} {attached:<5} {snapshot_id:<8}")
 
 # Récupérer les volumes attachés aux instances
 def mounted_volumes(conn):
