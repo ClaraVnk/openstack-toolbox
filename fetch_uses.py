@@ -78,6 +78,7 @@ def main():
         else:
             resources = data[0].get("Resources", []) if data else []
 
+        # Cumul des ressources consommées sur la période (CPU/Go/h * heures d'utilisation)
         for entry in resources:
             project_id = entry.get("desc", {}).get("project_id", "inconnu")
             flavor = entry.get("desc", {}).get("flavor_name", "")
@@ -85,9 +86,11 @@ def main():
 
             cpu, ram, disk = parse_flavor_name(flavor)
 
-            usages[project_id]["cpu"] += cpu * volume
-            usages[project_id]["ram"] += ram * volume
-            usages[project_id]["storage"] += disk * volume
+            DURATION_PER_POINT_HOURS = 1 # Durée de chaque point de données en heures (chez infomaniak c'est 1h)
+
+            usages[project_id]["cpu"] += cpu * DURATION_PER_POINT_HOURS
+            usages[project_id]["ram"] += ram * DURATION_PER_POINT_HOURS
+            usages[project_id]["storage"] += disk * DURATION_PER_POINT_HOURS
 
         # Convertir en liste pour l'export JSON
         usage_list = []
