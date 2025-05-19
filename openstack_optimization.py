@@ -6,11 +6,6 @@ import importlib
 import json
 import os
 
-def print_header(header):
-    print("\n" + "=" * 50)
-    print(header.center(50))
-    print("=" * 50 + "\n")
-
 def load_openstack_credentials():
     load_dotenv()  # essaie de charger depuis .env s’il existe
 
@@ -209,7 +204,6 @@ def collect_and_analyze_data():
     for resource, costs in underutilized_costs.items():
         report_body += f"{resource}: {costs['ICU']} ICU / {costs['CHF']} CHF / {costs['EUR']} EUR\n"
 
-    report_body = header + "\n" + report_body
     return report_body
 
 def main():
@@ -234,7 +228,7 @@ def main():
          Openstack SysAdmin Toolbox
 
 """
-    print(print_header(header))
+    print(header)
 
     # Exécuter le script weekly_billing.py pour récupérer les données de facturation
     subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
@@ -247,6 +241,7 @@ def main():
         f.write(report_body)
 
     print("Rapport généré avec succès : /tmp/openstack_report.txt")
+    
     # Afficher le rapport
     print(report_body)
     # Afficher les graphiques
