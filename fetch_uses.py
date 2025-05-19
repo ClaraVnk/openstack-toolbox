@@ -95,8 +95,6 @@ def main():
         else:
             resources = data[0].get("Resources", []) if data else []
 
-        active_ids = get_active_instance_ids()
-
         # Cumul des ressources consommées sur la période (CPU/Go/h * heures d'utilisation)
         for entry in resources:
             desc = entry.get("desc", {})
