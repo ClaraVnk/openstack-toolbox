@@ -4,7 +4,11 @@ import json
 def load_usages(filename):
     try:
         with open(filename, "r") as f:
-            return json.load(f)
+            usages = json.load(f)
+            print("\n📊 Récapitulatif des usages par projet :")
+            for pid, data in usages.items():
+                print(f" - Projet {pid}: CPU={data['cpu']}, RAM={data['ram']}, Storage={data['storage']}, ICU={data.get('icu', 0)}")
+            return usages
     except Exception:
         return {}
 
@@ -35,6 +39,19 @@ def main():
 
     # Charger usages APRÈS génération
     usages = load_usages("fetch_uses.json")
+
+    # Example of where measure_resp might be handled; adding debug print
+    # This is a placeholder snippet to show where to add the debug prints
+    # Replace with actual code where measure_resp is obtained
+    # For demonstration, assume measure_resp is obtained here:
+    # measure_resp = requests.get(...)
+    # Add debug prints as requested:
+    # print(f"↪️ Vérification des mesures pour {resource_id} : {measure_resp.status_code}")
+    # if measure_resp.status_code == 200:
+    #     data_points = measure_resp.json()
+    #     print(f"  Nombre de points : {len(data_points)}")
+    #     if data_points:
+    #         print("  Premier point :", data_points[0])
 
     if not usages:
         print("⚠️ Aucun usage détecté dans fetch_uses.json, mais on poursuit avec les coûts uniquement.")

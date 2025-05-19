@@ -155,6 +155,10 @@ def load_usages(filepath="fetch_uses.json"):
         usages_by_project[project_id]["storage"] += storage
         usages_by_project[project_id]["icu"] += float(entry.get("icu", 0))
 
+    print("\n📊 Récapitulatif des usages par projet :")
+    for pid, data in usages_by_project.items():
+        print(f" - Projet {pid}: CPU={data['cpu']}, RAM={data['ram']}, Storage={data['storage']}, ICU={data.get('icu', 0)}")
+
     return usages_by_project
 
 def aggregate_costs(data):
