@@ -123,7 +123,7 @@ def load_usages(filepath="fetch_uses.json"):
 def aggregate_costs(data):
     costs_by_project = {}
 
-    for entry in data.get("Resources", []):
+    for entry in data[0].get("Resources", []):
         desc = entry.get("desc", {})
         project_id = desc.get("project_id", "inconnu")
         rating = entry.get("rating")
