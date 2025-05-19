@@ -2,6 +2,7 @@
 import subprocess
 from datetime import datetime, timedelta, timezone
 import argparse
+import json
 
 def trim_to_minute(dt_str):
     return dt_str.replace("T", " ")[:16]
@@ -48,8 +49,32 @@ def main():
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
+        raw_data = json.loads(result.stdout)
+        if isinstance(raw_data, list) and raw_data:
+            resources = raw_data[0].get("Resources", [])
+        elif isinstance(raw_data, dict):
+            resources = raw_data.get("Resources", [])
+        else:
+            resources = []
+
+        aggregated = {}
+        for entry in resources:
+            desc = entry.get("desc", {})
+            project_id = desc.get("project_id", "inconnu")
+            rating = float(entry.get("rating", 0))
+            rate_value = float(entry.get("rate_value", 0))
+
+            if project_id not in aggregated:
+                aggregated[project_id] = {
+                    "total_icu": 0.0,
+                    "rate_values": []
+                }
+
+            aggregated[project_id]["total_icu"] += rating
+            aggregated[project_id]["rate_values"].append(rate_value)
+
         with open("billing.json", "w") as f:
-            f.write(result.stdout)
+            json.dump(aggregated, f, indent=2)
     else:
         print("❌ Échec de la récupération des données")
         print("STDERR:", result.stderr)
