@@ -222,6 +222,7 @@ def collect_and_analyze_data():
     return report_body
 
 if __name__ == '__main__':
+    subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
     report_body = collect_and_analyze_data()
     with open('/tmp/openstack_report.txt', 'w') as f:
         f.write(report_body)

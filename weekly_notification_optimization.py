@@ -12,7 +12,6 @@ def run_script(script_path):
     print(f"{script_path} terminé avec succès.\n")
 
     def main():
-    run_script('weekly_billing.py')
     run_script('openstack_optimization.py')
     run_script('notification.py')
 
