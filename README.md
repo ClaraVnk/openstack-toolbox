@@ -6,7 +6,7 @@
 
 ### Disclaimer
 
-These toolbox is configured to match Infomaniak's Public Cloud costs (euros and CHF). Iy fou want, you can reconfigure it to mach your provider's costs.
+These toolbox is configured to match Infomaniak's Public Cloud costs (euros and CHF). If you want, you can reconfigure it to mach your provider's costs.
 
 <!-- GETTING STARTED -->
 ## Getting started
