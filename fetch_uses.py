@@ -34,9 +34,6 @@ def main():
     start_iso = "2025-05-18T14:00:00+00:00"
     end_iso = "2025-05-18T15:00:00+00:00"
 
-    # Lancer les scripts pour générer les données
-    subprocess.run([sys.executable, 'fetch_uses.py', '--start', start_iso, '--end', end_iso], check=True)
-    subprocess.run([sys.executable, 'fetch_billing.py', '--start', start_iso, '--end', end_iso], check=True)
 
     # Charger usages APRÈS génération
     usages = load_usages("fetch_uses.json")
