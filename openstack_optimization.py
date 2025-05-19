@@ -264,7 +264,7 @@ def main():
     with open('/tmp/openstack_report.txt', 'w') as f:
         f.write(report_body)
 
-    print("Rapport généré avec succès : /tmp/openstack_report.txt")
+    print("Rapport généré avec succès : /tmp/openstack_optimization_report.txt")
     
     # Afficher le rapport
     print(report_body)

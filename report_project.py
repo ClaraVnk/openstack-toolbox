@@ -163,22 +163,28 @@ def main():
         })
 
     with open('/tmp/openstack_report.txt', 'w') as f:
+        if not report:
+            f.write("⚠️  Aucun coût détecté pour ce projet (peut-être trop faible ou inexistant).\n")
+        else:
+            for line in report:
+                f.write(
+                    f"{line['projet']:20} | {line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
+                    f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
+                    f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}\n"
+                )
+
+    print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
+
+    if not report:
+        print("⚠️  Aucun coût détecté pour ce projet (peut-être trop faible ou inexistant).")
+    else:
+        print(f"{'Projet':20} | CPU h | RAM h | Stock h | Net GB | ICU | EUR | CHF")
+        print("-" * 90)
         for line in report:
-            f.write(
-                f"{line['projet']:20} | {line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
-                f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
-                f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}\n"
-            )
-
-    print("Rapport généré avec succès : /tmp/openstack_report.txt")
-
-    print(f"{'Projet':20} | CPU h | RAM h | Stock h | Net GB | ICU | EUR | CHF")
-    print("-" * 90)
-    for line in report:
-        print(f"{line['projet'][:20]:20} | "
-              f"{line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
-              f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
-              f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}")
+            print(f"{line['projet'][:20]:20} | "
+                  f"{line['cpu_h']:6.2f} | {line['ram_h']:6.2f} | "
+                  f"{line['storage_h']:7.2f} | {line['network_gb']:7.2f} | "
+                  f"{line['total_icu']:5.2f} | {line['total_eur']:5.2f} | {line['total_chf']:5.2f}")
 
 if __name__ == '__main__':
     main()
