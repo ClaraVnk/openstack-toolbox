@@ -80,17 +80,17 @@ def main():
 
         # Cumul des ressources consommées sur la période (CPU/Go/h * heures d'utilisation)
         for entry in resources:
-            project_id = entry.get("desc", {}).get("project_id", "inconnu")
-            flavor = entry.get("desc", {}).get("flavor_name", "")
-            volume = float(entry.get("volume", 1.0))
+            desc = entry.get("desc", {})
+            project_id = desc.get("project_id", "inconnu")
+            flavor = desc.get("flavor_name", "")
+            volume = float(entry.get("volume", 1.0))  # C’est la durée en heures si l’entrée est fiable
 
             cpu, ram, disk = parse_flavor_name(flavor)
 
-            DURATION_PER_POINT_HOURS = 1 # Durée de chaque point de données en heures (chez infomaniak c'est 1h)
-
-            usages[project_id]["cpu"] += cpu * DURATION_PER_POINT_HOURS
-            usages[project_id]["ram"] += ram * DURATION_PER_POINT_HOURS
-            usages[project_id]["storage"] += disk * DURATION_PER_POINT_HOURS
+            # 🔁 Cumul par volume (durée d’usage)
+            usages[project_id]["cpu"] += cpu * volume
+            usages[project_id]["ram"] += ram * volume
+            usages[project_id]["storage"] += disk * volume
 
         # Convertir en liste pour l'export JSON
         usage_list = []
