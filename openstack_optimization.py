@@ -76,7 +76,7 @@ conn = connection.Connection(**creds)
 def get_vm_statuses_from_cli():
     try:
         result = subprocess.run(
-            ["openstack", "server", "list", "--all-projects", "-f", "json"],
+            ["openstack", "server", "list", "-f", "json"],
             capture_output=True, text=True
         )
         if result.returncode != 0:
