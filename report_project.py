@@ -1,3 +1,15 @@
+def select_project_interactive(usages):
+    projects = list(usages.keys())
+    print("\nProjets disponibles :")
+    for i, pid in enumerate(projects, start=1):
+        print(f"  {i}. {pid}")
+    while True:
+        choice = input(f"Choisissez un projet (1-{len(projects)}): ").strip()
+        if choice.isdigit():
+            idx = int(choice)
+            if 1 <= idx <= len(projects):
+                return projects[idx - 1]
+        print("Choix invalide. Veuillez entrer un numéro valide.")
 #!/usr/bin/env python3
 
 import subprocess
@@ -197,7 +209,7 @@ def main():
 
     header = r"""
   ___                       _             _                       
- / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __                   
+ / _ \ _ __   ___ _ __  ___| |_ _debug_ _  ___| | __                   
 | | | | '_ \ / _ \ '_ \/ __| __/ _` |/ __| |/ /                   
 | |_| | |_) |  __/ | | \__ \ || (_| | (__|   <                    
  \___/| .__/ \___|_| |_|___/\__\__,_|\___|_|\_\               _   
@@ -212,7 +224,11 @@ def main():
 """
     print(header)
 
-    project_id = input("Entrez l'ID du projet à analyser : ").strip()
+    usages = load_usages("fetch_uses.json")
+    if not usages:
+        print("⚠️ Aucun projet disponible.")
+        return
+    project_id = select_project_interactive(usages)
 
     # Demander la période à l'utilisateur UNE SEULE FOIS
     from datetime import datetime, timedelta, timezone
