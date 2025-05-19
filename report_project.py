@@ -160,6 +160,11 @@ def main():
 """
     print(header)
 
+    # Exécuter le script weekly_uses.py pour récupérer les données des usages
+    subprocess.run([sys.executable, 'weekly_uses.py'], check=True)
+    # Exécuter le script weekly_billing.py pour récupérer les données de facturation
+    subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
+
     # Charger usages et facturation
     usages = load_usages()
     billing = load_billing()
