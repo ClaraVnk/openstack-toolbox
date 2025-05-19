@@ -46,18 +46,45 @@ def main():
 
     if result.returncode == 0:
         data = json.loads(result.stdout)
-        usages = []
+        
+        import re
+        from collections import defaultdict
+
+        def parse_flavor_name(flavor_name):
+            match = re.match(r"[a-zA-Z]?(\d+)-ram(\d+)-disk(\d+)", flavor_name)
+            if match:
+                cpu = int(match.group(1))
+                ram = int(match.group(2))
+                disk = int(match.group(3))
+                return cpu, ram, disk
+            return 0, 0, 0
+
+        usages = defaultdict(lambda: {"cpu": 0, "ram": 0, "storage": 0})
+
         for entry in data:
-            usages.append({
-                "project_id": entry.get("project_id"),
-                "project_name": entry.get("project_name"),
-                "cpu_hours": entry.get("cpu_hours", 0),
-                "ram_gb_hours": entry.get("ram_gb_hours", 0),
-                "storage_gb_hours": entry.get("storage_gb_hours", 0),
-                "network_gb": entry.get("network_gb", 0)
+            desc = entry.get("desc", {})
+            project_id = desc.get("project_id", "inconnu")
+            flavor = desc.get("flavor_name", "")
+            volume = float(entry.get("volume", 1.0))
+
+            cpu, ram, disk = parse_flavor_name(flavor)
+
+            usages[project_id]["cpu"] += cpu * volume
+            usages[project_id]["ram"] += ram * volume
+            usages[project_id]["storage"] += disk * volume
+
+        # Convertir en liste pour l'export JSON
+        usage_list = []
+        for project_id, values in usages.items():
+            usage_list.append({
+                "project_id": project_id,
+                "cpu": values["cpu"],
+                "ram": values["ram"],
+                "storage": values["storage"]
             })
+
         with open("fetch_uses.json", "w") as f:
-            json.dump(usages, f, indent=2)
+            json.dump(usage_list, f, indent=2)
     else:
         print("❌ Échec de la récupération des données")
         print("STDERR:", result.stderr)

@@ -86,18 +86,18 @@ def load_billing(filepath="billing.json"):
 def load_usages(filepath="weekly_uses.json"):
     with open(filepath, "r") as f:
         data = json.load(f)
-    
+
     usages_by_project = {}
 
     for entry in data:
-        project_id = entry.get("project_id") or entry.get("tenant_id") or "inconnu"
-        cpu = float(entry.get("cpu_hours", 0))
-        ram = float(entry.get("ram_gb_hours", 0))
-        storage = float(entry.get("storage_gb_hours", 0))
+        project_id = entry.get("project_id") or "inconnu"
+        cpu = float(entry.get("cpu", 0))
+        ram = float(entry.get("ram", 0))
+        storage = float(entry.get("storage", 0))
 
         if project_id not in usages_by_project:
             usages_by_project[project_id] = {"cpu": 0.0, "ram": 0.0, "storage": 0.0}
-        
+
         usages_by_project[project_id]["cpu"] += cpu
         usages_by_project[project_id]["ram"] += ram
         usages_by_project[project_id]["storage"] += storage
@@ -116,9 +116,6 @@ def aggregate_costs(data):
         costs_by_project[project_id] += float(rating)
     
     return costs_by_project
-
-# Récupération des projets
-project_id = input("Entrez l'ID du projet à analyser : ").strip()
 
 # Affichage du rapport
 def main():
@@ -182,16 +179,10 @@ def main():
     aggregated = aggregate_costs(data)
 
     print("-" * 65)
+    print(f"{'Projet':36} | CPU    | RAM    | Stockage")
+    print("-" * 65)
     for project_id, usage in usages.items():
-        if project_id not in aggregated:
-            continue
-        report.append({
-            "project_id": project_id,
-            "cpu": usage["cpu"],
-            "ram": usage["ram"],
-            "storage": usage["storage"],
-        })
-        print(f"Projet: {project_id} | CPU: {usage['cpu']} | RAM: {usage['ram']} | Storage: {usage['storage']}")
+        print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f}")
 
     print(f"{'Projet':36} | EUR     | CHF")
     print("-" * 65)
