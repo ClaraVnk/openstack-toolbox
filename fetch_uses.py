@@ -128,9 +128,6 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
             return set()
 
         resources = response.json()
-        print(f"🔍 {len(resources)} ressources de type 'instance' détectées.")
-        for res in resources:
-            print(f" - Gnocchi ID: {res['id']}, original: {res.get('original_resource_id')}, metrics: {list(res.get('metrics', {}).keys())}")
         active_ids = set()
 
         for res in resources:
@@ -239,6 +236,10 @@ def main():
                 "ram": values["ram"],
                 "storage": values["storage"]
             })
+
+        print("\nContenu de fetch_uses.json en préparation :")
+        for usage in usage_list:
+            print(f"- Projet {usage['project_id']}: CPU={usage['cpu']:.2f}, RAM={usage['ram']:.2f}, Storage={usage['storage']:.2f}")
 
         with open("fetch_uses.json", "w") as f:
             json.dump(usage_list, f, indent=2)
