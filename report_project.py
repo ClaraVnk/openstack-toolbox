@@ -188,9 +188,9 @@ def main():
     default_start = isoformat(datetime.now(timezone.utc) - timedelta(hours=2))
     default_end = isoformat(datetime.now(timezone.utc))
 
-    print("Entrez la période de facturation souhaitée (format: YYYY-MM-DD HH:MM)")
+    print("Entrez la période souhaitée (format: YYYY-MM-DD HH:MM)")
     start_input = input(f"Date de début [Défaut: {trim_to_minute(default_start)}]: ").strip() or trim_to_minute(default_start)
-    end_input = input(f"Date de fin [Défaut: {trim_to_minute(default_end)}]: ").strip() or trim_to_minute(default_end)
+    end_input = input(f"Date de fin [Défaut: {trim_to_minute(default_end)}, pressez Enter]: ").strip() or trim_to_minute(default_end)
 
     # Conversion en datetime
     start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
