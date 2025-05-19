@@ -56,7 +56,7 @@ def main():
                 "storage_gb_hours": entry.get("storage_gb_hours", 0),
                 "network_gb": entry.get("network_gb", 0)
             })
-        with open("weekly_uses.json", "w") as f:
+        with open("fetch_uses.json", "w") as f:
             json.dump(usages, f, indent=2)
     else:
         print("❌ Échec de la récupération des données")
