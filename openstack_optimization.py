@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from openstack import connection
 import pandas as pd
 import matplotlib.pyplot as plt
