@@ -195,6 +195,13 @@ def main():
     usages = load_usages("fetch_uses.json")
     report = []
     data = load_billing()
+    # Affichage d'un aperçu des données de facturation
+    if data:
+        print("\nAperçu de billing.json :")
+        import pprint
+        pprint.pprint(data[0])
+    else:
+        print("⚠️  Le fichier billing.json est vide.")
     aggregated = aggregate_costs(data)
 
     print("-" * 65)

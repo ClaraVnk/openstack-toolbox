@@ -46,8 +46,6 @@ def main():
 
     if result.returncode == 0:
         data = json.loads(result.stdout)
-        # DEBUUUUUUUG
-        print("Premier élément JSON reçu :", data if isinstance(data, dict) else (data[0] if data else "Aucune donnée"))
 
         if not data:
             print("⚠️  Aucune donnée reçue, fichier fetch_uses.json non généré.")
