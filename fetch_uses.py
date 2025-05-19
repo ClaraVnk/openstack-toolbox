@@ -222,6 +222,8 @@ def main():
                 usages[project_id]["ram"] += ram * interval_hours
                 usages[project_id]["storage"] += disk * interval_hours
                 counts[project_id] += 1
+                rating = float(entry.get("rating", 0.0))
+                usages[project_id]["icu"] = usages[project_id].get("icu", 0.0) + rating
 
         # Convertir en liste pour l'export JSON
         usage_list = []
@@ -230,7 +232,8 @@ def main():
                 "project_id": project_id,
                 "cpu": values["cpu"],
                 "ram": values["ram"],
-                "storage": values["storage"]
+                "storage": values["storage"],
+                "icu": values.get("icu", 0.0)
             })
 
         print("\nContenu de fetch_uses.json en préparation :")
