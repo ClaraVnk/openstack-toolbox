@@ -157,7 +157,7 @@ def list_volumes(conn):
     volumes = list(conn.block_storage.volumes())
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<12} {'Nom':<15} {'Taille':<6} {'Type':<10} {'Attaché':<8} {'Snapshot':<12}")
+    print(f"{'ID':<36} {'Nom':<20} {'Taille':>4} {'Type':<10} {'Attaché':<5} {'Snapshot':<12}")
     print("-" * 70)
     for volume in volumes:
         attached = "Oui" if volume.attachments else "Non"
