@@ -16,21 +16,6 @@ def input_with_default(prompt, default):
     return s.strip() or default
 
 def main():
-        header = r"""
-  ___                       _             _       
- / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __   
-| | | | '_ \ / _ \ '_ \/ __| __/ _` |/ __| |/ /   
-| |_| | |_) |  __/ | | \__ \ || (_| | (__|   <    
- \___/| .__/ \___|_| |_|___/\__\__,_|\___|_|\_\   
-/ ___||_|  _ _ __ ___  _ __ ___   __ _ _ __ _   _ 
-\___ \| | | | '_ ` _ \| '_ ` _ \ / _` | '__| | | |
- ___) | |_| | | | | | | | | | | | (_| | |  | |_| |
-|____/ \__,_|_| |_| |_|_| |_| |_|\__,_|_|   \__, |
-                                            |___/ 
-           Openstack SysAdmin Toolbox
-    """
-    print(header)
-
     default_start = isoformat(datetime.now(timezone.utc) - timedelta(hours=2))
     default_end = isoformat(datetime.now(timezone.utc))
 
