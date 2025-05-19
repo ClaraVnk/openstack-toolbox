@@ -114,6 +114,7 @@ def parse_flavor_name(flavor_name):
     return 0, 0, 0
 
 def load_usages(filepath="fetch_uses.json"):
+    print(f"Chargement des usages depuis : {filepath}")
     try:
         with open(filepath, "r") as f:
             data = json.load(f)
@@ -184,6 +185,15 @@ def main():
         return
 
     print("Connexion réussie à OpenStack")
+
+    usages = load_usages("fetch_uses.json")
+    print("\nProjets disponibles dans fetch_uses.json :")
+    for pid in usages.keys():
+        print(f" - {pid}")
+
+    with open("fetch_uses.json", "r") as f:
+        print("\nContenu complet de fetch_uses.json :")
+        print(f.read())
 
     header = r"""
   ___                       _             _                       

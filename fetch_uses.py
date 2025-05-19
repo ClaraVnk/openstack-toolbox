@@ -222,8 +222,14 @@ def main():
                 usages[project_id]["ram"] += ram * interval_hours
                 usages[project_id]["storage"] += disk * interval_hours
                 counts[project_id] += 1
-                rating = float(entry.get("rating", 0.0))
-                usages[project_id]["icu"] = usages[project_id].get("icu", 0.0) + rating
+            rating = float(entry.get("rating", 0.0))
+            usages[project_id]["icu"] = usages[project_id].get("icu", 0.0) + rating
+
+        for project_id in usages.keys():
+            count = counts.get(project_id, 1)
+            usages[project_id]["cpu"] *= count
+            usages[project_id]["ram"] *= count
+            usages[project_id]["storage"] *= count
 
         # Convertir en liste pour l'export JSON
         usage_list = []
