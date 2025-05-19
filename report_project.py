@@ -215,7 +215,7 @@ def main():
     hours, remainder = divmod(duration.seconds, 3600)
     minutes, _ = divmod(remainder, 60)
 
-    print(f"\nPériode sélectionnée pour ce projet : {days} jours, {hours} heures, {minutes} minutes\n")
+    print(f"\n🗓️ Période sélectionnée pour ce projet : {days} jours, {hours} heures, {minutes} minutes\n")
 
     print("-" * 90)
     print(f"{'Projet':36} | {'CPU':6} | {'RAM':6} | {'Stockage':9} | {'EUR':7} | {'CHF':7}")
