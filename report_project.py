@@ -173,7 +173,7 @@ def main():
         return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
     default_start = isoformat(datetime.now(timezone.utc) - timedelta(hours=2))
-    default_end = isoformat(datetime.now(timezone.utc)) s
+    default_end = isoformat(datetime.now(timezone.utc))
 
     print("Entrez la période de facturation souhaitée (format: YYYY-MM-DD HH:MM)")
     start_input = input(f"Date de début [Défaut: {trim_to_minute(default_start)}]: ").strip() or trim_to_minute(default_start)
