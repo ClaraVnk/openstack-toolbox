@@ -46,7 +46,9 @@ def main():
 
     if result.returncode == 0:
         data = json.loads(result.stdout)
-        
+        # DEBUUUUUUUG
+        print("Premier élément JSON reçu :", data[0] if data else "Aucune donnée")
+
         import re
         from collections import defaultdict
 
