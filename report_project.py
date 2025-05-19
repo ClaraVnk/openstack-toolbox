@@ -122,7 +122,7 @@ def calculate_costs(entry):
     }
 
 # Récupération des projets
-projects = {p.id: p.name for p in conn.identity.projects()}
+project_id = input("Entrez l'ID du projet à analyser : ").strip()
 
 # Traitement
 report = []
@@ -193,14 +193,14 @@ def main():
     report = []
     
     for entry in data:
-        # Essaie de récupérer un nom ou ID de projet
-        project = entry.get("project_name") or entry.get("project_id") or "Inconnu"
+    if entry.get("project_id") != project_id:
+        continue
 
-        costs = calculate_costs(entry)
-        report.append({
-            "projet": project,
-            **costs
-        })
+    costs = calculate_costs(entry)
+    report.append({
+        "projet": project,
+        **costs
+    })
 
     # Enregistrer le rapport dans un fichier
     with open('/tmp/openstack_report.txt', 'w') as f:
