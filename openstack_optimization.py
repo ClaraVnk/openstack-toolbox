@@ -66,6 +66,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from dotenv import load_dotenv
+from openstack import connection
 
 # Connexion à OpenStack
 creds = load_openstack_credentials()
