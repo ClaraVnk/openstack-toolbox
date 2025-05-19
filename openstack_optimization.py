@@ -187,22 +187,37 @@ def collect_and_analyze_data():
     inactive_instances = get_inactive_instances()
     unused_volumes = get_unused_volumes()
 
-    report_body = "Récapitulatif des ressources sous-utilisées:\n\n"
-    report_body += "Instances inactives:\n"
-    for instance in inactive_instances:
-        report_body += f"ID: {instance.id}, Nom: {instance.name}\n"
+    report_body = ""
+    report_body += "="*60 + "\n"
+    report_body += "RÉCAPITULATIF DES RESSOURCES SOUS-UTILISÉES\n"
+    report_body += "="*60 + "\n\n"
 
-    report_body += "\nVolumes non utilisés:\n"
-    for volume in unused_volumes:
-        report_body += f"ID: {volume.id}, Nom: {volume.name}\n"
+    report_body += "[INSTANCES INACTIVES]\n"
+    if inactive_instances:
+        for instance in inactive_instances:
+            report_body += f"  - ID: {instance.id}, Nom: {instance.name}\n"
+    else:
+        report_body += "  Aucune instance inactive détectée.\n"
+    report_body += "\n" + "-"*50 + "\n"
 
+    report_body += "[VOLUMES NON UTILISÉS]\n"
+    if unused_volumes:
+        for volume in unused_volumes:
+            report_body += f"  - ID: {volume.id}, Nom: {volume.name}\n"
+    else:
+        report_body += "  Aucun volume inutilisé détecté.\n"
+    report_body += "\n" + "-"*50 + "\n"
+
+    report_body += "[ANALYSE DE L'UTILISATION DES RESSOURCES]\n"
     report = analyze_resource_usage()
-    report_body += "\n" + report
+    report_body += report
+    report_body += "-"*50 + "\n"
 
+    report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
     underutilized_costs = calculate_underutilized_costs()
-    report_body += "\nCoûts des ressources sous-utilisées:\n"
     for resource, costs in underutilized_costs.items():
-        report_body += f"{resource}: {costs['ICU']} ICU / {costs['CHF']} CHF / {costs['EUR']} EUR\n"
+        report_body += f"  - {resource}: {costs['ICU']} ICU / {costs['CHF']} CHF / {costs['EUR']} EUR\n"
+    report_body += "="*60 + "\n"
 
     return report_body
 
