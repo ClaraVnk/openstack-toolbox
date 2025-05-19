@@ -224,13 +224,16 @@ def main():
 
     if project_id in usages:
         usage = usages[project_id]
+        cost = aggregated.get(project_id, {"rate_values": []})
+        rate_values = cost.get("rate_values", [])
+
         print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f}")
 
         if rate_values:
             avg_rate_icu = sum(rate_values) / len(rate_values)
             avg_rate_eur = avg_rate_icu * ICU_TO_EUR
             avg_rate_chf = avg_rate_icu * ICU_TO_CHF
-            print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
+        print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
 
     print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
 
