@@ -72,35 +72,32 @@ from openstack import connection
 creds = load_openstack_credentials()
 conn = connection.Connection(**creds)
 
-# Liste des statuts de VM à vérifier
-def get_inactive_instances_from_billing(path="weekly_billing.json"):
+# Fonction pour récupérer les statuts des VMs via l'API OpenStack
+def get_vm_statuses_from_cli():
     try:
-        with open(path, "r") as f:
-            data = json.load(f)
-    except Exception as e:
-        print(f"Erreur lors de la lecture de {path} : {e}")
+        result = subprocess.run(
+            ["openstack", "server", "list", "--all-projects", "-f", "json"],
+            capture_output=True, text=True, check=True
+        )
+        servers = json.loads(result.stdout)
+        return [
+            {
+                "id": s["ID"],
+                "name": s["Name"],
+                "status": s["Status"],
+                "project": s.get("Project ID", "inconnu")
+            }
+            for s in servers
+        ]
+    except subprocess.CalledProcessError as e:
+        print("❌ Erreur lors de l'appel à `openstack server list`:", e)
         return []
 
-    # Gérer la structure ['Resources'] dans un objet unique ou dans une liste
-    if isinstance(data, list):
-        data = data[0] if data else {}
-
-    resources = data.get("Resources", [])
-    inactive_instances = []
-
-    for res in resources:
-        desc = res.get("desc", {})
-        name = desc.get("name") or desc.get("instance_name") or "Inconnu"
-        raw_status = desc.get("vm_status") or desc.get("status") or "INCONNU"
-        vm_status = raw_status.upper()
-        if vm_status and vm_status != "ACTIVE":
-            inactive_instances.append({
-                "id": desc.get("id", "inconnu"),
-                "name": name,
-                "status": vm_status
-            })
-
-    return inactive_instances
+# Liste des statuts de VM à vérifier
+def get_inactive_instances_from_cli():
+    servers = get_vm_statuses_from_cli()
+    inactive = [s for s in servers if s["status"].upper() != "ACTIVE"]
+    return inactive
 
 def get_unused_volumes():
     # Récupérer la liste des volumes
@@ -203,7 +200,7 @@ def calculate_underutilized_costs():
     return underutilized_costs
 
 def collect_and_analyze_data():
-    inactive_instances = get_inactive_instances_from_billing()
+    inactive_instances = get_inactive_instances_from_cli()
     unused_volumes = get_unused_volumes()
 
     report_body = ""
