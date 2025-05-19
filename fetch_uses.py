@@ -39,6 +39,44 @@ def get_active_instance_ids():
         print("⚠️ Erreur lors de l'appel à `openstack server list`:", e)
         return set()
 
+def get_active_instances_from_gnocchi(start_iso, end_iso):
+    print("📡 Interrogation de Gnocchi pour récupérer l’historique des VM actives...")
+    try:
+        cmd = [
+            "openstack", "metric", "resource", "list",
+            "--type", "instance",
+            "-f", "json"
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print("⚠️ Impossible de récupérer la liste des ressources Gnocchi.")
+            print("STDERR:", result.stderr)
+            return set()
+
+        resources = json.loads(result.stdout)
+        active_ids = set()
+
+        for res in resources:
+            resource_id = res["id"]
+            metric_cmd = [
+                "openstack", "metric", "measures", "show",
+                res["metrics"]["cpu"],
+                "--start", start_iso,
+                "--end", end_iso,
+                "-f", "json"
+            ]
+            metric_result = subprocess.run(metric_cmd, capture_output=True, text=True)
+            if metric_result.returncode != 0:
+                continue
+
+            measures = json.loads(metric_result.stdout)
+            if measures:
+                active_ids.add(resource_id)
+        return active_ids
+    except Exception as e:
+        print("❌ Erreur lors de l’accès à Gnocchi :", e)
+        return set()
+
 def main():
     args = parse_args()
     if args.start and args.end:
@@ -56,6 +94,8 @@ def main():
         start_iso = isoformat(start_dt)
         end_iso = isoformat(end_dt)
         print(f"Période choisie: {start_iso} → {end_iso}")
+
+    active_ids = get_active_instances_from_gnocchi(start_iso, end_iso)
 
     # Construire la commande openstack
     cmd = [
@@ -98,6 +138,9 @@ def main():
         # Cumul des ressources consommées sur la période (CPU/Go/h * heures d'utilisation)
         for entry in resources:
             desc = entry.get("desc", {})
+            instance_id = desc.get("id")
+            if not instance_id or instance_id not in active_ids:
+                continue
             project_id = desc.get("project_id", "inconnu")
             flavor = desc.get("flavor_name", "")
             volume = float(entry.get("volume", 1.0))
