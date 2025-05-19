@@ -142,7 +142,16 @@ def load_usages(filepath="fetch_uses.json"):
 def aggregate_costs(data):
     costs_by_project = {}
 
-    for entry in data[0].get("Resources", []):
+    if not data:
+        print("⚠️ Le fichier de facturation est vide.")
+        return costs_by_project
+
+    if not isinstance(data, list) or len(data) == 0:
+        print("⚠️ Format inattendu ou liste vide dans le fichier de facturation.")
+        return costs_by_project
+
+    resources = data[0].get("Resources", [])
+    for entry in resources:
         desc = entry.get("desc", {})
         project_id = desc.get("project_id", "inconnu")
         rating = entry.get("rating")
