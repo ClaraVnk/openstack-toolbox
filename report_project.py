@@ -80,7 +80,26 @@ ICU_CONVERSION = {
 ICU_TO_EUR = ICU_CONVERSION["icu_to_eur"]
 ICU_TO_CHF = ICU_CONVERSION["icu_to_chf"]
 
-# Fonctions 
+# Fonctions
+def get_vm_state(instance_id):
+    try:
+        result = subprocess.run(
+            ["openstack", "server", "show", instance_id],
+            capture_output=True, text=True, check=True
+        )
+        for line in result.stdout.splitlines():
+            if line.strip().startswith("OS-EXT-STS:vm_state"):
+                # La ligne ressemble à :
+                # | OS-EXT-STS:vm_state           | active                               |
+                # On récupère la troisième colonne (statut)
+                parts = line.split("|")
+                if len(parts) >= 3:
+                    return parts[2].strip()
+        return "INCONNU"
+    except subprocess.CalledProcessError as e:
+        print(f"Erreur lors de la récupération du statut pour {instance_id}: {e}")
+        return "ERREUR"
+     
 def load_billing(filepath="billing.json"):
     with open(filepath, "r") as f:
         return json.load(f)
