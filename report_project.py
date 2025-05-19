@@ -124,6 +124,7 @@ def main():
         return
 
     print("Connexion réussie à OpenStack")
+    project_id = input("Entrez l'ID du projet à analyser : ").strip()
 
     header = r"""
   ___                       _             _                       
@@ -181,15 +182,17 @@ def main():
     print("-" * 65)
     print(f"{'Projet':36} | CPU    | RAM    | Stockage")
     print("-" * 65)
-    for project_id, usage in usages.items():
+    if project_id in usages:
+        usage = usages[project_id]
         print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f}")
 
     print(f"{'Projet':36} | EUR     | CHF")
     print("-" * 65)
-    for project_id, total_icu in aggregated.items():
+    if project_id in aggregated:
+        total_icu = aggregated[project_id]
         eur = total_icu * ICU_TO_EUR
         chf = total_icu * ICU_TO_CHF
-        print(f"{project_id:36} | {eur:7.2f} | {chf:7.2f}") 
+        print(f"{project_id:36} | {eur:7.2f} | {chf:7.2f}")
 
     print("Rapport généré avec succès : /tmp/openstack_project_report.txt")
 
