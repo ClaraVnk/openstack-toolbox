@@ -19,6 +19,9 @@ except ImportError:
 
 from dotenv import load_dotenv
 
+# Charger les variables d'environnement dès le début
+load_dotenv()
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--start', required=True)
@@ -108,8 +111,14 @@ def get_active_instances_from_gnocchi(start_iso, end_iso):
     }
 
     try:
-        # ⚠️ À adapter selon ton endpoint réel Gnocchi + token Keystone
-        GNOCCHI_ENDPOINT = os.environ.get("GNOCCHI_ENDPOINT", "https://api.pub2.infomaniak.cloud/metric")
+        # Sélection dynamique du endpoint Gnocchi selon la région
+        dc_env = os.environ.get("OS_REGION_NAME", "")
+        if "dc3" in dc_env:
+            GNOCCHI_ENDPOINT = "https://api.pub1.infomaniak.cloud/metric"
+        elif "dc4" in dc_env:
+            GNOCCHI_ENDPOINT = "https://api.pub2.infomaniak.cloud/metric"
+        else:
+            GNOCCHI_ENDPOINT = os.environ.get("GNOCCHI_ENDPOINT", "https://api.pub2.infomaniak.cloud/metric")
 
         # Récupérer toutes les ressources de type "instance"
         url = f"{GNOCCHI_ENDPOINT}/v1/resource/instance"
@@ -214,10 +223,11 @@ def main():
             flavor = desc.get("flavor_name", "")
             volume = float(entry.get("volume", 1.0))
             cpu, ram, disk = parse_flavor_name(flavor)
+            interval_hours = 5 / 60  # 5 minutes exprimées en heures
             if volume > 0:
-                usages[project_id]["cpu"] += cpu * volume
-                usages[project_id]["ram"] += ram * volume
-                usages[project_id]["storage"] += disk * volume
+                usages[project_id]["cpu"] += cpu * volume * interval_hours
+                usages[project_id]["ram"] += ram * volume * interval_hours
+                usages[project_id]["storage"] += disk * volume * interval_hours
                 counts[project_id] += 1
 
         # Convertir en liste pour l'export JSON
