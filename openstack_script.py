@@ -98,11 +98,21 @@ def list_instances(conn, billing_data):
     print_header("LISTE DES INSTANCES")
     if not billing_data:
         print("⚠️  Aucune donnée de facturation disponible (indisponible u trop faible) — les coûts affichés seront à 0.\n")
+
     # Récupérer les instances
-    instances = list(conn.compute.servers())  # Assurez-vous que cette ligne est exécutée
+    instances = list(conn.compute.servers())  
+
     # Taux de conversion ICU vers monnaies
     icu_to_chf = 50  # Taux de conversion ICU vers CHF
     icu_to_euro = 55.5  # Taux de conversion ICU vers EUR
+
+    # Calculer le coût total des ressources consommées
+    total_cost_chf = 0.0
+    total_cost_euro = 0.0
+    for instance in instances:
+        cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id, icu_to_chf=icu_to_chf, icu_to_euro=icu_to_euro)
+        total_cost_chf += cost_chf
+        total_cost_euro += cost_euro
 
     # Calculer le total des ressources consommées
     total_vcpus = 0
@@ -134,7 +144,8 @@ def list_instances(conn, billing_data):
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
 
     # Afficher le total des ressources consommées
-    print (f"{' 👀 Total des ressources consommées':} {total_vcpus} {'CPU'} {total_ram_go} {'RAM (Go)'} {total_disk_go} {'Disque (Go)'}")
+    print (f"\n{'📊 Total des ressources consommées':} {total_vcpus} {'CPU'} {total_ram_go} {'RAM (Go)'} {total_disk_go} {'Disque (Go)'}")
+    print (f"\n{'💰 Coût total des ressources consommées':} {total_cost_chf:.2f} {'CHF,'} {total_cost_euro:.2f} {'EUR'}")
 
 # Lister les snapshots
 def list_snapshots(conn):
@@ -278,3 +289,84 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+if project_id in usages or project_id in aggregated:
+        icu = cost.get("total_icu", 0)
+        eur = icu * ICU_TO_EUR
+        chf = icu * ICU_TO_CHF
+        print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f} | {eur:7.2f} | {chf:7.2f} (ICU: {usage['icu']:.2f})")
+        rate_values = cost.get("rate_values", [])
+        if rate_values:
+            avg_rate_icu = sum(rate_values) / len(rate_values)
+            avg_rate_eur = avg_rate_icu * ICU_TO_EUR
+            avg_rate_chf = avg_rate_icu * ICU_TO_CHF
+            print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
+
+# Fonction pour obtenir les détails d'un projet spécifique
+def get_project_details(conn, project_id):
+    print_header(f"DÉTAILS DU PROJET AVEC ID: {project_id}")
+    project = conn.identity.get_project(project_id)
+
+    if project:
+        print(f"ID: {project.id}")
+        print(f"Nom: {project.name}")
+        print(f"Description: {project.description}")
+        print(f"Domaine: {project.domain_id}")
+        print(f"Actif: {'Oui' if project.is_enabled else 'Non'}")
+    else:
+        print(f"Aucun projet trouvé avec l'ID: {project_id}")
+
+# Fonction pour obtenir l'état d'une VM
+def get_vm_state(instance_id):
+    try:
+        result = subprocess.run(
+            ["openstack", "server", "show", instance_id],
+            capture_output=True, text=True, check=True
+        )
+        for line in result.stdout.splitlines():
+            if line.strip().startswith("OS-EXT-STS:vm_state"):
+                # La ligne ressemble à :
+                # | OS-EXT-STS:vm_state           | active                               |
+                # On récupère la troisième colonne (statut)
+                parts = line.split("|")
+                if len(parts) >= 3:
+                    return parts[2].strip()
+        return "INCONNU"
+    except subprocess.CalledProcessError as e:
+        print(f"Erreur lors de la récupération du statut pour {instance_id}: {e}")
+        return "ERREUR"
+
+# Fonction pour agréger les coûts par projet
+def aggregate_costs(data):
+    costs_by_project = {}
+
+    if not data:
+        print("⚠️ Le fichier de facturation est vide.")
+        return costs_by_project
+
+    if not isinstance(data, list) or len(data) == 0:
+        print("⚠️ Format inattendu ou liste vide dans le fichier de facturation.")
+        return costs_by_project
+
+    resources = data[0].get("Resources", [])
+    for entry in resources:
+        desc = entry.get("desc", {})
+        project_id = desc.get("project_id", "inconnu")
+        rating = entry.get("rating")
+        rate_value = entry.get("rate_value")
+
+        if rating is None:
+            continue
+
+        if project_id not in costs_by_project:
+            costs_by_project[project_id] = {
+                "total_icu": 0.0,
+                "rate_values": []
+            }
+
+        costs_by_project[project_id]["total_icu"] += float(rating)
+        if rate_value is not None:
+            costs_by_project[project_id]["rate_values"].append(float(rate_value))
+
+    return costs_by_project
