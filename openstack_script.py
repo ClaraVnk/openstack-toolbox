@@ -161,7 +161,7 @@ def list_images(conn):
 def list_instances(conn, billing_data):
     print_header("LISTE DES INSTANCES")
     if not billing_data:
-        print("❌ Aucune donnée de facturation disponible (indisponible u trop faible) — les coûts affichés seront à 0.\n")
+        print("❌ Aucune donnée de facturation disponible (indisponible ou trop faible) — les coûts affichés seront à 0.\n")
 
     # Récupérer les instances
     instances = list(conn.compute.servers())  
@@ -201,7 +201,6 @@ def list_instances(conn, billing_data):
 
     for instance in instances:
         flavor_id = instance.flavor['id']
-        flavor = conn.compute.get_flavor(flavor_id)
         if flavor:
             total_vcpus += flavor.vcpus
             total_ram_go += flavor.ram
