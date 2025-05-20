@@ -40,7 +40,7 @@ python3 openstack_admin_script.py
 
 ## Openstack optimization
 
-This will list inactive instances, unused volumes, and analyze the ressource usage with lost costs.
+This will list inactive instances, unused volumes, and analyze the ressource usage with lost costs for the last week.
 
 ### 1. As a user
 
