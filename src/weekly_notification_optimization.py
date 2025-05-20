@@ -5,6 +5,7 @@ import os
 import sys
 import configparser
 from notification import generate_report
+from cron_notification import setup_cron
 
 CONFIG_PATH = os.path.expanduser("~/.openstack_toolbox_config.ini")
 
@@ -117,7 +118,7 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
     print("\n💌 Voulez-vous paramétrer l'envoi hebdomadaire d'un e-mail avec le résumé de la semaine ? (o/n)")
     choice = input().strip().lower()
     if choice == 'o':
-        create_config_interactive()
+        setup_cron()
         print("✅ Configuration terminée. Vous pouvez maintenant envoyer des e-mails.")
     else:
         print("❌ Configuration annulée.")
