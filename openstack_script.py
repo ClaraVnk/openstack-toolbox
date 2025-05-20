@@ -212,13 +212,9 @@ def list_instances(conn, billing_data):
         
         # Calculer les ressources pour les totaux
         if flavor:
-            _, cpu, ram, disk = parse_flavor_name(flavor.name)
-            if cpu is not None:
-                total_vcpus += cpu
-            if ram is not None:
-                total_ram_go += ram
-            if disk is not None:
-                total_disk_go += disk
+            total_vcpus += flavor.vcpus
+            total_ram_go += flavor.ram
+            total_disk_go += flavor.disk
 
         # Convertir la date de création en objet datetime
         created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
