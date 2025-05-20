@@ -215,8 +215,6 @@ def list_instances(conn, billing_data):
             total_vcpus += cpu if cpu else 0
             total_ram_go += ram if ram else 0
             total_disk_go += disk if disk else 0
-            
-            print(f"   ✓ Ressources ajoutées : {cpu} CPU, {ram} RAM, {disk} Disque")
 
             # ...reste du code pour l'affichage...
             created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
