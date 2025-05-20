@@ -14,9 +14,9 @@ def parse_flavor_name(name):
         cpu = next((int(p[1:]) for p in parts if p.startswith('a')), None)
         ram = next((int(p[3:]) for p in parts if p.startswith('ram')), None)
         disk = next((int(p[4:]) for p in parts if p.startswith('disk')), None)
-        return f"{cpu} vCPU / {ram} Go RAM / {disk} Go disque"
+        return f"{cpu} vCPU / {ram} Go RAM / {disk} Go disque", cpu, ram, disk
     except Exception:
-        return name  # Fallback si le parsing échoue
+        return name, None, None, None  # Fallback si le parsing échoue
 
 # Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():
@@ -195,9 +195,13 @@ def list_instances(conn, billing_data):
         flavor_id = instance.flavor['id']
         flavor = flavors.get(flavor_id)
         if flavor:
-            total_vcpus += flavor.vcpus
-            total_ram_go += flavor.ram
-            total_disk_go += flavor.disk
+            _, cpu, ram, disk = parse_flavor_name(flavor.name)
+            if cpu:
+                total_vcpus += cpu
+            if ram:
+                total_ram_go += ram
+            if disk:
+                total_disk_go += disk
         state = instance.status.lower()
         emoji = "🟢" if state == "active" else "🔴"
 
