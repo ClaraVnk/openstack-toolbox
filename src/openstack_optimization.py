@@ -256,6 +256,7 @@ def main():
     print("Commandes disponibles :")
     print("  • openstack_summary        → Génère un résumé global du projet")
     print("  • openstack_optimization   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
+    print("  • openstack_weekly_notification   → Envoie un e-mail avec le résumé de la semaine")
 
     header = r"""
   ___                       _             _               
