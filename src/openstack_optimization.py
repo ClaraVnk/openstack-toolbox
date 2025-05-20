@@ -6,6 +6,29 @@ import importlib
 import json
 import os
 
+# Fonction pour traduire le nom du flavor (copié depuis openstack_script.py)
+def parse_flavor_name(name):
+    """
+    Parse un nom de flavor du type 'aX-ramY-diskZ-...' et retourne une chaîne lisible + les valeurs numériques.
+    Exemple : 'a2-ram8-disk40' → ('2 vCPU / 8 Go RAM / 40 Go disque', 2, 8, 40)
+    """
+    try:
+        parts = name.split('-')
+        cpu_part = next((p for p in parts if p.startswith('a') and p[1:].isdigit()), None)
+        ram_part = next((p for p in parts if p.startswith('ram') and p[3:].isdigit()), None)
+        disk_part = next((p for p in parts if p.startswith('disk') and p[4:].isdigit()), None)
+
+        cpu = int(cpu_part[1:]) if cpu_part else None
+        ram = int(ram_part[3:]) if ram_part else None
+        disk = int(disk_part[4:]) if disk_part else None
+
+        human_readable = f"{cpu} CPU / {ram} Go RAM / {disk} Go disque"
+        return human_readable, cpu, ram, disk
+    except Exception as e:
+        # En cas d'échec, retourne le nom original et None pour les valeurs numériques
+        print(f"❌ Échec du parsing pour le flavor '{name}' : {str(e)}")
+        return name, None, None, None
+
 def run_script(script_name):
     script_dir = os.path.dirname(os.path.abspath(__file__))  # = src/
     script_path = os.path.join(script_dir, script_name)
@@ -121,58 +144,6 @@ def get_unused_volumes():
 
     return unused_volumes
 
-def analyze_resource_usage():
-    # Collecter les données d'utilisation des ressources
-    data = {
-        'Instance': ['Instance1', 'Instance2', 'Instance3'],
-        'CPU Usage (%)': [10, 20, 30],
-        'RAM Usage (%)': [15, 25, 35],
-        'Disk Usage (%)': [20, 30, 40]
-    }
-
-    df = pd.DataFrame(data)
-
-    # Analyser les données
-    # Par exemple, calculer la moyenne et l'écart type
-    mean_cpu = df['CPU Usage (%)'].mean()
-    std_cpu = df['CPU Usage (%)'].std()
-
-    mean_ram = df['RAM Usage (%)'].mean()
-    std_ram = df['RAM Usage (%)'].std()
-
-    mean_disk = df['Disk Usage (%)'].mean()
-    std_disk = df['Disk Usage (%)'].std()
-
-    # Générer des visualisations
-    plt.figure(figsize=(12, 6))
-    sns.barplot(x='Instance', y='CPU Usage (%)', data=df)
-    plt.title('CPU Usage by Instance')
-    plt.savefig('cpu_usage.png')
-    plt.show() 
-
-    plt.figure(figsize=(12, 6))
-    sns.barplot(x='Instance', y='RAM Usage (%)', data=df)
-    plt.title('RAM Usage by Instance')
-    plt.savefig('ram_usage.png')
-    plt.show() 
-
-    plt.figure(figsize=(12, 6))
-    sns.barplot(x='Instance', y='Disk Usage (%)', data=df)
-    plt.title('Disk Usage by Instance')
-    plt.savefig('disk_usage.png')
-    plt.show() 
-
-    # Générer un rapport
-    report = f"Rapport d'analyse de l'utilisation des ressources:\n\n"
-    report += f"Moyenne de l'utilisation du CPU: {mean_cpu:.2f}%\n"
-    report += f"Écart type de l'utilisation du CPU: {std_cpu:.2f}%\n\n"
-    report += f"Moyenne de l'utilisation de la RAM: {mean_ram:.2f}%\n"
-    report += f"Écart type de l'utilisation de la RAM: {std_ram:.2f}%\n\n"
-    report += f"Moyenne de l'utilisation du disque: {mean_disk:.2f}%\n"
-    report += f"Écart type de l'utilisation du disque: {std_disk:.2f}%\n\n"
-
-    return report
-
 def calculate_underutilized_costs():
     try:
         with open('weekly_billing.json', 'r') as f:
@@ -234,11 +205,6 @@ def collect_and_analyze_data():
         report_body += "✅ Aucun volume inutilisé détecté.\n"
     report_body += "\n" + "-"*50 + "\n"
 
-    report_body += "[ANALYSE DE L'UTILISATION DES RESSOURCES]\n"
-    report = analyze_resource_usage()
-    report_body += report
-    report_body += "-"*50 + "\n"
-
     report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
     underutilized_costs = calculate_underutilized_costs()
     if not underutilized_costs:
@@ -246,6 +212,35 @@ def collect_and_analyze_data():
     else:
         for resource, costs in underutilized_costs.items():
             report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
+
+    report_body += "[TOTAL DES RESSOURCES CONSOMMÉES]\n"
+    try:
+        from openstack import connection
+        from dotenv import load_dotenv
+
+        creds = load_openstack_credentials()
+        conn_summary = connection.Connection(**creds)
+        instances = list(conn_summary.compute.servers())
+        total_instances = len(instances)
+
+        total_vcpus = 0
+        total_ram_go = 0
+        total_disk_go = 0
+
+        for instance in instances:
+            flavor_id = instance.flavor['id']
+            _, cpu, ram, disk = parse_flavor_name(flavor_id)
+
+            total_vcpus += cpu if cpu else 0
+            total_ram_go += ram if ram else 0
+            total_disk_go += disk if disk else 0
+
+        report_body += f"  - Instances : {total_instances}\n"
+        report_body += f"  - CPU : {total_vcpus}\n"
+        report_body += f"  - RAM : {total_ram_go} Go\n"
+        report_body += f"  - Disque : {total_disk_go} Go\n"
+    except Exception as e:
+        report_body += f"❌ Impossible de calculer le total des ressources consommées : {e}\n"
     report_body += "="*60 + "\n"
 
     return report_body
@@ -260,7 +255,7 @@ def main():
     print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3 🎉")
     print("Commandes disponibles :")
     print("  • openstack_summary        → Génère un résumé global du projet")
-    print("  • openstack_optimization   → Identifie les ressources sous-utilisées dans la semaine")
+    print("  • openstack_optimization   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
 
     header = r"""
   ___                       _             _               
@@ -285,15 +280,13 @@ def main():
     report_body = collect_and_analyze_data()
 
     # Enregistrer le rapport dans un fichier
-    with open('/tmp/openstack_report.txt', 'w') as f:
+    with open('/tmp/openstack_optimization_report.txt', 'w') as f:
         f.write(report_body)
 
     print("🎉 Rapport généré avec succès : /tmp/openstack_optimization_report.txt")
     
     # Afficher le rapport
     print(report_body)
-    # Afficher les graphiques
-    plt.show()
 
 if __name__ == '__main__':
     main()
