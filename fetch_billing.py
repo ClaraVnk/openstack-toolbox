@@ -42,7 +42,7 @@ def main():
     hours, remainder = divmod(duration.seconds, 3600)
     minutes, _ = divmod(remainder, 60)
 
-    print(f"\n🗓️ Période sélectionnée : {days} jours, {hours} heures, {minutes} minutes\n")
+    print(f"\n🗓️ Période de facturation sélectionnée : {days} jours, {hours} heures, {minutes} minutes\n")
 
     cmd = [
         "openstack", "rating", "dataframes", "get",
