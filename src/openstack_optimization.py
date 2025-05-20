@@ -186,7 +186,7 @@ def collect_and_analyze_data():
 
     report_body = ""
     report_body += "="*60 + "\n"
-    report_body += "RÉCAPITULATIF DES RESSOURCES SOUS-UTILISÉES\n"
+    report_body += "RÉCAPITULATIF HEBDOMADAIRE DES RESSOURCES SOUS-UTILISÉES\n"
     report_body += "="*60 + "\n\n"
 
     report_body += "[INSTANCES INACTIVES]\n"
@@ -212,7 +212,8 @@ def collect_and_analyze_data():
     else:
         for resource, costs in underutilized_costs.items():
             report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
-
+    report_body += "\n" + "-"*50 + "\n"
+    
     report_body += "[TOTAL DES RESSOURCES CONSOMMÉES]\n"
     try:
         from openstack import connection
