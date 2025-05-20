@@ -178,6 +178,8 @@ def list_instances(conn, billing_data):
         total_vcpus += flavor.vcpus
         total_ram_go += flavor.ram  
         total_disk_go += flavor.disk
+        state = get_vm_state(instance.id)
+        emoji = "🟢" if state == "active" else "🔴"
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
@@ -194,7 +196,7 @@ def list_instances(conn, billing_data):
 
         # Calculer le coût en CHF et EUR
         cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
-        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
+        print(f"{emoji:<3} {instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
 
     # Afficher le total des ressources consommées
     print(f"\n📊 Total des ressources consommées : {total_vcpus} CPU, {total_ram_go} RAM (Go), {total_disk_go} Disque (Go)")
