@@ -80,20 +80,6 @@ python3 openstack_optimization.py
   0 8 * * 1 /usr/bin/python3 /path/to/your/project/weekly_notification_optimization.py >> /tmp/cron_optimization.log 2>&1
   ```
 
-## Openstack project report
-
-This will allow you to chose a project, and list the uses (CPU, RAM, storage) and the costs.
-
-* List your projects :
-  ```sh
-  openstack project list -f json
-  ```
-* Copy the ID you want
-* Enter the command : 
-  ```sh
-  python3 report_project.py
-  ```
-
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
