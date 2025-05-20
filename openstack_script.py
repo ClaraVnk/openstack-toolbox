@@ -332,7 +332,8 @@ def main():
     parser.add_argument("--region", choices=["pub1", "pub2"], default="pub1", help="Région à utiliser (pub1 ou pub2)")
     args = parser.parse_args()
 
-    region_config = {
+    # Détection dynamique des régions disponibles et sélection sécurisée
+    region_candidates = {
         "pub1": {
             "auth_url": "https://api.pub1.infomaniak.cloud/identity/v3",
             "region_name": "dc3-a"
@@ -342,8 +343,10 @@ def main():
             "region_name": "dc4-a"
         }
     }
-    auth_url = region_config[args.region]["auth_url"]
-    region_name = region_config[args.region]["region_name"]
+
+    selected = region_candidates[args.region]
+    auth_url = selected["auth_url"]
+    region_name = selected["region_name"]
 
     project_name = os.getenv("OS_PROJECT_NAME")
     username = os.getenv("OS_USERNAME")
@@ -351,8 +354,8 @@ def main():
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
 
-    # Créer la connexion OpenStack
-    conn = openstack.connect(
+    # Vérifier si la région est disponible dans ce cloud
+    test_conn = openstack.connect(
         auth_url=auth_url,
         project_name=project_name,
         username=username,
@@ -361,25 +364,49 @@ def main():
         project_domain_name=project_domain_name,
         region_name=region_name,
     )
-    
+
+    try:
+        # Test d’appel pour confirmer la validité de la région
+        _ = list(test_conn.compute.servers(limit=1))
+    except openstack.exceptions.ConfigException:
+        print(f"⚠️ La région {region_name} n’est pas accessible. Tentative de bascule automatique...")
+        # Essayer la région alternative
+        other_region = "pub2" if args.region == "pub1" else "pub1"
+        fallback = region_candidates[other_region]
+        auth_url = fallback["auth_url"]
+        region_name = fallback["region_name"]
+        test_conn = openstack.connect(
+            auth_url=auth_url,
+            project_name=project_name,
+            username=username,
+            password=password,
+            user_domain_name=user_domain_name,
+            project_domain_name=project_domain_name,
+            region_name=region_name,
+        )
+        try:
+            _ = list(test_conn.compute.servers(limit=1))
+            print(f"✅ Connexion réussie à la région alternative : {region_name}")
+        except openstack.exceptions.ConfigException:
+            print("❌ Aucune région valide trouvée.")
+            return
+
+    # Créer la connexion OpenStack (après validation de la région)
+    conn = test_conn
     # Vérifier la connexion
     if not conn.authorize():
         print("❌ Échec de la connexion à OpenStack")
         return
-    
     billing_data = get_billing_data_from_file('billing.json')
-    
     # Lister les ressources
     list_images(conn)
     list_instances(conn, billing_data)
     list_snapshots(conn)
     list_backups(conn)
     list_volumes(conn)
-    
     print_header("ARBORESCENCE DES VOLUMES")
     tree = mounted_volumes(conn)
     print_tree(tree)
-    
     list_floating_ips(conn)
     list_containers(conn)
 
