@@ -253,7 +253,7 @@ def main():
         return
     
     # Afficher le message d'accueil
-    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3 🎉")
+    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉")
     print("Commandes disponibles :")
     print("  • openstack_summary        → Génère un résumé global du projet")
     print("  • openstack_optimization   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")

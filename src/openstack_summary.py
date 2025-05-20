@@ -17,7 +17,7 @@ def run_script(script_name, arg=None):
         sys.exit(result.returncode)
 
 def main():
-    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3 🎉")
+    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉")
     print("Commandes disponibles :")
     print("  • openstack_summary        → Génère un résumé global du projet")
     print("  • openstack_optimization   → Identifie les ressources sous-utilisées dans la semaine")

@@ -5,8 +5,6 @@ import os
 import sys
 import configparser
 from notification import generate_report
-import argparse
-import subprocess
 
 CONFIG_PATH = os.path.expanduser("~/.openstack_toolbox_config.ini")
 
@@ -77,37 +75,9 @@ def send_email(subject, body):
         server.login(smtp_username, smtp_password)
         server.send_message(msg)
 
-def setup_cron():
-    """Ajoute ce script à la crontab pour une exécution automatique chaque lundi à 8h."""
-    python_exe = sys.executable
-    script_path = os.path.abspath(__file__)
-    cron_line = f"0 8 * * 1 {python_exe} {script_path} > /dev/null 2>&1\n"
-
-    result = subprocess.run(['crontab', '-l'], capture_output=True, text=True)
-    existing_cron = result.stdout if result.returncode == 0 else ""
-
-    if cron_line.strip() in existing_cron:
-        print("✅ La tâche cron est déjà configurée.")
-        return
-
-    new_cron = existing_cron + cron_line
-    proc = subprocess.run(['crontab', '-'], input=new_cron, text=True)
-    if proc.returncode == 0:
-        print("✅ Tâche cron ajoutée : le script s'exécutera tous les lundis à 8h.")
-    else:
-        print("❌ Échec lors de l'ajout à la crontab.")
-
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--setup-cron', action='store_true', help="Ajoute une tâche cron pour lancer ce script chaque lundi à 8h.")
-    args = parser.parse_args()
-
-    if args.setup_cron:
-        setup_cron()
-        return
-
     # Afficher le message d'accueil
-    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3 🎉")
+    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉")
     print("Commandes disponibles :")
     print("  • openstack_summary        → Génère un résumé global du projet")
     print("  • openstack_optimization   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
@@ -143,6 +113,14 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
         print("❌ Le fichier de rapport est introuvable.")
     except Exception as e:
         print(f"❌ Erreur lors de l'envoi de l'email : {e}")
+
+    print("\n💌 Voulez-vous paramétrer l'envoi hebdomadaire d'un e-mail avec le résumé de la semaine ? (o/n)")
+    choice = input().strip().lower()
+    if choice == 'o':
+        create_config_interactive()
+        print("✅ Configuration terminée. Vous pouvez maintenant envoyer des e-mails.")
+    else:
+        print("❌ Configuration annulée.")
 
 if __name__ == '__main__':
     main()
