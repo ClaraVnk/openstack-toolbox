@@ -182,7 +182,7 @@ def list_instances(conn, billing_data):
         emoji = "🟢" if state == "active" else "🔴"
 
     # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
+    print(f"{'État':<3} {'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
     print("-" * 130)
 
     for instance in instances:
