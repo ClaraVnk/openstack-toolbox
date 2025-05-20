@@ -345,7 +345,9 @@ def main():
         print("❌ Échec de la connexion à OpenStack")
         return
 
-    billing_data = get_billing_data_from_file('billing.json')
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    billing_path = os.path.join(script_dir, 'billing.json')
+    billing_data = get_billing_data_from_file(billing_path)
 
     # Lister les ressources
     list_images(conn)
