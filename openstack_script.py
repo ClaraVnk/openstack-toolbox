@@ -323,16 +323,14 @@ def list_containers(conn):
         size_formatted = format_size(container.bytes)
         print(f"{container.name:<20} {size_formatted:<20}")
 
+# Fonction principale
 def main():
-    # Se connecter à OpenStack
     load_dotenv()
-
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--region", choices=["pub1", "pub2"], default="pub1", help="Région à utiliser (pub1 ou pub2)")
     args = parser.parse_args()
 
-    # Détection dynamique des régions disponibles et sélection sécurisée
     region_candidates = {
         "pub1": {
             "auth_url": "https://api.pub1.infomaniak.cloud/identity/v3",
@@ -344,18 +342,45 @@ def main():
         }
     }
 
-    selected = region_candidates[args.region]
-    auth_url = selected["auth_url"]
-    region_name = selected["region_name"]
-
     project_name = os.getenv("OS_PROJECT_NAME")
     username = os.getenv("OS_USERNAME")
     password = os.getenv("OS_PASSWORD")
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
 
-    # Vérifier si la région est disponible dans ce cloud
-    test_conn = openstack.connect(
+    # Vérifier la disponibilité de chaque région
+    available_regions = []
+    for key, cfg in region_candidates.items():
+        try:
+            conn = openstack.connect(
+                auth_url=cfg["auth_url"],
+                project_name=project_name,
+                username=username,
+                password=password,
+                user_domain_name=user_domain_name,
+                project_domain_name=project_domain_name,
+                region_name=cfg["region_name"],
+            )
+            _ = list(conn.compute.servers(limit=1))  # test simple
+            available_regions.append(key)
+        except openstack.exceptions.ConfigException:
+            pass
+
+    if not available_regions:
+        print("❌ Aucune région disponible. Vérifie ta configuration.")
+        return
+
+    # Si la région choisie n’est pas disponible, basculer sur la première disponible
+    if args.region not in available_regions:
+        print(f"⚠️ La région {args.region} n’est pas disponible, utilisation de {available_regions[0]} à la place.")
+        args.region = available_regions[0]
+
+    selected = region_candidates[args.region]
+    auth_url = selected["auth_url"]
+    region_name = selected["region_name"]
+
+    # Connexion finale
+    conn = openstack.connect(
         auth_url=auth_url,
         project_name=project_name,
         username=username,
@@ -365,39 +390,12 @@ def main():
         region_name=region_name,
     )
 
-    try:
-        # Test d’appel pour confirmer la validité de la région
-        _ = list(test_conn.compute.servers(limit=1))
-    except openstack.exceptions.ConfigException:
-        print(f"⚠️ La région {region_name} n’est pas accessible. Tentative de bascule automatique...")
-        # Essayer la région alternative
-        other_region = "pub2" if args.region == "pub1" else "pub1"
-        fallback = region_candidates[other_region]
-        auth_url = fallback["auth_url"]
-        region_name = fallback["region_name"]
-        test_conn = openstack.connect(
-            auth_url=auth_url,
-            project_name=project_name,
-            username=username,
-            password=password,
-            user_domain_name=user_domain_name,
-            project_domain_name=project_domain_name,
-            region_name=region_name,
-        )
-        try:
-            _ = list(test_conn.compute.servers(limit=1))
-            print(f"✅ Connexion réussie à la région alternative : {region_name}")
-        except openstack.exceptions.ConfigException:
-            print("❌ Aucune région valide trouvée.")
-            return
-
-    # Créer la connexion OpenStack (après validation de la région)
-    conn = test_conn
-    # Vérifier la connexion
     if not conn.authorize():
         print("❌ Échec de la connexion à OpenStack")
         return
+    
     billing_data = get_billing_data_from_file('billing.json')
+
     # Lister les ressources
     list_images(conn)
     list_instances(conn, billing_data)
