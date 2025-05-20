@@ -312,6 +312,8 @@ def main():
     project_name = os.getenv("OS_PROJECT_NAME")
     username = os.getenv("OS_USERNAME")
     password = os.getenv("OS_PASSWORD")
+    # 🔒 L'endpoint Identity est toujours 'pub1', quelle que soit la région chez Infomaniak.
+    # Ne jamais construire dynamiquement auth_url en fonction de la région.
     auth_url = os.getenv("OS_AUTH_URL")
     region_name = os.getenv("OS_REGION_NAME")
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
@@ -348,3 +350,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
