@@ -97,12 +97,24 @@ def list_images(conn):
 def list_instances(conn, billing_data):
     print_header("LISTE DES INSTANCES")
     if not billing_data:
-        print("⚠️  Aucune donnée de facturation disponible — les coûts affichés seront à 0.\n")
+        print("⚠️  Aucune donnée de facturation disponible (indisponible u trop faible) — les coûts affichés seront à 0.\n")
     # Récupérer les instances
     instances = list(conn.compute.servers())  # Assurez-vous que cette ligne est exécutée
     # Taux de conversion ICU vers monnaies
     icu_to_chf = 50  # Taux de conversion ICU vers CHF
     icu_to_euro = 55.5  # Taux de conversion ICU vers EUR
+
+    # Calculer le total des ressources consommées
+    total_vcpus = 0
+    total_ram_go = 0
+    total_disk_go = 0
+
+    for instance in instances:
+        flavor_id = instance.flavor['id']
+        flavor = conn.compute.get_flavor(flavor_id)
+        total_vcpus += flavor.vcpus
+        total_ram_go += flavor.ram  
+        total_disk_go += flavor.disk
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
@@ -121,6 +133,8 @@ def list_instances(conn, billing_data):
         cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
 
+    # Afficher le total des ressources consommées
+    print (f"{' 👀 Total des ressources consommées':} {total_vcpus} {'CPU'} {total_ram_go} {'RAM (Go)'} {total_disk_go} {'Disque (Go)'}")
 
 # Lister les snapshots
 def list_snapshots(conn):
