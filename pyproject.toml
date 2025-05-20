@@ -32,7 +32,5 @@ exclude = [
     "/bin/python3",
 ]
 
-[
-tool.hatch.build.targets.wheel
-]
+[tool.hatch.build.targets.wheel]
 packages = ["src/openstack_toolbox"]
