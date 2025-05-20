@@ -13,7 +13,7 @@ def main():
     start_dt = datetime.combine(last_monday, datetime.min.time()).replace(tzinfo=timezone.utc)
     end_dt = datetime.combine(last_sunday, datetime.max.time()).replace(tzinfo=timezone.utc)
 
-    print(f"Période choisie automatiquement : la semaine dernière {start_dt} → {end_dt}")
+    print(f"📅 Période choisie automatiquement : la semaine dernière {start_dt} → {end_dt}")
 
     start_iso = isoformat(start_dt)
     end_iso = isoformat(end_dt)

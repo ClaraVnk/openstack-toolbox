@@ -40,4 +40,4 @@ if __name__ == '__main__':
             email_body = f.read()
         send_email("Récapitulatif des ressources sous-utilisées et analyse de l'utilisation des ressources", email_body)
     except FileNotFoundError:
-        print("Le fichier /tmp/openstack_report.txt est introuvable.")
+        print("❌ Le fichier /tmp/openstack_report.txt est introuvable.")

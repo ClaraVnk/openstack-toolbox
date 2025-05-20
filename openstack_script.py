@@ -24,6 +24,7 @@ except ImportError:
     install_package('python-dotenv')
 
 import openstack
+import openstack.exceptions
 from dotenv import load_dotenv
 
 # Fonction pour afficher les en-têtes
@@ -174,10 +175,29 @@ def list_instances(conn, billing_data):
 
     for instance in instances:
         flavor_id = instance.flavor['id']
-        flavor = conn.compute.get_flavor(flavor_id)
-        total_vcpus += flavor.vcpus
-        total_ram_go += flavor.ram  
-        total_disk_go += flavor.disk
+        try:
+            flavor = conn.compute.get_flavor(flavor_id)
+        except openstack.exceptions.ResourceNotFound:
+            # Essayer dans l'autre région
+            other_region = "dc4-a" if conn.config.region_name == "dc3-a" else "dc3-a"
+            try:
+                flavor = openstack.connect(
+                    auth_url=conn.config.auth["auth_url"],
+                    project_name=conn.config.auth["project_name"],
+                    username=conn.config.auth["username"],
+                    password=conn.config.auth["password"],
+                    user_domain_name=conn.config.auth["user_domain_name"],
+                    project_domain_name=conn.config.auth["project_domain_name"],
+                    region_name=other_region,
+                ).compute.get_flavor(flavor_id)
+            except openstack.exceptions.ResourceNotFound:
+                print(f"⚠️ Flavor introuvable dans les deux régions pour {instance.name} ({flavor_id}), ressources ignorées.")
+                flavor = None
+
+        if flavor:
+            total_vcpus += flavor.vcpus
+            total_ram_go += flavor.ram
+            total_disk_go += flavor.disk
         state = get_vm_state(instance.id)
         emoji = "🟢" if state == "active" else "🔴"
 
@@ -306,8 +326,25 @@ def list_containers(conn):
 def main():
     # Se connecter à OpenStack
     load_dotenv()
-    
-    auth_url = os.getenv("OS_AUTH_URL")
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--region", choices=["pub1", "pub2"], required=True, help="Région à utiliser (pub1 ou pub2)")
+    args = parser.parse_args()
+
+    region_config = {
+        "pub1": {
+            "auth_url": "https://api.pub1.infomaniak.cloud/identity/v3",
+            "region_name": "dc3-a"
+        },
+        "pub2": {
+            "auth_url": "https://api.pub2.infomaniak.cloud/identity/v3",
+            "region_name": "dc4-a"
+        }
+    }
+    auth_url = region_config[args.region]["auth_url"]
+    region_name = region_config[args.region]["region_name"]
+
     project_name = os.getenv("OS_PROJECT_NAME")
     username = os.getenv("OS_USERNAME")
     password = os.getenv("OS_PASSWORD")
@@ -322,6 +359,7 @@ def main():
         password=password,
         user_domain_name=user_domain_name,
         project_domain_name=project_domain_name,
+        region_name=region_name,
     )
     
     # Vérifier la connexion
