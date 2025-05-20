@@ -32,10 +32,46 @@ def print_header(header):
     print(header.center(50))
     print("=" * 50 + "\n")
 
+# Fonction pour obtenir les détails d'un projet spécifique
+def get_project_details(conn, project_id):
+    print_header(f"DÉTAILS DU PROJET AVEC ID: {project_id}")
+    project = conn.identity.get_project(project_id)
+
+    if project:
+        print(f"ID: {project.id}")
+        print(f"Nom: {project.name}")
+        print(f"Description: {project.description}")
+        print(f"Domaine: {project.domain_id}")
+        print(f"Actif: {'Oui' if project.is_enabled else 'Non'}")
+    else:
+        print(f"Aucun projet trouvé avec l'ID: {project_id}")
+
+# Fonction pour obtenir l'état d'une VM
+def get_vm_state(instance_id):
+    try:
+        result = subprocess.run(
+            ["openstack", "server", "show", instance_id],
+            capture_output=True, text=True, check=True
+        )
+        for line in result.stdout.splitlines():
+            if line.strip().startswith("OS-EXT-STS:vm_state"):
+                # La ligne ressemble à :
+                # | OS-EXT-STS:vm_state           | active                               |
+                # On récupère la troisième colonne (statut)
+                parts = line.split("|")
+                if len(parts) >= 3:
+                    return parts[2].strip()
+        return "INCONNU"
+    except subprocess.CalledProcessError as e:
+        print(f"Erreur lors de la récupération du statut pour {instance_id}: {e}")
+        return "ERREUR"
+
+# Fonction pour obtenir les détails d'une instance
 def get_billing_data_from_file(filepath):
     with open(filepath, 'r') as f:
         return json.load(f)
 
+# Fonction pour calculer le coût d'une instance
 def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
         return 0.0, 0.0
@@ -61,6 +97,7 @@ def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_t
 
     return cost_chf, cost_euro
 
+# Fonction pour formater la taille
 def format_size(size_bytes):
     # Définir les unités et leurs seuils
     units = [
@@ -310,72 +347,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# Fonction pour obtenir les détails d'un projet spécifique
-def get_project_details(conn, project_id):
-    print_header(f"DÉTAILS DU PROJET AVEC ID: {project_id}")
-    project = conn.identity.get_project(project_id)
-
-    if project:
-        print(f"ID: {project.id}")
-        print(f"Nom: {project.name}")
-        print(f"Description: {project.description}")
-        print(f"Domaine: {project.domain_id}")
-        print(f"Actif: {'Oui' if project.is_enabled else 'Non'}")
-    else:
-        print(f"Aucun projet trouvé avec l'ID: {project_id}")
-
-# Fonction pour obtenir l'état d'une VM
-def get_vm_state(instance_id):
-    try:
-        result = subprocess.run(
-            ["openstack", "server", "show", instance_id],
-            capture_output=True, text=True, check=True
-        )
-        for line in result.stdout.splitlines():
-            if line.strip().startswith("OS-EXT-STS:vm_state"):
-                # La ligne ressemble à :
-                # | OS-EXT-STS:vm_state           | active                               |
-                # On récupère la troisième colonne (statut)
-                parts = line.split("|")
-                if len(parts) >= 3:
-                    return parts[2].strip()
-        return "INCONNU"
-    except subprocess.CalledProcessError as e:
-        print(f"Erreur lors de la récupération du statut pour {instance_id}: {e}")
-        return "ERREUR"
-
-# Fonction pour agréger les coûts par projet
-def aggregate_costs(data):
-    costs_by_project = {}
-
-    if not data:
-        print("⚠️ Le fichier de facturation est vide.")
-        return costs_by_project
-
-    if not isinstance(data, list) or len(data) == 0:
-        print("⚠️ Format inattendu ou liste vide dans le fichier de facturation.")
-        return costs_by_project
-
-    resources = data[0].get("Resources", [])
-    for entry in resources:
-        desc = entry.get("desc", {})
-        project_id = desc.get("project_id", "inconnu")
-        rating = entry.get("rating")
-        rate_value = entry.get("rate_value")
-
-        if rating is None:
-            continue
-
-        if project_id not in costs_by_project:
-            costs_by_project[project_id] = {
-                "total_icu": 0.0,
-                "rate_values": []
-            }
-
-        costs_by_project[project_id]["total_icu"] += float(rating)
-        if rate_value is not None:
-            costs_by_project[project_id]["rate_values"].append(float(rate_value))
-
-    return costs_by_project
