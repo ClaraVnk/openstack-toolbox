@@ -236,7 +236,7 @@ def collect_and_analyze_data():
     report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
     underutilized_costs = calculate_underutilized_costs()
     if not underutilized_costs:
-        report_body += " ⚠️ Aucune donnée de facturation disponible (trop faibles ou non disponibles).\n"
+        report_body += "❌ Aucune donnée de facturation disponible (trop faibles ou non disponibles).\n"
     else:
         for resource, costs in underutilized_costs.items():
             report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
@@ -247,10 +247,8 @@ def collect_and_analyze_data():
 def main():
     # Test de connection à OpenStack
     if not conn.authorize():
-        print("Échec de la connexion à OpenStack")
+        print("❌ Échec de la connexion à OpenStack")
         return
-    
-    print("Connexion réussie à OpenStack")
     
     header = r"""
   ___                       _             _               
@@ -279,7 +277,7 @@ def main():
     with open('/tmp/openstack_report.txt', 'w') as f:
         f.write(report_body)
 
-    print("Rapport généré avec succès : /tmp/openstack_optimization_report.txt")
+    print("🎉 Rapport généré avec succès : /tmp/openstack_optimization_report.txt")
     
     # Afficher le rapport
     print(report_body)
