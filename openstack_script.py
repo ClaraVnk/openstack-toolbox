@@ -329,7 +329,7 @@ def main():
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--region", choices=["pub1", "pub2"], required=True, help="Région à utiliser (pub1 ou pub2)")
+    parser.add_argument("--region", choices=["pub1", "pub2"], default="pub1", help="Région à utiliser (pub1 ou pub2)")
     args = parser.parse_args()
 
     region_config = {
