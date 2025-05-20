@@ -18,29 +18,35 @@ These toolbox is configured to match Infomaniak's Public Cloud costs (euros and 
   source ../openstack.sh
   ```
 
-## Easy mode 
+# Easy mode 
 
   ```sh
   pip install openstack-toolbox
   ```
 
-Then for the Openstack_summary :
+Then for the Openstack summary :
 
   ```sh
   openstack_summary
   ```
 
-And for the Openstack_optimization :
+For the Openstack optimization (weekly) :
 
   ```sh
   openstack_optimization
   ```
 
-## Manual mode
+And for the the optimization's weekly notification :
+
+  ```sh
+  weekly_notification_optimization
+  ```
+
+# Manual mode
 
 * Clone this repo in your Openstack directory
 
-# Openstack summary 
+## Openstack summary 
 
 This will list instances with their costs, backups, images, volumes, etc.
 
@@ -48,7 +54,7 @@ This will list instances with their costs, backups, images, volumes, etc.
 
 In your terminal, type this command : 
   ```sh
-python3 openstack_summary.py
+  python3 openstack_summary.py
   ```
 
 By default, you can see the last hour of billing (simply press enter), but you can choose the dates you want.
@@ -57,50 +63,27 @@ By default, you can see the last hour of billing (simply press enter), but you c
 
 As an Openstack admin, maybe you don't want to see the costs of all the instance, but you need to see a specific project.
   ```sh
-python3 openstack_admin_script.py
+  python3 openstack_admin_script.py
   ```
 
-# Openstack optimization
+## Openstack optimization
 
 This will list inactive instances, unused volumes, and analyze the ressource usage with lost costs for the last week.
 
-### 1. As a user
+In your terminal, type this command : 
+  ```sh
+  python3 openstack_optimization.py
+  ```
+
+### Weekly notification
 
 In your terminal, type this command : 
   ```sh
-python3 openstack_optimization.py
+  python weekly_notification_optimization.py
   ```
 
-### 2. Weekly notification
-
-* Put your Openstack credentials in secrets.json :
-  ```sh
-  {
-  "auth_url": "http://openstack.example.com:5000/v3",
-  "username": "user",
-  "password": "pass",
-  "project_name": "project",
-  "user_domain_name": "default",
-  "project_domain_name": "default"
-  }
-  ```
-* Configure emails in notification.py :
-  ```sh
-  smtp_server = '<your-smtp-server>'
-  smtp_port = 587
-  smtp_username = '<your-smtp-username>'
-  smtp_password = '<your-smtp-password>'
-  from_email = '<your-email>'
-  to_email = '<recipient-email>'
-  ```
-* Add a cron task :
-  ```sh
-  crontab -e
-  ```
-* Adapt the path below to match the location of your project directory:
-  ```sh
-  0 8 * * 1 /usr/bin/python3 /path/to/your/project/weekly_notification_optimization.py >> /tmp/cron_optimization.log 2>&1
-  ```
+You will have to configure SMTP services in order to send emails.
+It will add a cron tab every monday at 08 am.
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
