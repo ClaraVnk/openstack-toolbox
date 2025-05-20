@@ -326,21 +326,20 @@ def list_containers(conn):
 # Fonction principale
 def main():
     load_dotenv()
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--region", choices=["pub1", "pub2"], default="pub1", help="Région à utiliser (pub1 ou pub2)")
-    args = parser.parse_args()
 
-    region_candidates = {
-        "pub1": {
-            "auth_url": "https://api.pub1.infomaniak.cloud/identity/v3",
-            "region_name": "dc3-a"
-        },
-        "pub2": {
-            "auth_url": "https://api.pub2.infomaniak.cloud/identity/v3",
-            "region_name": "dc4-a"
-        }
-    }
+    # Lire la région dans l’environnement (variable standard OpenStack)
+    dc_env = os.environ.get("OS_REGION_NAME", "").lower()
+
+    if "dc3" in dc_env:
+        auth_url = "https://api.pub1.infomaniak.cloud/identity/v3"
+        region_name = "dc3-a"
+    elif "dc4" in dc_env:
+        auth_url = "https://api.pub2.infomaniak.cloud/identity/v3"
+        region_name = "dc4-a"
+    else:
+        # Valeur par défaut
+        auth_url = "https://api.pub2.infomaniak.cloud/identity/v3"
+        region_name = "dc4-a"
 
     project_name = os.getenv("OS_PROJECT_NAME")
     username = os.getenv("OS_USERNAME")
@@ -348,52 +347,21 @@ def main():
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
 
-    # Vérifier la disponibilité de chaque région
-    available_regions = []
-    for key, cfg in region_candidates.items():
-        try:
-            conn = openstack.connect(
-                auth_url=cfg["auth_url"],
-                project_name=project_name,
-                username=username,
-                password=password,
-                user_domain_name=user_domain_name,
-                project_domain_name=project_domain_name,
-                region_name=cfg["region_name"],
-            )
-            _ = list(conn.compute.servers(limit=1))  # test simple
-            available_regions.append(key)
-        except openstack.exceptions.ConfigException:
-            pass
-
-    if not available_regions:
-        print("❌ Aucune région disponible. Vérifie ta configuration.")
+    try:
+        conn = openstack.connect(
+            auth_url=auth_url,
+            project_name=project_name,
+            username=username,
+            password=password,
+            user_domain_name=user_domain_name,
+            project_domain_name=project_domain_name,
+            region_name=region_name,
+        )
+        _ = list(conn.compute.servers(limit=1))  # Test de connexion simple
+    except Exception as e:
+        print(f"❌ Échec de la connexion à OpenStack : {e}")
         return
 
-    # Si la région choisie n’est pas disponible, basculer sur la première disponible
-    if args.region not in available_regions:
-        print(f"⚠️ La région {args.region} n’est pas disponible, utilisation de {available_regions[0]} à la place.")
-        args.region = available_regions[0]
-
-    selected = region_candidates[args.region]
-    auth_url = selected["auth_url"]
-    region_name = selected["region_name"]
-
-    # Connexion finale
-    conn = openstack.connect(
-        auth_url=auth_url,
-        project_name=project_name,
-        username=username,
-        password=password,
-        user_domain_name=user_domain_name,
-        project_domain_name=project_domain_name,
-        region_name=region_name,
-    )
-
-    if not conn.authorize():
-        print("❌ Échec de la connexion à OpenStack")
-        return
-    
     billing_data = get_billing_data_from_file('billing.json')
 
     # Lister les ressources
