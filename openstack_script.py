@@ -113,6 +113,22 @@ def list_instances(conn, billing_data):
         cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id, icu_to_chf=icu_to_chf, icu_to_euro=icu_to_euro)
         total_cost_chf += cost_chf
         total_cost_euro += cost_euro
+    
+    # Calculer le coût horaire moyen global à partir des données
+    rate_values = []
+    for group in billing_data:
+        for resource in group.get("Resources", []):
+            rate = resource.get("rate_value")
+            if rate is not None:
+                try:
+                    rate_values.append(float(rate))
+                except ValueError:
+                    continue
+
+    if rate_values:
+        avg_rate_icu = sum(rate_values) / len(rate_values)
+        avg_rate_eur = avg_rate_icu / icu_to_euro
+        avg_rate_chf = avg_rate_icu / icu_to_chf
 
     # Calculer le total des ressources consommées
     total_vcpus = 0
@@ -144,8 +160,13 @@ def list_instances(conn, billing_data):
         print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
 
     # Afficher le total des ressources consommées
-    print (f"\n{'📊 Total des ressources consommées':} {total_vcpus} {'CPU'} {total_ram_go} {'RAM (Go)'} {total_disk_go} {'Disque (Go)'}")
-    print (f"\n{'💰 Coût total des ressources consommées':} {total_cost_chf:.2f} {'CHF,'} {total_cost_euro:.2f} {'EUR'}")
+    print(f"\n📊 Total des ressources consommées : {total_vcpus} CPU, {total_ram_go} RAM (Go), {total_disk_go} Disque (Go)")
+    print(f"\n💰 Coût total des ressources consommées : {total_cost_chf:.2f} CHF, {total_cost_euro:.2f} EUR")
+
+    if rate_values:
+        print(f"\n💸 Coût horaire moyen : {avg_rate_chf:.5f} CHF, {avg_rate_eur:.5f} EUR")
+    else:
+        print("\n💸 Coût horaire moyen : Données insuffisantes")
 
 # Lister les snapshots
 def list_snapshots(conn):
@@ -290,18 +311,6 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-if project_id in usages or project_id in aggregated:
-        icu = cost.get("total_icu", 0)
-        eur = icu * ICU_TO_EUR
-        chf = icu * ICU_TO_CHF
-        print(f"{project_id:36} | {usage['cpu']:6.2f} | {usage['ram']:6.2f} | {usage['storage']:9.2f} | {eur:7.2f} | {chf:7.2f} (ICU: {usage['icu']:.2f})")
-        rate_values = cost.get("rate_values", [])
-        if rate_values:
-            avg_rate_icu = sum(rate_values) / len(rate_values)
-            avg_rate_eur = avg_rate_icu * ICU_TO_EUR
-            avg_rate_chf = avg_rate_icu * ICU_TO_CHF
-            print(f"\n💰 Prix horaire moyen pour ce projet : {avg_rate_eur:.5f} € | {avg_rate_chf:.5f} CHF")
 
 # Fonction pour obtenir les détails d'un projet spécifique
 def get_project_details(conn, project_id):
