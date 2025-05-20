@@ -27,13 +27,13 @@ These toolbox is configured to match Infomaniak's Public Cloud costs (euros and 
 Then for the Openstack_summary :
 
   ```sh
-  openstacck_summary
+  openstack_summary
   ```
 
 And for the Openstack_optimization :
 
   ```sh
-  openstacck_optimization
+  openstack_optimization
   ```
 
 ## Manual mode
