@@ -14,13 +14,13 @@ def install_package(package):
 try:
     importlib.import_module('openstack')
 except ImportError:
-    print("Installation du package openstack...")
+    print("⚙️ Installation du package openstack...")
     install_package('openstacksdk')
 
 try:
     importlib.import_module('dotenv')
 except ImportError:
-    print("Installation du package dotenv...")
+    print("⚙️ Installation du package dotenv...")
     install_package('python-dotenv')
 
 import openstack
@@ -63,7 +63,7 @@ def get_vm_state(instance_id):
                     return parts[2].strip()
         return "INCONNU"
     except subprocess.CalledProcessError as e:
-        print(f"Erreur lors de la récupération du statut pour {instance_id}: {e}")
+        print(f"❌ Erreur lors de la récupération du statut pour {instance_id}: {e}")
         return "ERREUR"
 
 # Fonction pour obtenir les détails d'une instance
@@ -134,7 +134,7 @@ def list_images(conn):
 def list_instances(conn, billing_data):
     print_header("LISTE DES INSTANCES")
     if not billing_data:
-        print("⚠️  Aucune donnée de facturation disponible (indisponible u trop faible) — les coûts affichés seront à 0.\n")
+        print("❌ Aucune donnée de facturation disponible (indisponible u trop faible) — les coûts affichés seront à 0.\n")
 
     # Récupérer les instances
     instances = list(conn.compute.servers())  
@@ -326,10 +326,8 @@ def main():
     
     # Vérifier la connexion
     if not conn.authorize():
-        print("Échec de la connexion à OpenStack")
+        print("❌ Échec de la connexion à OpenStack")
         return
-    
-    print("Connexion réussie à OpenStack")
     
     billing_data = get_billing_data_from_file('billing.json')
     
