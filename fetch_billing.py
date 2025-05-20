@@ -35,7 +35,14 @@ def main():
         end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
         start_iso = isoformat(start_dt)
         end_iso = isoformat(end_dt)
-        print(f"Période choisie: {start_iso} → {end_iso}")
+
+    # Calcul de la durée entre start_dt et end_dt
+    duration = end_dt - start_dt
+    days = duration.days
+    hours, remainder = divmod(duration.seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+
+    print(f"\n🗓️ Période sélectionnée pour ce projet : {days} jours, {hours} heures, {minutes} minutes\n")
 
     cmd = [
         "openstack", "rating", "dataframes", "get",

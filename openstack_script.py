@@ -27,6 +27,7 @@ def parse_flavor_name(name):
         return human_readable, cpu, ram, disk
     except Exception:
         # En cas d'échec, retourne le nom original et None pour les valeurs numériques
+        print(f"❌ Échec du parsing pour le flavor '{name}' : {str(e)}")
         return name, None, None, None
 
 # Fonction pour charger les identifiants OpenStack
@@ -202,17 +203,29 @@ def list_instances(conn, billing_data):
     total_disk_go = 0
 
     # 1. Récupérer tous les flavors utilisés
-    flavors = {f.id: f for f in conn.compute.flavors()}
+    try:
+        flavors = {f.id: f for f in conn.compute.flavors()}
+    except Exception as e:
+        print(f"❌ Erreur lors de la récupération des flavors : {str(e)}")
+        flavors = {}
     
     # 2. Pour chaque instance, traduire son flavor et additionner
     for instance in instances:
-        flavor_id = instance.flavor['id']
-        if flavor := flavors.get(flavor_id):  # Si le flavor existe
-            _, cpu, ram, disk = parse_flavor_name(flavor.name)  # Traduire le flavor
-            # 3. Additionner les ressources
-            total_vcpus += cpu if cpu else 0
-            total_ram_go += ram if ram else 0
-            total_disk_go += disk if disk else 0
+        try:
+            flavor_id = instance.flavor['id']
+            flavor = flavors.get(flavor_id)
+            if flavor:
+                print(f"🔍 Traitement du flavor '{flavor.name}' pour l'instance '{instance.name}'")
+                _, cpu, ram, disk = parse_flavor_name(flavor.name)  # Traduire le flavor
+                # 3. Additionner les ressources
+                total_vcpus += cpu if cpu else 0
+                total_ram_go += ram if ram else 0
+                total_disk_go += disk if disk else 0
+                print(f"   ✓ Ressources ajoutées : {cpu} CPU, {ram} RAM, {disk} Disque")
+            else:
+                print(f"⚠️  Flavor non trouvé pour l'instance '{instance.name}' (ID: {flavor_id})")
+        except Exception as e:
+            print(f"❌ Erreur lors du traitement de l'instance '{instance.name}' : {str(e)}")
 
     # Afficher le tableau des instances...
     print(f"{'État':<3} {'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
