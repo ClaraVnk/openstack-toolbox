@@ -4,11 +4,10 @@ import sys
 import os
 
 def run_script(script_name):
-    # Chemin absolu basé sur le dossier 'src'
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # = src/
     script_path = os.path.join(script_dir, script_name)
 
-    result = subprocess.run([sys.executable, script_path])
+    result = subprocess.run([sys.executable, script_path], check=True)
     if result.returncode != 0:
         print(f"❌ Le script {script_name} a échoué avec le code {result.returncode}")
         sys.exit(result.returncode)

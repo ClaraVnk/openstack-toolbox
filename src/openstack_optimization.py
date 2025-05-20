@@ -6,6 +6,12 @@ import importlib
 import json
 import os
 
+def run_script(script_name):
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # = src/
+    script_path = os.path.join(script_dir, script_name)
+
+    result = subprocess.run([sys.executable, script_path], check=True)
+
 def load_openstack_credentials():
     load_dotenv()  # essaie de charger depuis .env s’il existe
 
@@ -268,7 +274,7 @@ def main():
     print(header)
 
     # Exécuter le script weekly_billing.py pour récupérer les données de facturation
-    subprocess.run([sys.executable, 'src/weekly_billing.py'], check=True)
+    run_script("weekly_billing.py")
 
     # Collecter et analyser les données
     report_body = collect_and_analyze_data()
