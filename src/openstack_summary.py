@@ -17,6 +17,11 @@ def run_script(script_name, arg=None):
         sys.exit(result.returncode)
 
 def main():
+    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3 🎉")
+    print("Commandes disponibles :")
+    print("  • openstack_summary        → Génère un résumé global du projet")
+    print("  • openstack_optimization   → Identifie les ressources sous-utilisées dans la semaine")
+    
     header = r"""
   ___                       _             _       
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __   
@@ -28,8 +33,7 @@ def main():
  ___) | |_| | | | | | | | | | | | (_| | |  | |_| |
 |____/ \__,_|_| |_| |_|_| |_| |_|\__,_|_|   \__, |
                                             |___/ 
-           Openstack SysAdmin Toolbox
-                       by Loutre
+            By Loutre
     """
     print(header)
     run_script("fetch_billing.py")

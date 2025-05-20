@@ -256,6 +256,12 @@ def main():
         print("❌ Échec de la connexion à OpenStack")
         return
     
+    # Afficher le message d'accueil
+    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3 🎉")
+    print("Commandes disponibles :")
+    print("  • openstack_summary        → Génère un résumé global du projet")
+    print("  • openstack_optimization   → Identifie les ressources sous-utilisées dans la semaine")
+
     header = r"""
   ___                       _             _               
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __           
@@ -267,8 +273,7 @@ def main():
 | |_| | |_) | |_| | | | | | | |/ / (_| | |_| | (_) | | | |
  \___/| .__/ \__|_|_| |_| |_|_/___\__,_|\__|_|\___/|_| |_|
       |_|                                                 
-         Openstack SysAdmin Toolbox
-                        by Loutre
+         By Loutre
 
 """
     print(header)
