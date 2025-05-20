@@ -175,25 +175,7 @@ def list_instances(conn, billing_data):
 
     for instance in instances:
         flavor_id = instance.flavor['id']
-        try:
-            flavor = conn.compute.get_flavor(flavor_id)
-        except openstack.exceptions.ResourceNotFound:
-            # Essayer dans l'autre région
-            other_region = "dc4-a" if conn.config.region_name == "dc3-a" else "dc3-a"
-            try:
-                flavor = openstack.connect(
-                    auth_url=conn.config.auth["auth_url"],
-                    project_name=conn.config.auth["project_name"],
-                    username=conn.config.auth["username"],
-                    password=conn.config.auth["password"],
-                    user_domain_name=conn.config.auth["user_domain_name"],
-                    project_domain_name=conn.config.auth["project_domain_name"],
-                    region_name=other_region,
-                ).compute.get_flavor(flavor_id)
-            except openstack.exceptions.ResourceNotFound:
-                print(f"⚠️ Flavor introuvable dans les deux régions pour {instance.name} ({flavor_id}), ressources ignorées.")
-                flavor = None
-
+        flavor = conn.compute.get_flavor(flavor_id)
         if flavor:
             total_vcpus += flavor.vcpus
             total_ram_go += flavor.ram
@@ -326,12 +308,11 @@ def list_containers(conn):
 # Fonction principale
 def main():
     load_dotenv()
-
+    # Charger les variables d'environnement
     project_name = os.getenv("OS_PROJECT_NAME")
     username = os.getenv("OS_USERNAME")
     password = os.getenv("OS_PASSWORD")
     auth_url = os.getenv("OS_AUTH_URL")
-    region_name = os.getenv("OS_REGION_NAME")
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
 
