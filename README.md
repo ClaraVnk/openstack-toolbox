@@ -24,6 +24,18 @@ These toolbox is configured to match Infomaniak's Public Cloud costs (euros and 
   pip install openstack-toolbox
   ```
 
+Then for the Openstack_summary :
+
+  ```sh
+  openstacck_summary
+  ```
+
+And for the Openstack_optimization :
+
+  ```sh
+  openstacck_optimization
+  ```
+
 ## Manual mode
 
 * Clone this repo in your Openstack directory
