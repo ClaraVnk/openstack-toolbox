@@ -9,14 +9,25 @@ import os
 
 # Fonction pour traduire le nom du flavor
 def parse_flavor_name(name):
+    """
+    Parse un nom de flavor du type 'aX-ramY-diskZ-...' et retourne une chaîne lisible + les valeurs numériques.
+    Exemple : 'a2-ram8-disk40' → ('2 vCPU / 8 Go RAM / 40 Go disque', 2, 8, 40)
+    """
     try:
         parts = name.split('-')
-        cpu = next((int(p[1:]) for p in parts if p.startswith('a')), None)
-        ram = next((int(p[3:]) for p in parts if p.startswith('ram')), None)
-        disk = next((int(p[4:]) for p in parts if p.startswith('disk')), None)
-        return f"{cpu} vCPU / {ram} Go RAM / {disk} Go disque", cpu, ram, disk
+        cpu_part = next((p for p in parts if p.startswith('a') and p[1:].isdigit()), None)
+        ram_part = next((p for p in parts if p.startswith('ram') and p[3:].isdigit()), None)
+        disk_part = next((p for p in parts if p.startswith('disk') and p[4:].isdigit()), None)
+
+        cpu = int(cpu_part[1:]) if cpu_part else None
+        ram = int(ram_part[3:]) if ram_part else None
+        disk = int(disk_part[4:]) if disk_part else None
+
+        human_readable = f"{cpu} vCPU / {ram} Go RAM / {disk} Go disque"
+        return human_readable, cpu, ram, disk
     except Exception:
-        return name, None, None, None  # Fallback si le parsing échoue
+        # En cas d'échec, retourne le nom original et None pour les valeurs numériques
+        return name, None, None, None
 
 # Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():
