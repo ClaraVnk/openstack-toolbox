@@ -268,7 +268,7 @@ def main():
     print(header)
 
     # Exécuter le script weekly_billing.py pour récupérer les données de facturation
-    subprocess.run([sys.executable, 'weekly_billing.py'], check=True)
+    subprocess.run([sys.executable, 'src/weekly_billing.py'], check=True)
 
     # Collecter et analyser les données
     report_body = collect_and_analyze_data()
