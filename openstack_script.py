@@ -208,10 +208,7 @@ def list_instances(conn, billing_data):
 
     for instance in instances:
         try:
-            flavor_id = instance.flavor['id']  # C'est en fait déjà le nom formaté!
-            print(f"🔍 Traitement du flavor '{flavor_id}' pour l'instance '{instance.name}'")
-            
-            # Parser directement le flavor_id au lieu de chercher dans flavors
+            flavor_id = instance.flavor['id']  
             _, cpu, ram, disk = parse_flavor_name(flavor_id)
             
             # Additionner les ressources
