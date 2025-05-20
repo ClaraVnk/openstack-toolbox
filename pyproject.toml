@@ -33,4 +33,4 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/openstack_toolbox"]
+packages = ["src"]
