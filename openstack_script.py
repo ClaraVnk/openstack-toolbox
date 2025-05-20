@@ -23,7 +23,7 @@ def parse_flavor_name(name):
         ram = int(ram_part[3:]) if ram_part else None
         disk = int(disk_part[4:]) if disk_part else None
 
-        human_readable = f"{cpu} vCPU / {ram} Go RAM / {disk} Go disque"
+        human_readable = f"{cpu} CPU / {ram} Go RAM / {disk} Go disque"
         return human_readable, cpu, ram, disk
     except Exception:
         # En cas d'échec, retourne le nom original et None pour les valeurs numériques
@@ -196,13 +196,25 @@ def list_instances(conn, billing_data):
         avg_rate_eur = avg_rate_icu / icu_to_euro
         avg_rate_chf = avg_rate_icu / icu_to_chf
 
-    flavors = {f.id: f for f in conn.compute.flavors()}
-    
+    # Initialiser les totaux
     total_vcpus = 0
     total_ram_go = 0
     total_disk_go = 0
 
-    # Afficher les en-têtes du tableau
+    # 1. Récupérer tous les flavors utilisés
+    flavors = {f.id: f for f in conn.compute.flavors()}
+    
+    # 2. Pour chaque instance, traduire son flavor et additionner
+    for instance in instances:
+        flavor_id = instance.flavor['id']
+        if flavor := flavors.get(flavor_id):  # Si le flavor existe
+            _, cpu, ram, disk = parse_flavor_name(flavor.name)  # Traduire le flavor
+            # 3. Additionner les ressources
+            total_vcpus += cpu if cpu else 0
+            total_ram_go += ram if ram else 0
+            total_disk_go += disk if disk else 0
+
+    # Afficher le tableau des instances...
     print(f"{'État':<3} {'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
     print("-" * 130)
 
@@ -228,8 +240,8 @@ def list_instances(conn, billing_data):
         # Afficher l'ID du flavor tel quel
         print(f"{emoji:<3} {instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
 
-    # Afficher le total des ressources consommées avec les valeurs calculées
-    print(f"\n📊 Total des ressources consommées : {total_vcpus} CPU, {total_ram_go} RAM (Go), {total_disk_go} Disque (Go)")
+    # 4. Afficher le total
+    print(f"\n📊 Total des ressources consommées : {total_vcpus} CPU, {total_ram_go} RAM (Go), {total_disk_go} Go de stockage")
 
     # Afficher le coût total des ressources consommées
     print(f"\n💰 Coût total des ressources consommées : {total_cost_chf:.2f} CHF, {total_cost_euro:.2f} EUR")
