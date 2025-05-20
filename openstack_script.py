@@ -7,6 +7,29 @@ import json
 from datetime import datetime
 import os
 
+# Fonction pour charger les identifiants OpenStack
+def load_openstack_credentials():
+    load_dotenv()  # essaie de charger depuis .env s’il existe
+
+    creds = {
+        "auth_url": os.getenv("OS_AUTH_URL"),
+        "project_name": os.getenv("OS_PROJECT_NAME"),
+        "username": os.getenv("OS_USERNAME"),
+        "password": os.getenv("OS_PASSWORD"),
+        "user_domain_name": os.getenv("OS_USER_DOMAIN_NAME"),
+        "project_domain_name": os.getenv("OS_PROJECT_DOMAIN_NAME"),
+    }
+
+    # Si une des variables est absente, on essaie de charger depuis un fichier JSON
+    if not all(creds.values()):
+        try:
+            with open("secrets.json") as f:
+                creds = json.load(f)
+        except FileNotFoundError:
+            raise RuntimeError("❌ Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
+
+    return creds
+
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
@@ -23,9 +46,12 @@ except ImportError:
     print("⚙️ Installation du package dotenv...")
     install_package('python-dotenv')
 
-import openstack
-import openstack.exceptions
+from openstack import connection
 from dotenv import load_dotenv
+
+# Connexion à OpenStack
+creds = load_openstack_credentials()
+conn = connection.Connection(**creds)
 
 # Fonction pour afficher les en-têtes
 def print_header(header):
@@ -307,31 +333,9 @@ def list_containers(conn):
 
 # Fonction principale
 def main():
-    load_dotenv()
-    # Charger les variables d'environnement
-    project_name = os.getenv("OS_PROJECT_NAME")
-    username = os.getenv("OS_USERNAME")
-    password = os.getenv("OS_PASSWORD")
-    # 🔒 L'endpoint Identity est toujours 'pub1', quelle que soit la région chez Infomaniak.
-    # Ne jamais construire dynamiquement auth_url en fonction de la région.
-    auth_url = os.getenv("OS_AUTH_URL")
-    region_name = os.getenv("OS_REGION_NAME")
-    user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
-    project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
-
-    try:
-        conn = openstack.connect(
-            auth_url=auth_url,
-            project_name=project_name,
-            username=username,
-            password=password,
-            user_domain_name=user_domain_name,
-            project_domain_name=project_domain_name,
-            region_name=region_name,
-        )
-        _ = list(conn.compute.servers(limit=1))  # Test de connexion simple
-    except Exception as e:
-        print(f"❌ Échec de la connexion à OpenStack : {e}")
+    # Test de connection à OpenStack
+    if not conn.authorize():
+        print("❌ Échec de la connexion à OpenStack")
         return
 
     billing_data = get_billing_data_from_file('billing.json')
