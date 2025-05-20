@@ -31,3 +31,8 @@ openstack_optimization = "src.openstack_optimization:main"
 exclude = [
     "/bin/python3",
 ]
+
+[
+tool.hatch.build.targets.wheel
+]
+packages = ["src/openstack_toolbox"]
