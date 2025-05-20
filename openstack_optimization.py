@@ -24,7 +24,7 @@ def load_openstack_credentials():
             with open("secrets.json") as f:
                 creds = json.load(f)
         except FileNotFoundError:
-            raise RuntimeError("Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
+            raise RuntimeError("❌ Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
 
     return creds
 
@@ -35,31 +35,31 @@ def install_package(package):
 try:
     importlib.import_module('openstack')
 except ImportError:
-    print("Installation du package openstack...")
+    print("⚙️ Installation du package openstack...")
     install_package('openstacksdk')
 
 try:
     importlib.import_module('dotenv')
 except ImportError:
-    print("Installation du package dotenv...")
+    print("⚙️ Installation du package dotenv...")
     install_package('python-dotenv')
 
 try:
     importlib.import_module('pandas')
 except ImportError:
-    print("Installation du package Pandas...")
+    print("⚙️ Installation du package Pandas...")
     install_package('pandas')
 
 try:
     importlib.import_module('matplotlib')
 except ImportError:
-    print("Installation du package Matplotlib...")
+    print("⚙️ Installation du package Matplotlib...")
     install_package('matplotlib')
 
 try:
     importlib.import_module('seaborn')
 except ImportError:
-    print("Installation du package Seaborn...")
+    print("⚙️ Installation du package Seaborn...")
     install_package('seaborn')
 
 import pandas as pd
@@ -172,10 +172,10 @@ def calculate_underutilized_costs():
         with open('weekly_billing.json', 'r') as f:
             billing_data = json.load(f)
     except FileNotFoundError:
-        print("Le fichier weekly_billing.json est introuvable.")
+        print("❌ Le fichier weekly_billing.json est introuvable.")
         billing_data = []
     except json.JSONDecodeError:
-        print("Erreur lors de la lecture du fichier weekly_billing.json : format JSON invalide.")
+        print("❌ Erreur lors de la lecture du fichier weekly_billing.json : format JSON invalide.")
         billing_data = []
 
     ICU_to_CHF = 1 / 50
@@ -217,7 +217,7 @@ def collect_and_analyze_data():
         for instance in inactive_instances:
             report_body += f"  - ID: {instance['id']}, Nom: {instance['name']}, Statut: {instance['status']}\n"
     else:
-        report_body += "  Aucune instance inactive détectée.\n"
+        report_body += "✅ Aucune instance inactive détectée.\n"
     report_body += "\n" + "-"*50 + "\n"
 
     report_body += "[VOLUMES NON UTILISÉS]\n"
@@ -225,7 +225,7 @@ def collect_and_analyze_data():
         for volume in unused_volumes:
             report_body += f"  - ID: {volume.id}, Nom: {volume.name}\n"
     else:
-        report_body += "  Aucun volume inutilisé détecté.\n"
+        report_body += "✅ Aucun volume inutilisé détecté.\n"
     report_body += "\n" + "-"*50 + "\n"
 
     report_body += "[ANALYSE DE L'UTILISATION DES RESSOURCES]\n"
@@ -236,7 +236,7 @@ def collect_and_analyze_data():
     report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
     underutilized_costs = calculate_underutilized_costs()
     if not underutilized_costs:
-        report_body += " ⚠️  Aucune donnée de facturation disponible (trop faibles ou non disponibles).\n"
+        report_body += " ⚠️ Aucune donnée de facturation disponible (trop faibles ou non disponibles).\n"
     else:
         for resource, costs in underutilized_costs.items():
             report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
