@@ -202,15 +202,6 @@ def list_instances(conn, billing_data):
     total_ram_go = 0
     total_disk_go = 0
 
-    for instance in instances:
-        flavor_id = instance.flavor['id']
-        flavor = flavors.get(flavor_id)
-        if flavor:
-            _, cpu, ram, disk = parse_flavor_name(flavor.name)
-            total_vcpus += cpu if cpu is not None else 0
-            total_ram_go += ram if ram is not None else 0
-            total_disk_go += disk if disk is not None else 0
-
     # Afficher les en-têtes du tableau
     print(f"{'État':<3} {'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
     print("-" * 130)
@@ -218,22 +209,33 @@ def list_instances(conn, billing_data):
     for instance in instances:
         flavor_id = instance.flavor['id']
         flavor = flavors.get(flavor_id)
+        
+        # Calculer les ressources pour les totaux
+        if flavor:
+            _, cpu, ram, disk = parse_flavor_name(flavor.name)
+            if cpu is not None:
+                total_vcpus += cpu
+            if ram is not None:
+                total_ram_go += ram
+            if disk is not None:
+                total_disk_go += disk
+
         # Convertir la date de création en objet datetime
         created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
-        # Calculer l'uptime
         uptime = datetime.now() - created_at
-        # Formater l'uptime en jours, heures, minutes, secondes
-        uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
+        uptime_str = str(uptime).split('.')[0]
 
-        # Calculer le coût en CHF et EUR
         cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
         state = instance.status.lower()
         emoji = "🟢" if state == "active" else "🔴"
-        parsed_flavor = parse_flavor_name(flavor.name) if flavor else flavor_id
-        print(f"{emoji:<3} {instance.id:<36} {instance.name:<20} {parsed_flavor:<30} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
+        
+        # Afficher l'ID du flavor tel quel
+        print(f"{emoji:<3} {instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
 
-    # Afficher le total des ressources consommées
+    # Afficher le total des ressources consommées avec les valeurs calculées
     print(f"\n📊 Total des ressources consommées : {total_vcpus} CPU, {total_ram_go} RAM (Go), {total_disk_go} Disque (Go)")
+
+    # Afficher le coût total des ressources consommées
     print(f"\n💰 Coût total des ressources consommées : {total_cost_chf:.2f} CHF, {total_cost_euro:.2f} EUR")
 
     if rate_values:
