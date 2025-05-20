@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openstack-toolbox"
-version = "1.2.4"
+version = "1.3"
 authors = [
     { name="Loutre", email="loutre@ikmail.com" },
 ]
@@ -26,6 +26,7 @@ Issues = "https://github.com/ClaraVnk/openstack-toolbox/issues"
 [project.scripts]
 openstack_summary = "src.openstack_summary:main"
 openstack_optimization = "src.openstack_optimization:main"
+weekly_notification_optimization = "src.weekly_notification_optimization"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
