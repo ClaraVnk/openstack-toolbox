@@ -21,6 +21,7 @@ def main():
 |____/ \__,_|_| |_| |_|_| |_| |_|\__,_|_|   \__, |
                                             |___/ 
            Openstack SysAdmin Toolbox
+                       by Loutre
     """
     print(header)
     run_script("fetch_billing.py")

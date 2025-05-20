@@ -264,6 +264,7 @@ def main():
  \___/| .__/ \__|_|_| |_| |_|_/___\__,_|\__|_|\___/|_| |_|
       |_|                                                 
          Openstack SysAdmin Toolbox
+                        by Loutre
 
 """
     print(header)
