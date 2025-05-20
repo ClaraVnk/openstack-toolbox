@@ -4,7 +4,7 @@ import subprocess
 import sys
 import importlib
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import os
 
 def install_package(package):
@@ -327,23 +327,11 @@ def list_containers(conn):
 def main():
     load_dotenv()
 
-    # Lire la région dans l’environnement (variable standard OpenStack)
-    dc_env = os.environ.get("OS_REGION_NAME", "").lower()
-
-    if "dc3" in dc_env:
-        auth_url = "https://api.pub1.infomaniak.cloud/identity/v3"
-        region_name = "dc3-a"
-    elif "dc4" in dc_env:
-        auth_url = "https://api.pub2.infomaniak.cloud/identity/v3"
-        region_name = "dc4-a"
-    else:
-        # Valeur par défaut
-        auth_url = "https://api.pub2.infomaniak.cloud/identity/v3"
-        region_name = "dc4-a"
-
     project_name = os.getenv("OS_PROJECT_NAME")
     username = os.getenv("OS_USERNAME")
     password = os.getenv("OS_PASSWORD")
+    auth_url = os.getenv("OS_AUTH_URL")
+    region_name = os.getenv("OS_REGION_NAME")
     user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
     project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
 
