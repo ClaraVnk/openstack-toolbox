@@ -196,14 +196,9 @@ def list_instances(conn, billing_data):
         flavor = flavors.get(flavor_id)
         if flavor:
             _, cpu, ram, disk = parse_flavor_name(flavor.name)
-            if cpu:
-                total_vcpus += cpu
-            if ram:
-                total_ram_go += ram
-            if disk:
-                total_disk_go += disk
-        state = instance.status.lower()
-        emoji = "🟢" if state == "active" else "🔴"
+            total_vcpus += cpu if cpu is not None else 0
+            total_ram_go += ram if ram is not None else 0
+            total_disk_go += disk if disk is not None else 0
 
     # Afficher les en-têtes du tableau
     print(f"{'État':<3} {'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
