@@ -1,3 +1,0 @@
-include README.md
-include LICENCE
-exclude bin/python3

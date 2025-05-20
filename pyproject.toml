@@ -26,3 +26,8 @@ Issues = "https://github.com/ClaraVnk/openstack-toolbox/issues"
 [project.scripts]
 openstack_summary = "src.openstack_summary:main"
 openstack_optimization = "src.openstack_optimization:main"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/bin/python3",
+]
