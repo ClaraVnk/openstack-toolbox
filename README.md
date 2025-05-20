@@ -9,7 +9,7 @@
 These toolbox is configured to match Infomaniak's Public Cloud costs (euros and CHF). If you want, you can reconfigure it to mach your provider's costs.
 
 <!-- GETTING STARTED -->
-## Getting started
+### Getting started
 
 * Log in your Openstack environnement
 * Activate your venv : 
@@ -28,7 +28,7 @@ These toolbox is configured to match Infomaniak's Public Cloud costs (euros and 
 
 * Clone this repo in your Openstack directory
 
-## Openstack summary 
+# Openstack summary 
 
 This will list instances with their costs, backups, images, volumes, etc.
 
@@ -48,7 +48,7 @@ As an Openstack admin, maybe you don't want to see the costs of all the instance
 python3 openstack_admin_script.py
   ```
 
-## Openstack optimization
+# Openstack optimization
 
 This will list inactive instances, unused volumes, and analyze the ressource usage with lost costs for the last week.
 
