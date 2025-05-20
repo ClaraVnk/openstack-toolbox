@@ -194,14 +194,16 @@ def list_instances(conn, billing_data):
         avg_rate_eur = avg_rate_icu / icu_to_euro
         avg_rate_chf = avg_rate_icu / icu_to_chf
 
-    # Calculer le total des ressources consommées
+    flavors = {f.id: f for f in conn.compute.flavors()}
+    
     total_vcpus = 0
     total_ram_go = 0
     total_disk_go = 0
 
     for instance in instances:
         flavor_id = instance.flavor['id']
-        if flavor_id:
+        flavor = flavors.get(flavor_id)
+        if flavor:
             total_vcpus += flavor.vcpus
             total_ram_go += flavor.ram
             total_disk_go += flavor.disk
@@ -214,6 +216,7 @@ def list_instances(conn, billing_data):
 
     for instance in instances:
         flavor_id = instance.flavor['id']
+        flavor = flavors.get(flavor_id)
         # Convertir la date de création en objet datetime
         created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
         # Calculer l'uptime
@@ -353,4 +356,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
