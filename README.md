@@ -13,6 +13,7 @@ These toolbox is configured to match Infomaniak's Public Cloud costs (euros and 
 
 * Log in your Openstack environnement
 * Clone this repo in your Openstack directory
+* Activate your venv : 
   ```sh
   source openstack-toolbox/bin/activate
   source ../openstack.sh
