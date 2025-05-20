@@ -25,7 +25,7 @@ def parse_flavor_name(name):
 
         human_readable = f"{cpu} CPU / {ram} Go RAM / {disk} Go disque"
         return human_readable, cpu, ram, disk
-    except Exception:
+    except Exception as e:
         # En cas d'échec, retourne le nom original et None pour les valeurs numériques
         print(f"❌ Échec du parsing pour le flavor '{name}' : {str(e)}")
         return name, None, None, None
@@ -339,14 +339,16 @@ def list_containers(conn):
         print(f"{container.name:<20} {size_formatted:<20}")
 
 # Fonction principale
-def main():
+def main(billing_path=None):
     # Test de connection à OpenStack
     if not conn.authorize():
         print("❌ Échec de la connexion à OpenStack")
         return
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    billing_path = os.path.join(script_dir, 'billing.json')
+    if not billing_path:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        billing_path = os.path.join(script_dir, 'billing.json')
+
     billing_data = get_billing_data_from_file(billing_path)
 
     # Lister les ressources
@@ -362,4 +364,6 @@ def main():
     list_containers(conn)
 
 if __name__ == "__main__":
-    main()
+    import sys
+    billing_arg = sys.argv[1] if len(sys.argv) > 1 else None
+    main(billing_arg)

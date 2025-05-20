@@ -3,11 +3,15 @@ import subprocess
 import sys
 import os
 
-def run_script(script_name):
+def run_script(script_name, arg=None):
     script_dir = os.path.dirname(os.path.abspath(__file__))  # = src/
     script_path = os.path.join(script_dir, script_name)
 
-    result = subprocess.run([sys.executable, script_path], check=True)
+    cmd = [sys.executable, script_path]
+    if arg:
+        cmd.append(arg)
+
+    result = subprocess.run(cmd, check=True)
     if result.returncode != 0:
         print(f"❌ Le script {script_name} a échoué avec le code {result.returncode}")
         sys.exit(result.returncode)
@@ -29,7 +33,8 @@ def main():
     """
     print(header)
     run_script("fetch_billing.py")
-    run_script("openstack_script.py")
+    billing_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'billing.json')
+    run_script("openstack_script.py", billing_file)
 
 if __name__ == "__main__":
     main()

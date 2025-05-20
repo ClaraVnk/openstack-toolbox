@@ -55,7 +55,10 @@ def main():
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
-        with open("billing.json", "w") as f:
+        import os
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, "billing.json")
+        with open(output_path, "w") as f:
             f.write(result.stdout)
     else:
         print("❌ Échec de la récupération des données")
