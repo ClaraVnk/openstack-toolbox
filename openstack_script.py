@@ -201,7 +201,7 @@ def list_instances(conn, billing_data):
 
     for instance in instances:
         flavor_id = instance.flavor['id']
-        if flavor:
+        if flavor_id:
             total_vcpus += flavor.vcpus
             total_ram_go += flavor.ram
             total_disk_go += flavor.disk
