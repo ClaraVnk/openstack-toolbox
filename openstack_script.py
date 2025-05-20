@@ -7,6 +7,17 @@ import json
 from datetime import datetime
 import os
 
+# Fonction pour traduire le nom du flavor
+def parse_flavor_name(name):
+    try:
+        parts = name.split('-')
+        cpu = next((int(p[1:]) for p in parts if p.startswith('a')), None)
+        ram = next((int(p[3:]) for p in parts if p.startswith('ram')), None)
+        disk = next((int(p[4:]) for p in parts if p.startswith('disk')), None)
+        return f"{cpu} vCPU / {ram} Go RAM / {disk} Go disque"
+    except Exception:
+        return name  # Fallback si le parsing échoue
+
 # Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():
     load_dotenv()  # essaie de charger depuis .env s’il existe
@@ -72,26 +83,6 @@ def get_project_details(conn, project_id):
         print(f"Actif: {'Oui' if project.is_enabled else 'Non'}")
     else:
         print(f"Aucun projet trouvé avec l'ID: {project_id}")
-
-# Fonction pour obtenir l'état d'une VM
-def get_vm_state(instance_id):
-    try:
-        result = subprocess.run(
-            ["openstack", "server", "show", instance_id],
-            capture_output=True, text=True, check=True
-        )
-        for line in result.stdout.splitlines():
-            if line.strip().startswith("OS-EXT-STS:vm_state"):
-                # La ligne ressemble à :
-                # | OS-EXT-STS:vm_state           | active                               |
-                # On récupère la troisième colonne (statut)
-                parts = line.split("|")
-                if len(parts) >= 3:
-                    return parts[2].strip()
-        return "INCONNU"
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Erreur lors de la récupération du statut pour {instance_id}: {e}")
-        return "ERREUR"
 
 # Fonction pour obtenir les détails d'une instance
 def get_billing_data_from_file(filepath):
@@ -207,7 +198,7 @@ def list_instances(conn, billing_data):
             total_vcpus += flavor.vcpus
             total_ram_go += flavor.ram
             total_disk_go += flavor.disk
-        state = get_vm_state(instance.id)
+        state = instance.status.lower()
         emoji = "🟢" if state == "active" else "🔴"
 
     # Afficher les en-têtes du tableau
@@ -226,7 +217,10 @@ def list_instances(conn, billing_data):
 
         # Calculer le coût en CHF et EUR
         cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
-        print(f"{emoji:<3} {instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
+        state = instance.status.lower()
+        emoji = "🟢" if state == "active" else "🔴"
+        parsed_flavor = parse_flavor_name(flavor.name) if flavor else flavor_id
+        print(f"{emoji:<3} {instance.id:<36} {instance.name:<20} {parsed_flavor:<30} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
 
     # Afficher le total des ressources consommées
     print(f"\n📊 Total des ressources consommées : {total_vcpus} CPU, {total_ram_go} RAM (Go), {total_disk_go} Disque (Go)")
