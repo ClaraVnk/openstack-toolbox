@@ -83,6 +83,8 @@ Sends the weekly optimization report by email. Requires SMTP configuration.
 weekly_notification_optimization
 ```
 
+![Weekly Notification Screenshot](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/weekly_notification.png)
+
 ---
 
 ## Important Note: SMTP Configuration with Gmail
