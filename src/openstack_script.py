@@ -69,8 +69,20 @@ except ImportError:
     print("⚙️ Installation du package dotenv...")
     install_package('python-dotenv')
 
+try:
+    importlib.import_module('rich')
+except ImportError:
+    print("⚙️ Installation du package rich...")
+    install_package('rich')
+
 from openstack import connection
 from dotenv import load_dotenv
+from rich import print
+from rich.console import Console
+from rich.table import Table
+from rich.tree import Tree
+
+console = Console()
 
 # Connexion à OpenStack
 creds = load_openstack_credentials()
@@ -79,7 +91,7 @@ conn = connection.Connection(**creds)
 # Fonction pour afficher les en-têtes
 def print_header(header):
     print("\n" + "=" * 50)
-    print(header.center(50))
+    print(f"[bold yellow]{header.center(50)}[/]")
     print("=" * 50 + "\n")
 
 # Fonction pour obtenir les détails d'un projet spécifique
@@ -94,7 +106,7 @@ def get_project_details(conn, project_id):
         print(f"Domaine: {project.domain_id}")
         print(f"Actif: {'Oui' if project.is_enabled else 'Non'}")
     else:
-        print(f"Aucun projet trouvé avec l'ID: {project_id}")
+        print(f"[bold red]❌ Aucun projet trouvé avec l'ID:[/] {project_id}")
 
 # Fonction pour obtenir les détails d'une instance
 def get_billing_data_from_file(filepath):
@@ -158,11 +170,14 @@ def list_images(conn):
         print("🚫 Aucune image privée ou partagée trouvée.")
         return
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<36} {'Visibilité':<20}")
-    print("-" * 96) 
+    # Affichage avec rich.Table
+    table = Table(title="Images OpenStack")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Visibilité", style="green")
     for image in all_images:
-        print(f"{image.id:<36} {image.name:<36} {image.visibility:<20}")
+        table.add_row(image.id, image.name, image.visibility)
+    console.print(table)
 
 # Lister les instances
 def list_instances(conn, billing_data):
@@ -210,21 +225,25 @@ def list_instances(conn, billing_data):
     total_ram_go = 0
     total_disk_go = 0
 
-    # Afficher le tableau des instances...
-    print(f"{'État':<3} {'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20} {'Coût (CHF)':>13} {'Coût (EUR)':>13}")
-    print("-" * 130)
+    table = Table(title="Instances OpenStack")
+
+    table.add_column("État", justify="center", style="bold")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Flavor ID", style="green")
+    table.add_column("Uptime", justify="right")
+    table.add_column("Coût (CHF)", justify="right")
+    table.add_column("Coût (EUR)", justify="right")
 
     for instance in instances:
         try:
-            flavor_id = instance.flavor['id']  
+            flavor_id = instance.flavor['id']
             _, cpu, ram, disk = parse_flavor_name(flavor_id)
-            
-            # Additionner les ressources
+
             total_vcpus += cpu if cpu else 0
             total_ram_go += ram if ram else 0
             total_disk_go += disk if disk else 0
 
-            # ...reste du code pour l'affichage...
             created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
             uptime = datetime.now() - created_at
             uptime_str = str(uptime).split('.')[0]
@@ -232,12 +251,13 @@ def list_instances(conn, billing_data):
             cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
             state = instance.status.lower()
             emoji = "🟢" if state == "active" else "🔴"
-            
-            print(f"{emoji:<3} {instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20} {cost_chf:>13.2f} {cost_euro:>13.2f}")
-        
+
+            table.add_row(emoji, instance.id, instance.name, flavor_id, uptime_str, f"{cost_chf:.2f}", f"{cost_euro:.2f}")
         except Exception as e:
             print(f"❌ Erreur lors du traitement de l'instance '{instance.name}' : {str(e)}")
             continue
+
+    console.print(table)
 
     # 4. Afficher le total
     print(f"\n📊 Total des ressources consommées : {total_vcpus} CPU, {total_ram_go} Go de RAM, {total_disk_go} Go de stockage")
@@ -260,11 +280,14 @@ def list_snapshots(conn):
         print("🚫 Aucun snapshot trouvé.")
         return
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
-    print("-" * 96)
+    # Affichage avec rich.Table
+    table = Table(title="Snapshots OpenStack")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Volume associé", style="green")
     for snapshot in snapshots:
-        print(f"{snapshot.id:<36} {snapshot.name:<20} {snapshot.volume_id:<20}")
+        table.add_row(snapshot.id, snapshot.name, snapshot.volume_id)
+    console.print(table)
 
 # Lister les backups
 def list_backups(conn):
@@ -276,11 +299,14 @@ def list_backups(conn):
         print("🚫 Aucun backup trouvé.")
         return
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
-    print("-" * 96)
+    # Affichage avec rich.Table
+    table = Table(title="Backups OpenStack")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Volume associé", style="green")
     for backup in backups:
-        print(f"{backup.id:<36} {backup.name:<20} {backup.volume_id:<20}")
+        table.add_row(backup.id, backup.name, backup.volume_id)
+    console.print(table)
 
 # Lister les volumes 
 def list_volumes(conn):
@@ -292,14 +318,19 @@ def list_volumes(conn):
         print("🚫 Aucun volume trouvé.")
         return
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Taille':>4} {'Type':<10} {'Attaché':<5} {'Snapshot':<12}")
-    print("-" * 96)
+    # Affichage avec rich.Table
+    table = Table(title="Volumes OpenStack")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Taille", justify="right")
+    table.add_column("Type", style="green")
+    table.add_column("Attaché", justify="center")
+    table.add_column("Snapshot", style="blue")
     for volume in volumes:
         attached = "Oui" if volume.attachments else "Non"
-        # Remplacer None par une chaîne vide pour snapshot_id
         snapshot_id = volume.snapshot_id[:6] if volume.snapshot_id else 'Aucun'
-        print(f"{volume.id:<36} {volume.name:<20} {volume.size:>4} {volume.volume_type:<10} {attached:<5} {snapshot_id:<12}")
+        table.add_row(volume.id, volume.name, str(volume.size), volume.volume_type, attached, snapshot_id)
+    console.print(table)
 
 # Récupérer les volumes attachés aux instances
 def mounted_volumes(conn):
@@ -327,11 +358,16 @@ def mounted_volumes(conn):
     return tree
 
 # Afficher l'arborescence
-def print_tree(tree):
-    for instance, volumes in tree.items():
-        print(f"Instance: {instance}")
-        for volume in volumes:
-            print(f"  Volume: {volume}")
+def print_tree(tree_data):
+    tree = Tree("📦 Volumes montés par instance")
+    for instance, volumes in tree_data.items():
+        instance_branch = tree.add(f"🖥️ {instance}")
+        if volumes:
+            for volume in volumes:
+                instance_branch.add(f"💾 {volume}")
+        else:
+            instance_branch.add("🚫 Aucun volume")
+    console.print(tree)
 
 # Lister les IP flottantes
 def list_floating_ips(conn):
@@ -343,11 +379,14 @@ def list_floating_ips(conn):
         print("🚫 Aucune IP flottante trouvée.")
         return
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'IP':<20} {'Statut':<20}")
-    print("-" * 96)
+    # Affichage avec rich.Table
+    table = Table(title="IP Flottantes OpenStack")
+    table.add_column("ID", style="magenta")
+    table.add_column("IP", style="cyan")
+    table.add_column("Statut", style="green")
     for ip in floating_ips:
-        print(f"{ip.id:<36} {ip.floating_ip_address:<20} {ip.status:<20}")
+        table.add_row(ip.id, ip.floating_ip_address, ip.status)
+    console.print(table)
 
 # Lister les containers
 def list_containers(conn):
@@ -359,18 +398,20 @@ def list_containers(conn):
         print("🚫 Aucun container trouvé.")
         return
 
-    # Afficher les en-têtes du tableau
-    print(f"{'Nom':<20} {'Taille totale':<20}")
-    print("-" * 40)
+    # Affichage avec rich.Table
+    table = Table(title="Containers OpenStack")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Taille totale", justify="right", style="magenta")
     for container in containers:
         size_formatted = format_size(container.bytes)
-        print(f"{container.name:<20} {size_formatted:<20}")
+        table.add_row(container.name, size_formatted)
+    console.print(table)
 
 # Fonction principale
 def main(billing_path=None):
     # Test de connection à OpenStack
     if not conn.authorize():
-        print("❌ Échec de la connexion à OpenStack")
+        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
         return
 
     if not billing_path:

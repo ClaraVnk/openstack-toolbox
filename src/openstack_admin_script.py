@@ -11,17 +11,29 @@ def install_package(package):
 try:
     importlib.import_module('openstack')
 except ImportError:
-    print("Installation du package openstack...")
+    print("[yellow]⚙️ Installation du package openstack...[/]")
     install_package('openstacksdk')
 
 try:
     importlib.import_module('dotenv')
 except ImportError:
-    print("Installation du package dotenv...")
+    print("[yellow]⚙️ Installation du package dotenv...[/]")
     install_package('python-dotenv')
+
+try:
+    importlib.import_module('rich')
+except ImportError:
+    print("[yellow]⚙️ Installation du package rich...[/]")
+    install_package('rich')
 
 import openstack
 from datetime import datetime
+from rich import print
+from rich.console import Console
+from rich.table import Table
+from rich.tree import Tree
+
+console = Console()
 
 # Se connecter à OpenStackv 
 from dotenv import load_dotenv
@@ -48,14 +60,14 @@ conn = openstack.connect(
 
 # Vérifier la connexion
 if conn.authorize():
-    print("Connexion réussie à OpenStack")
+    print("[bold green]✅ Connexion réussie à OpenStack[/]")
 else:
-    print("Échec de la connexion à OpenStack")
+    print("[bold red]❌ Échec de la connexion à OpenStack[/]")
     exit(1)
 
 def print_header(header):
     print("\n" + "=" * 50)
-    print(header.center(50))
+    print(f"[bold yellow]{header.center(50)}[/]")
     print("=" * 50 + "\n")
 
 # Fonction pour obtenir les détails d'un projet spécifique
@@ -70,7 +82,7 @@ def get_project_details(conn, project_id):
         print(f"Domaine: {project.domain_id}")
         print(f"Actif: {'Oui' if project.is_enabled else 'Non'}")
     else:
-        print(f"Aucun projet trouvé avec l'ID: {project_id}")
+        print(f"[bold red]❌ Aucun projet trouvé avec l'ID:[/] {project_id}")
 
 # Demander à l'utilisateur de saisir l'ID du projet
 project_id = input("Veuillez entrer l'ID du projet: ")
@@ -86,11 +98,16 @@ def list_images(conn):
     # Combiner les images privées et partagées
     all_images = private_images + shared_images
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<36} {'Visibilité':<20}")
-    print("-" * 96) 
+    if not all_images:
+        print("🚫 Aucune image trouvée.")
+        return
+    table = Table(title="Images utilisées")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Visibilité", style="green")
     for image in all_images:
-        print(f"{image.id:<36} {image.name:<36} {image.visibility:<20}")
+        table.add_row(image.id, image.name, image.visibility)
+    console.print(table)
 
 list_images(conn)
 
@@ -102,18 +119,21 @@ def list_instances(conn):
     # Récupérer toutes les flavors disponibles
     flavors = {flavor.id: flavor for flavor in conn.compute.flavors()}
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Flavor ID':<20} {'Uptime':<20}")
-    print("-" * 116)
+    if not instances:
+        print("🚫 Aucune instance trouvée.")
+        return
+    table = Table(title="Instances")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Flavor ID", style="green")
+    table.add_column("Uptime", justify="right")
     for instance in instances:
         flavor_id = instance.flavor['id']
-        # Convertir la date de création en objet datetime
         created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
-        # Calculer l'uptime
         uptime = datetime.now() - created_at
-        # Formater l'uptime en jours, heures, minutes, secondes
-        uptime_str = str(uptime).split('.')[0]  # Supprimer les microsecondes
-        print(f"{instance.id:<36} {instance.name:<20} {flavor_id:<20} {uptime_str:<20}")
+        uptime_str = str(uptime).split('.')[0]
+        table.add_row(instance.id, instance.name, flavor_id, uptime_str)
+    console.print(table)
 
 list_instances(conn)
 
@@ -123,11 +143,16 @@ def list_snapshots(conn):
     # Récupérer les snapshots
     snapshots = list(conn.block_storage.snapshots())
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
-    print("-" * 96)
+    if not snapshots:
+        print("🚫 Aucun snapshot trouvé.")
+        return
+    table = Table(title="Snapshots")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Volume associé", style="green")
     for snapshot in snapshots:
-        print(f"{snapshot.id:<36} {snapshot.name:<20} {snapshot.volume_id:<20}")
+        table.add_row(snapshot.id, snapshot.name, snapshot.volume_id)
+    console.print(table)
     
 list_snapshots(conn)
 
@@ -137,11 +162,16 @@ def list_backups(conn):
     # Récupérer les backups
     backups = list(conn.block_storage.backups())
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
-    print("-" * 96)
+    if not backups:
+        print("🚫 Aucun backup trouvé.")
+        return
+    table = Table(title="Backups")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Volume associé", style="green")
     for backup in backups:
-        print(f"{backup.id:<36} {backup.name:<20} {backup.volume_id:<20}")
+        table.add_row(backup.id, backup.name, backup.volume_id)
+    console.print(table)
 
 list_backups(conn)
 
@@ -151,14 +181,21 @@ def list_volumes(conn):
     # Récupérer les volumes
     volumes = list(conn.block_storage.volumes())
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'Nom':<20} {'Taille (Go)':<20} {'Type':<20} {'Attaché':<20} {'Snapshot associé':<20}")
-    print("-" * 116)
+    if not volumes:
+        print("🚫 Aucun volume trouvé.")
+        return
+    table = Table(title="Volumes")
+    table.add_column("ID", style="magenta")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Taille (Go)", justify="right")
+    table.add_column("Type", style="green")
+    table.add_column("Attaché", style="blue")
+    table.add_column("Snapshot associé", style="magenta")
     for volume in volumes:
         attached = "Oui" if volume.attachments else "Non"
-        # Remplacer None par une chaîne vide pour snapshot_id
         snapshot_id = volume.snapshot_id if volume.snapshot_id else 'Aucun'
-        print(f"{volume.id:<36} {volume.name:<20} {volume.size:<20} {volume.volume_type:<20} {attached:<20} {snapshot_id:<20}")
+        table.add_row(volume.id, volume.name, str(volume.size), volume.volume_type, attached, snapshot_id)
+    console.print(table)
 
 list_volumes(conn)
 
@@ -190,11 +227,16 @@ def mounted_volumes(conn):
     return tree
 
 # Afficher l'arborescence
-def print_tree(tree):
-    for instance, volumes in tree.items():
-        print(f"Instance: {instance}")
-        for volume in volumes:
-            print(f"  Volume: {volume}")
+def print_tree(tree_data):
+    tree = Tree("📦 Volumes montés par instance")
+    for instance, volumes in tree_data.items():
+        instance_branch = tree.add(f"🖥️ {instance}")
+        if volumes:
+            for volume in volumes:
+                instance_branch.add(f"💾 {volume}")
+        else:
+            instance_branch.add("🚫 Aucun volume")
+    console.print(tree)
 
 # Obtenir l'arborescence des volumes montés
 tree = mounted_volumes(conn)
@@ -206,11 +248,16 @@ def list_floating_ips(conn):
     # Récupérer les adresses IP flottantes
     floating_ips = list(conn.network.ips())
 
-    # Afficher les en-têtes du tableau
-    print(f"{'ID':<36} {'IP':<20} {'Statut':<20}")
-    print("-" * 96)
+    if not floating_ips:
+        print("🚫 Aucune IP flottante trouvée.")
+        return
+    table = Table(title="Floating IPs")
+    table.add_column("ID", style="magenta")
+    table.add_column("IP", style="cyan")
+    table.add_column("Statut", style="green")
     for ip in floating_ips:
-        print(f"{ip.id:<36} {ip.floating_ip_address:<20} {ip.status:<20}")
+        table.add_row(ip.id, ip.floating_ip_address, ip.status)
+    console.print(table)
 
 list_floating_ips(conn)
 
@@ -236,11 +283,15 @@ def list_containers(conn):
     # Récupérer les containers
     containers = list(conn.object_store.containers())
 
-    # Afficher les en-têtes du tableau
-    print(f"{'Nom':<20} {'Taille totale':<20}")
-    print("-" * 40)
+    if not containers:
+        print("🚫 Aucun container trouvé.")
+        return
+    table = Table(title="Containers")
+    table.add_column("Nom", style="cyan")
+    table.add_column("Taille totale", justify="right", style="magenta")
     for container in containers:
         size_formatted = format_size(container.bytes)
-        print(f"{container.name:<20} {size_formatted:<20}")
+        table.add_row(container.name, size_formatted)
+    console.print(table)
 
 list_containers(conn)

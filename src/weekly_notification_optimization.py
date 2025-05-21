@@ -4,13 +4,14 @@ from email.mime.multipart import MIMEMultipart
 import os
 import sys
 import configparser
+from rich import print
 from notification import generate_report
 from cron_notification import setup_cron
 
 CONFIG_PATH = os.path.expanduser("~/.openstack_toolbox_config.ini")
 
 def create_config_interactive():
-    print("🛠️ Configuration initiale SMTP nécessaire.")
+    print("[bold cyan]🛠️ Configuration initiale SMTP nécessaire.[/]")
     print("Merci de saisir les informations demandées pour configurer l'envoi d'e-mails.\n")
 
     smtp_server = input("SMTP server (ex: smtp.gmail.com): ").strip()
@@ -34,7 +35,7 @@ def create_config_interactive():
     with open(config_path, 'w') as configfile:
         config.write(configfile)
 
-    print(f"\n✅ Configuration sauvegardée dans {config_path}\n")
+    print(f"\n[bold green]✅ Configuration sauvegardée dans[/] [underline]{config_path}[/]\n")
 
 def load_config():
     config_path = os.path.expanduser("~/.openstack_toolbox_config.ini")
@@ -44,7 +45,7 @@ def load_config():
     config = configparser.ConfigParser()
     config.read(config_path)
     if 'SMTP' not in config:
-        print("❌ Section [SMTP] manquante dans le fichier de configuration.")
+        print("[bold red]❌ Section [SMTP] manquante dans le fichier de configuration.[/]")
         sys.exit(1)
     return config['SMTP']
 
@@ -58,7 +59,7 @@ def send_email(subject, body):
     to_email = smtp_config.get('to_email')
 
     if not all([smtp_server, smtp_port, smtp_username, smtp_password, from_email, to_email]):
-        print("❌ La configuration SMTP est incomplète dans le fichier de configuration.")
+        print("[bold red]❌ La configuration SMTP est incomplète dans le fichier de configuration.[/]")
         sys.exit(1)
 
     # Créer le message
@@ -78,11 +79,11 @@ def send_email(subject, body):
 
 def main():
     # Afficher le message d'accueil
-    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉")
-    print("Commandes disponibles :")
-    print("  • openstack_summary        → Génère un résumé global du projet")
-    print("  • openstack_optimization   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
-    print("  • openstack_weekly_notification   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
+    print("\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉[/]")
+    print("[cyan]Commandes disponibles :[/]")
+    print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
+    print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
+    print("  • [bold]openstack_weekly_notification[/]   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
 
     header = r"""
   ___                       _             _          
@@ -109,19 +110,19 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
             "Rapport hebdomadaire : Infomaniak Openstack Optimisation",
             email_body
         )
-        print("✅ Email envoyé avec succès.")
+        print("[bold green]✅ Email envoyé avec succès.[/]")
     except FileNotFoundError:
-        print("❌ Le fichier de rapport est introuvable.")
+        print("[bold red]❌ Le fichier de rapport est introuvable.[/]")
     except Exception as e:
-        print(f"❌ Erreur lors de l'envoi de l'email : {e}")
+        print(f"[bold red]❌ Erreur lors de l'envoi de l'email :[/] {e}")
 
     print("\n💌 Voulez-vous paramétrer l'envoi hebdomadaire d'un e-mail avec le résumé de la semaine ? (o/n)")
     choice = input().strip().lower()
     if choice == 'o':
         setup_cron()
-        print("✅ Configuration terminée. Vous pouvez maintenant envoyer des e-mails.")
+        print("[bold green]✅ Configuration terminée. Vous pouvez maintenant envoyer des e-mails.[/]")
     else:
-        print("❌ Configuration annulée.")
+        print("[bold yellow]❌ Configuration annulée.[/]")
 
 if __name__ == '__main__':
     main()

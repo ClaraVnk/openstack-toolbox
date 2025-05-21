@@ -2,6 +2,18 @@
 import subprocess
 import sys
 import os
+import importlib
+
+def install_package(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+try:
+    importlib.import_module('rich')
+except ImportError:
+    print("[yellow]⚙️ Installation du package rich...[/]")
+    install_package('rich')
+
+from rich import print
 
 def run_script(script_name, arg=None):
     script_dir = os.path.dirname(os.path.abspath(__file__))  # = src/
@@ -13,16 +25,16 @@ def run_script(script_name, arg=None):
 
     result = subprocess.run(cmd, check=True)
     if result.returncode != 0:
-        print(f"❌ Le script {script_name} a échoué avec le code {result.returncode}")
+        print(f"[bold red]❌ Le script {script_name} a échoué avec le code {result.returncode}[/]")
         sys.exit(result.returncode)
 
 def main():
-    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉")
-    print("Commandes disponibles :")
-    print("  • openstack_summary        → Génère un résumé global du projet")
-    print("  • openstack_optimization   → Identifie les ressources sous-utilisées dans la semaine")
-    print("  • openstack_weekly_notification   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
-    
+    print("\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉[/]")
+    print("[cyan]Commandes disponibles :[/]")
+    print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
+    print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées dans la semaine")
+    print("  • [bold]openstack_weekly_notification[/]   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
+
     header = r"""
   ___                       _             _       
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __   
@@ -36,7 +48,7 @@ def main():
                                             |___/ 
             By Loutre
     """
-    print(header)
+    print(f"[bold blue]{header}[/]")
     run_script("fetch_billing.py")
     billing_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'billing.json')
     run_script("openstack_script.py", billing_file)

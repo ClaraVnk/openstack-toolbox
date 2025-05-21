@@ -89,3 +89,4 @@ It will add a cron tab every monday at 08 am.
 ## Acknowledgments
 
 Special thanks to [@kallioli](https://github.com/kallioli) for his support !
+Thanks to [@PAPAMICA](https://github.com/PAPAMICA) for his suggestions.

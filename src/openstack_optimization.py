@@ -74,28 +74,18 @@ except ImportError:
     install_package('python-dotenv')
 
 try:
-    importlib.import_module('pandas')
+    importlib.import_module('rich')
 except ImportError:
-    print("⚙️ Installation du package Pandas...")
-    install_package('pandas')
+    print("⚙️ Installation du package rich...")
+    install_package('rich')
 
-try:
-    importlib.import_module('matplotlib')
-except ImportError:
-    print("⚙️ Installation du package Matplotlib...")
-    install_package('matplotlib')
-
-try:
-    importlib.import_module('seaborn')
-except ImportError:
-    print("⚙️ Installation du package Seaborn...")
-    install_package('seaborn')
-
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from dotenv import load_dotenv
 from openstack import connection
+from rich import print
+from rich.console import Console
+from rich.table import Table
+
+console = Console()
 
 # Connexion à OpenStack
 creds = load_openstack_credentials()
@@ -191,16 +181,25 @@ def collect_and_analyze_data():
 
     report_body += "[INSTANCES INACTIVES]\n"
     if inactive_instances:
+        table = Table(title="Instances inactives")
+        table.add_column("ID", style="magenta")
+        table.add_column("Nom", style="cyan")
+        table.add_column("Statut", style="red")
         for instance in inactive_instances:
-            report_body += f"  - ID: {instance['id']}, Nom: {instance['name']}, Statut: {instance['status']}\n"
+            table.add_row(instance["id"], instance["name"], instance["status"])
+        console.print(table)
     else:
         report_body += "✅ Aucune instance inactive détectée.\n"
     report_body += "\n" + "-"*50 + "\n"
 
     report_body += "[VOLUMES NON UTILISÉS]\n"
     if unused_volumes:
+        table = Table(title="Volumes non utilisés")
+        table.add_column("ID", style="magenta")
+        table.add_column("Nom", style="cyan")
         for volume in unused_volumes:
-            report_body += f"  - ID: {volume.id}, Nom: {volume.name}\n"
+            table.add_row(volume.id, volume.name)
+        console.print(table)
     else:
         report_body += "✅ Aucun volume inutilisé détecté.\n"
     report_body += "\n" + "-"*50 + "\n"
@@ -210,8 +209,13 @@ def collect_and_analyze_data():
     if not underutilized_costs:
         report_body += "❌ Aucune donnée de facturation disponible (trop faibles ou non disponibles).\n"
     else:
+        table = Table(title="Coûts des ressources sous-utilisées")
+        table.add_column("Ressource", style="cyan")
+        table.add_column("CHF", justify="right", style="green")
+        table.add_column("EUR", justify="right", style="blue")
         for resource, costs in underutilized_costs.items():
-            report_body += f"  - {resource}: {costs['CHF']} CHF / {costs['EUR']} EUR\n"
+            table.add_row(resource, f"{costs['CHF']} CHF", f"{costs['EUR']} EUR")
+        console.print(table)
     report_body += "\n" + "-"*50 + "\n"
     
     report_body += "[TOTAL DES RESSOURCES CONSOMMÉES]\n"
@@ -249,15 +253,15 @@ def collect_and_analyze_data():
 def main():
     # Test de connection à OpenStack
     if not conn.authorize():
-        print("❌ Échec de la connexion à OpenStack")
+        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
         return
     
     # Afficher le message d'accueil
-    print("\n🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉")
-    print("Commandes disponibles :")
-    print("  • openstack_summary        → Génère un résumé global du projet")
-    print("  • openstack_optimization   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
-    print("  • openstack_weekly_notification   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
+    print("\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉[/]")
+    print("[cyan]Commandes disponibles :[/]")
+    print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
+    print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
+    print("  • [bold]openstack_weekly_notification[/]   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
 
     header = r"""
   ___                       _             _               
@@ -285,7 +289,7 @@ def main():
     with open('/tmp/openstack_optimization_report.txt', 'w') as f:
         f.write(report_body)
 
-    print("🎉 Rapport généré avec succès : /tmp/openstack_optimization_report.txt")
+    print("[bold green]🎉 Rapport généré avec succès :[/] /tmp/openstack_optimization_report.txt")
     
     # Afficher le rapport
     print(report_body)
