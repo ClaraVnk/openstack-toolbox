@@ -5,9 +5,16 @@ import sys
 import importlib
 import json
 import os
+import tomllib  # Python 3.11+
+from pathlib import Path
 
-# Fonction pour traduire le nom du flavor (copié depuis openstack_script.py)
+# Fonction pour traduire le nom du flavor 
 def parse_flavor_name(name):
+def get_version():
+    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        data = tomllib.load(f)
+    return data["project"]["version"]
     """
     Parse un nom de flavor du type 'aX-ramY-diskZ-...' et retourne une chaîne lisible + les valeurs numériques.
     Exemple : 'a2-ram8-disk40' → ('2 vCPU / 8 Go RAM / 40 Go disque', 2, 8, 40)
@@ -255,9 +262,11 @@ def main():
     if not conn.authorize():
         print("[bold red]❌ Échec de la connexion à OpenStack[/]")
         return
-    
+
+    version = get_version()
+
     # Afficher le message d'accueil
-    print("\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉[/]")
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v{version} 🎉[/]")
     print("[cyan]Commandes disponibles :[/]")
     print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
     print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")

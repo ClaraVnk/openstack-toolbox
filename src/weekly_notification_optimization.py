@@ -4,11 +4,19 @@ from email.mime.multipart import MIMEMultipart
 import os
 import sys
 import configparser
+import tomllib  # Python 3.11+
+from pathlib import Path
 from rich import print
 from notification import generate_report
 from cron_notification import setup_cron
 
 CONFIG_PATH = os.path.expanduser("~/.openstack_toolbox_config.ini")
+
+def get_version():
+    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        data = tomllib.load(f)
+    return data["project"]["version"]
 
 def create_config_interactive():
     print("[bold cyan]🛠️ Configuration initiale SMTP nécessaire.[/]")
@@ -78,8 +86,9 @@ def send_email(subject, body):
         server.send_message(msg)
 
 def main():
+    version = get_version()
     # Afficher le message d'accueil
-    print("\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v1.3.1 🎉[/]")
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v{version} 🎉[/]")
     print("[cyan]Commandes disponibles :[/]")
     print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
     print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
@@ -115,6 +124,19 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
         print("[bold red]❌ Le fichier de rapport est introuvable.[/]")
     except Exception as e:
         print(f"[bold red]❌ Erreur lors de l'envoi de l'email :[/] {e}")
+        print("[bold yellow]💡 Vérifiez que votre configuration SMTP est correcte.[/]")
+        print("Souhaitez-vous reconfigurer maintenant et envoyer un e-mail test ? (o/n)")
+        retry = input().strip().lower()
+        if retry == 'o':
+            create_config_interactive()
+            try:
+                send_email("Test SMTP - OpenStack Toolbox", "✅ Ceci est un e-mail test de la configuration SMTP.")
+                print("[bold green]📬 E-mail test envoyé avec succès.[/]")
+            except Exception as e:
+                print(f"[bold red]❌ L'envoi de l'e-mail test a échoué :[/] {e}")
+                print("[bold cyan]ℹ️ Veuillez vérifier vos identifiants ou paramètres SMTP.[/]")
+        else:
+            print("[bold cyan]ℹ️ Vous pouvez relancer ce script plus tard après correction de la configuration.[/]")
 
     print("\n💌 Voulez-vous paramétrer l'envoi hebdomadaire d'un e-mail avec le résumé de la semaine ? (o/n)")
     choice = input().strip().lower()
