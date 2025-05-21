@@ -154,6 +154,10 @@ def list_images(conn):
     # Combiner les images privées et partagées
     all_images = private_images + shared_images
 
+    if not all_images:
+        print("🚫 Aucune image privée ou partagée trouvée.")
+        return
+
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<36} {'Visibilité':<20}")
     print("-" * 96) 
@@ -168,6 +172,10 @@ def list_instances(conn, billing_data):
 
     # Récupérer les instances
     instances = list(conn.compute.servers())  
+
+    if not instances:
+        print("🚫 Aucune instance trouvée.")
+        return
 
     # Taux de conversion ICU vers monnaies
     icu_to_chf = 50  # Taux de conversion ICU vers CHF
@@ -248,6 +256,10 @@ def list_snapshots(conn):
     # Récupérer les snapshots
     snapshots = list(conn.block_storage.snapshots())
 
+    if not snapshots:
+        print("🚫 Aucun snapshot trouvé.")
+        return
+
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
     print("-" * 96)
@@ -260,6 +272,10 @@ def list_backups(conn):
     # Récupérer les backups
     backups = list(conn.block_storage.backups())
 
+    if not backups:
+        print("🚫 Aucun backup trouvé.")
+        return
+
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Volume associé':<20}")
     print("-" * 96)
@@ -271,6 +287,10 @@ def list_volumes(conn):
     print_header("LISTE DES VOLUMES")
     # Récupérer les volumes
     volumes = list(conn.block_storage.volumes())
+
+    if not volumes:
+        print("🚫 Aucun volume trouvé.")
+        return
 
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'Nom':<20} {'Taille':>4} {'Type':<10} {'Attaché':<5} {'Snapshot':<12}")
@@ -319,6 +339,10 @@ def list_floating_ips(conn):
     # Récupérer les adresses IP flottantes
     floating_ips = list(conn.network.ips())
 
+    if not floating_ips:
+        print("🚫 Aucune IP flottante trouvée.")
+        return
+
     # Afficher les en-têtes du tableau
     print(f"{'ID':<36} {'IP':<20} {'Statut':<20}")
     print("-" * 96)
@@ -330,6 +354,10 @@ def list_containers(conn):
     print_header("LISTE DES CONTAINERS")
     # Récupérer les containers
     containers = list(conn.object_store.containers())
+
+    if not containers:
+        print("🚫 Aucun container trouvé.")
+        return
 
     # Afficher les en-têtes du tableau
     print(f"{'Nom':<20} {'Taille totale':<20}")
