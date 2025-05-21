@@ -1,15 +1,13 @@
 # Openstack SysAdmin Toolbox 🧰
 
-### Built With
-
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![infomaniak](https://img.shields.io/badge/infomaniak-0098FF?style=for-the-badge&logo=infomaniak&logoColor=white) ![OpenStack](https://img.shields.io/badge/Openstack-%23f01742.svg?style=for-the-badge&logo=openstack&logoColor=white)
 
 ### Disclaimer
 
 These toolbox is configured to match Infomaniak's Public Cloud costs (euros and CHF). If you want, you can reconfigure it to mach your provider's costs.
 
 <!-- GETTING STARTED -->
-### Getting started
+### Getting started with your virtual environnement
 
 * Log in your Openstack environnement
 * Activate your venv : 
@@ -24,19 +22,24 @@ These toolbox is configured to match Infomaniak's Public Cloud costs (euros and 
   pip install openstack-toolbox
   ```
 
-Then for the Openstack summary :
+Command for the Openstack summary :
 
   ```sh
   openstack_summary
   ```
 
-For the Openstack optimization (weekly) :
+![OpenStack Summary Screenshot 1](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_summary_1.png)
+![OpenStack Summary Screenshot 2](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_summary_2.png)
+
+Command for the Openstack optimization report (weekly) :
 
   ```sh
   openstack_optimization
   ```
 
-And for the the optimization's weekly notification :
+![OpenStack Optimization](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_optimization.png)
+
+Command for the optimization's email notification :
 
   ```sh
   weekly_notification_optimization
@@ -83,7 +86,7 @@ In your terminal, type this command :
   ```
 
 You will have to configure SMTP services in order to send emails.
-It will add a cron tab every monday at 08 am.
+It will suggest you to add a cron tab every monday at 08 am.
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
