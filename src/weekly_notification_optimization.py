@@ -26,9 +26,10 @@ def create_config_interactive():
     if smtp_server.lower() == "smtp.gmail.com":
         print("[bold yellow]⚠️ Pour Gmail, vous devez activer la validation en 2 étapes et créer un mot de passe d’application.[/]")
         print("Voici la page d’aide Google : https://support.google.com/accounts/answer/185833")
+        print("[bold yellow]⚠️ Pour Gmail, utilisez un mot de passe d’application, pas votre mot de passe habituel.[/]")
     smtp_port = input("SMTP port (ex: 587): ").strip()
     smtp_username = input("SMTP username (votre login email): ").strip()
-    smtp_password = input("SMTP password (votre mot de passe email): ").strip()
+    smtp_password = input("SMTP password (mot de passe email ou mot de passe d’application Gmail) : ").strip()
     from_email = input("From email (adresse expéditeur): ").strip()
     to_email = input("To email (adresse destinataire): ").strip()
 

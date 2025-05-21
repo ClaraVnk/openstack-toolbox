@@ -1,109 +1,146 @@
-# Openstack SysAdmin Toolbox 🧰
+# OpenStack SysAdmin Toolbox 🧰
 
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![infomaniak](https://img.shields.io/badge/infomaniak-0098FF?style=for-the-badge&logo=infomaniak&logoColor=white) ![OpenStack](https://img.shields.io/badge/Openstack-%23f01742.svg?style=for-the-badge&logo=openstack&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) 
+![Infomaniak](https://img.shields.io/badge/infomaniak-0098FF?style=for-the-badge&logo=infomaniak&logoColor=white) 
+![OpenStack](https://img.shields.io/badge/OpenStack-%23f01742.svg?style=for-the-badge&logo=openstack&logoColor=white)
 
-### Disclaimer
+---
 
-These toolbox is configured to match Infomaniak's Public Cloud costs (euros and CHF). If you want, you can reconfigure it to mach your provider's costs.
+## Table of Contents
 
-<!-- GETTING STARTED -->
-### Getting started with your virtual environnement
+- [Disclaimer](#disclaimer)
+- [Getting Started](#getting-started)
+- [Available Commands](#available-commands)
+  - [OpenStack Summary](#openstack-summary)
+  - [OpenStack Optimization Report (Weekly)](#openstack-optimization-report-weekly)
+  - [Optimization Email Notification (Weekly)](#optimization-email-notification-weekly)
+- [Important Note: SMTP Configuration with Gmail](#important-note-smtp-configuration-with-gmail)
+- [Manual Mode](#manual-mode)
+- [Acknowledgments](#acknowledgments)
 
-* Log in your Openstack environnement
-* Activate your venv : 
-  ```sh
+---
+
+## Disclaimer
+
+This toolbox is configured to match Infomaniak's Public Cloud costs (EUR and CHF).  
+You can reconfigure it to match your provider's pricing if needed.
+
+---
+
+## Getting Started
+
+### 1. Setup your virtual environment
+
+- Log in to your OpenStack environment.
+- Activate your virtual environment:  
+  ```bash
   source openstack-toolbox/bin/activate
-  source ../openstack-rc  # Source here your openstack credentials
+  source ../openstack-rc  # Source your OpenStack credentials here
   ```
 
-# Easy mode 
+### 2. Easy mode installation
 
-  ```sh
-  pip install openstack-toolbox
-  ```
+Install the toolbox globally with pip:
 
-Command for the Openstack summary :
+```bash
+pip install openstack-toolbox
+```
 
-  ```sh
-  openstack_summary
-  ```
+---
+
+## Available Commands
+
+### OpenStack Summary
+
+Generates a detailed summary of your OpenStack environment: instances, costs, backups, images, volumes, etc.
+
+```bash
+openstack_summary
+```
 
 ![OpenStack Summary Screenshot 1](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_summary_1.png)
 ![OpenStack Summary Screenshot 2](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_summary_2.png)
 
-Command for the Openstack optimization report (weekly) :
+---
 
-  ```sh
-  openstack_optimization
-  ```
+### OpenStack Optimization Report (Weekly)
+
+Identifies underutilized resources like inactive instances and unused volumes, with cost analysis.
+
+```bash
+openstack_optimization
+```
 
 ![OpenStack Optimization](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_optimization.png)
 
-Command for the optimization's email notification :
+---
 
-  ```sh
-  weekly_notification_optimization
-  ```
+### Optimization Email Notification (Weekly)
 
-### Important for SMTP configuration with Gmail
+Sends the weekly optimization report by email. Requires SMTP configuration.
 
-If you use Gmail as your SMTP server, please be aware that Google now requires secure authentication via OAuth 2.0 or the use of an App Password (if two-step verification is enabled).
+```bash
+weekly_notification_optimization
+```
+
+---
+
+## Important Note: SMTP Configuration with Gmail
+
+Google now requires secure authentication via **OAuth 2.0** or the use of an **App Password** (if two-step verification is enabled) for SMTP access.
 
 ⚠️ **Without this, email sending will fail.**
 
-For more information and instructions, please consult the official Google guide:  
-https://support.google.com/accounts/answer/185833
+- For detailed info, visit the official Google guide:  
+  https://support.google.com/accounts/answer/185833
 
-**Tip:** Enable two-step verification and create an App Password to use SMTP with this project.
+- To create an App Password, follow this guide:  
+  https://support.google.com/accounts/answer/185833#app-passwords
 
-To create an App Password, follow this guide:  
-https://support.google.com/accounts/answer/185833#app-passwords
+**Tip:** Enable two-step verification and create an App Password to use Gmail SMTP with this project.
 
-# Manual mode
+---
 
-* Clone this repo in your Openstack directory
+## Manual Mode
 
-## Openstack summary 
+If you prefer manual setup or want to contribute:
 
-This will list instances with their costs, backups, images, volumes, etc.
+### Clone the repository
 
-### 1. As a client
+```bash
+git clone https://github.com/ClaraVnk/openstack-toolbox.git
+cd openstack-toolbox/src
+```
 
-In your terminal, type this command : 
-  ```sh
+### Run scripts manually
+
+- OpenStack summary:  
+  ```bash
   python3 openstack_summary.py
   ```
 
-By default, you can see the last hour of billing (simply press enter), but you can choose the dates you want.
-
-### 2. As an admin (beta)
-
-As an Openstack admin, maybe you don't want to see the costs of all the instance, but you need to see a specific project.
-  ```sh
+- OpenStack admin summary (beta):  
+  ```bash
   python3 openstack_admin_script.py
   ```
 
-## Openstack optimization
-
-This will list inactive instances, unused volumes, and analyze the ressource usage with lost costs for the last week.
-
-In your terminal, type this command : 
-  ```sh
+- OpenStack optimization:  
+  ```bash
   python3 openstack_optimization.py
   ```
 
-### Weekly notification
-
-In your terminal, type this command : 
-  ```sh
-  python weekly_notification_optimization.py
+- Weekly notification (email):  
+  ```bash
+  python3 weekly_notification_optimization.py
   ```
 
-You will have to configure SMTP services in order to send emails.
-It will suggest you to add a cron tab every monday at 08 am.
+---
 
-<!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-Special thanks to [@kallioli](https://github.com/kallioli) for his support !
-Thanks to [@PAPAMICA](https://github.com/PAPAMICA) for his suggestions.
+Special thanks to [@kallioli](https://github.com/kallioli) for his support!  
+Thanks also to [@PAPAMICA](https://github.com/PAPAMICA) for his valuable suggestions.
+
+---
+
+If you have questions or want to contribute, feel free to open an issue or a pull request! Don't forget to star ⭐️ !
