@@ -3,8 +3,10 @@ import subprocess
 import sys
 import os
 import importlib
-import tomllib  # Python 3.11+
-from pathlib import Path
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    from importlib_metadata import version, PackageNotFoundError
 
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
@@ -18,10 +20,10 @@ except ImportError:
 from rich import print
 
 def get_version():
-    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
-    with open(pyproject_path, "rb") as f:
-        data = tomllib.load(f)
-    return data["project"]["version"]
+    try:
+        return version("openstack-toolbox")
+    except PackageNotFoundError:
+        return "unknown"
 
 def run_script(script_name, arg=None):
     script_dir = os.path.dirname(os.path.abspath(__file__))  # = src/

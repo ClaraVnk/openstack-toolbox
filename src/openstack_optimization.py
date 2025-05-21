@@ -5,14 +5,16 @@ import sys
 import importlib
 import json
 import os
-import tomllib  # Python 3.11+
-from pathlib import Path
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    from importlib_metadata import version, PackageNotFoundError
 
 def get_version():
-    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
-    with open(pyproject_path, "rb") as f:
-        data = tomllib.load(f)
-    return data["project"]["version"]
+    try:
+        return version("openstack-toolbox")
+    except PackageNotFoundError:
+        return "unknown"
 
 # Fonction pour traduire le nom du flavor (copié depuis openstack_script.py)
 def parse_flavor_name(name):

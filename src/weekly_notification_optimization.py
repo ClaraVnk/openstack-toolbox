@@ -5,8 +5,10 @@ from email.mime.multipart import MIMEMultipart
 import os
 import sys
 import configparser
-import tomllib  # Python 3.11+
-from pathlib import Path
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    from importlib_metadata import version, PackageNotFoundError
 from rich import print
 from notification import generate_report
 from cron_notification import setup_cron
@@ -14,10 +16,10 @@ from cron_notification import setup_cron
 CONFIG_PATH = os.path.expanduser("~/.openstack_toolbox_config.ini")
 
 def get_version():
-    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
-    with open(pyproject_path, "rb") as f:
-        data = tomllib.load(f)
-    return data["project"]["version"]
+    try:
+        return version("openstack-toolbox")
+    except PackageNotFoundError:
+        return "unknown"
 
 def create_config_interactive():
     print("[bold cyan]🛠️ Configuration initiale SMTP nécessaire.[/]")
