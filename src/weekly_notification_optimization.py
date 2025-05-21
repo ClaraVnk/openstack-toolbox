@@ -1,3 +1,4 @@
+import getpass
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -29,9 +30,9 @@ def create_config_interactive():
         print("[bold yellow]⚠️ Pour Gmail, utilisez un mot de passe d’application, pas votre mot de passe habituel.[/]")
     smtp_port = input("SMTP port (ex: 587): ").strip()
     smtp_username = input("SMTP username (votre login email): ").strip()
-    smtp_password = input("SMTP password (mot de passe email ou mot de passe d’application Gmail) : ").strip()
-    from_email = input("From email (adresse expéditeur): ").strip()
-    to_email = input("To email (adresse destinataire): ").strip()
+    smtp_password = getpass.getpass("SMTP password (mot de passe email ou mot de passe d’application Gmail) : ").strip()
+    from_email = smtp_username  # l'adresse expéditeur = login SMTP
+    to_email = input("Adresse e-mail destinataire : ").strip()
 
     config = configparser.ConfigParser()
     config['SMTP'] = {
