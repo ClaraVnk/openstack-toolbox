@@ -45,6 +45,20 @@ Command for the optimization's email notification :
   weekly_notification_optimization
   ```
 
+### Important for SMTP configuration with Gmail
+
+If you use Gmail as your SMTP server, please be aware that Google now requires secure authentication via OAuth 2.0 or the use of an App Password (if two-step verification is enabled).
+
+⚠️ **Without this, email sending will fail.**
+
+For more information and instructions, please consult the official Google guide:  
+https://support.google.com/accounts/answer/185833
+
+**Tip:** Enable two-step verification and create an App Password to use SMTP with this project.
+
+To create an App Password, follow this guide:  
+https://support.google.com/accounts/answer/185833#app-passwords
+
 # Manual mode
 
 * Clone this repo in your Openstack directory

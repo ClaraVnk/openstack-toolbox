@@ -23,6 +23,9 @@ def create_config_interactive():
     print("Merci de saisir les informations demandées pour configurer l'envoi d'e-mails.\n")
 
     smtp_server = input("SMTP server (ex: smtp.gmail.com): ").strip()
+    if smtp_server.lower() == "smtp.gmail.com":
+        print("[bold yellow]⚠️ Pour Gmail, vous devez activer la validation en 2 étapes et créer un mot de passe d’application.[/]")
+        print("Voici la page d’aide Google : https://support.google.com/accounts/answer/185833")
     smtp_port = input("SMTP port (ex: 587): ").strip()
     smtp_username = input("SMTP username (votre login email): ").strip()
     smtp_password = input("SMTP password (votre mot de passe email): ").strip()
