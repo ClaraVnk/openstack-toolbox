@@ -2,8 +2,6 @@
 
 import getpass
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
 import sys
 import configparser
@@ -13,6 +11,8 @@ except ImportError:
     from importlib_metadata import version, PackageNotFoundError
 from rich import print
 from notification import generate_report
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 CONFIG_PATH = os.path.expanduser("~/.openstack_toolbox_config.ini")
@@ -131,11 +131,10 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
 
     # Générer le rapport
     print("[bold cyan]📝 Génération du rapport hebdomadaire...[/]")
-    content = generate_report()
-    print(content)
+    email_body = generate_report()
+    print(email_body)
 
     try:
-        email_body = generate_report()
         send_email(
             "Rapport hebdomadaire : Infomaniak Openstack Optimisation",
             email_body
@@ -158,15 +157,6 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
                 print("[bold cyan]ℹ️ Veuillez vérifier vos identifiants ou paramètres SMTP.[/]")
         else:
             print("[bold cyan]ℹ️ Vous pouvez relancer ce script plus tard après correction de la configuration.[/]")
-
-    # Demander à l'utilisateur s'il souhaite configurer l'envoi hebdomadaire
-    # print("\n💌 Voulez-vous paramétrer l'envoi hebdomadaire d'un e-mail avec le résumé de la semaine ? (o/n)")
-    # choice = input().strip().lower()
-    # if choice == 'o':
-        # setup_cron()
-        # print("[bold green]✅ Configuration terminée. Vous pouvez maintenant envoyer des e-mails.[/]")
-    # else:
-        # print("[bold yellow]❌ Configuration annulée.[/]")
 
 if __name__ == '__main__':
     main()
