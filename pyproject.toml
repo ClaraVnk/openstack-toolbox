@@ -41,5 +41,5 @@ packages = ["src"]
 openstack-summary = "src.openstack_summary:main"
 openstack-optimization = "src.openstack_optimization:main"
 openstack-admin = "src.openstack_admin:main"
-weekly-notification = "src.weekly_notification_optimization:main"
 openstack-toolbox = "src.openstack_toolbox:main"
+weekly-notification = "src.weekly_notification_optimization:main"

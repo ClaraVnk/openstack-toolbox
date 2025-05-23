@@ -106,7 +106,7 @@ def list_images(conn):
     if not all_images:
         print("🚫 Aucune image trouvée.")
         return
-    table = Table(title="Images utilisées")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Visibilité", style="green")
@@ -125,7 +125,7 @@ def list_instances(conn):
     if not instances:
         print("🚫 Aucune instance trouvée.")
         return
-    table = Table(title="Instances")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Flavor ID", style="green")
@@ -147,7 +147,7 @@ def list_snapshots(conn):
     if not snapshots:
         print("🚫 Aucun snapshot trouvé.")
         return
-    table = Table(title="Snapshots")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Volume associé", style="green")
@@ -164,7 +164,7 @@ def list_backups(conn):
     if not backups:
         print("🚫 Aucun backup trouvé.")
         return
-    table = Table(title="Backups")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Volume associé", style="green")
@@ -181,7 +181,7 @@ def list_volumes(conn):
     if not volumes:
         print("🚫 Aucun volume trouvé.")
         return
-    table = Table(title="Volumes")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Taille (Go)", justify="right")
@@ -194,8 +194,6 @@ def list_volumes(conn):
         table.add_row(volume.id, volume.name, str(volume.size), volume.volume_type, attached, snapshot_id)
     console.print(table)
 
-# Lister les volumes sous forme d'arborescence
-print_header("ARBORESCENCE DES VOLUMES")
 # Récupérer les volumes attachés aux instances
 def mounted_volumes(conn):
     instances = conn.compute.servers()
@@ -233,10 +231,6 @@ def print_tree(tree_data):
             instance_branch.add("🚫 Aucun volume")
     console.print(tree)
 
-# Obtenir l'arborescence des volumes montés
-tree = mounted_volumes(conn)
-print_tree(tree)
-
 # Lister les IP flottantes
 def list_floating_ips(conn):
     print_header("LISTE DES FLOATING IPs")
@@ -246,7 +240,7 @@ def list_floating_ips(conn):
     if not floating_ips:
         print("🚫 Aucune IP flottante trouvée.")
         return
-    table = Table(title="Floating IPs")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("IP", style="cyan")
     table.add_column("Statut", style="green")
@@ -279,7 +273,7 @@ def list_containers(conn):
     if not containers:
         print("🚫 Aucun container trouvé.")
         return
-    table = Table(title="Containers")
+    table = Table(title="")
     table.add_column("Nom", style="cyan")
     table.add_column("Taille totale", justify="right", style="magenta")
     for container in containers:
