@@ -28,11 +28,6 @@ dependencies = [
 Homepage = "https://github.com/ClaraVnk/openstack-toolbox"
 Issues = "https://github.com/ClaraVnk/openstack-toolbox/issues"
 
-[project.scripts]
-openstack_summary = "src.openstack_summary:main"
-openstack_optimization = "src.openstack_optimization:main"
-weekly_notification_optimization = "src.weekly_notification_optimization:main"
-
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/bin/python3",
@@ -40,3 +35,9 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
+
+[project.scripts]
+openstack-toolbox = "scripts/openstack-toolbox"
+openstack-summary = "scripts/openstack-summary"
+openstack-optimization = "scripts/openstack-optimization"
+weekly-notification = "scripts/weekly-notification"

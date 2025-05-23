@@ -31,11 +31,13 @@ You can reconfigure it to match your provider's pricing if needed.
 
 ### 1. Setup your virtual environment
 
-- Log in to your OpenStack environment.
-- Activate your virtual environment:  
+- Activate your virtual environment 
   ```bash
   source openstack-toolbox/bin/activate
-  source ../openstack-rc  # Source your OpenStack credentials here
+  ```
+- Source your credentials
+  ```
+  source ../openstack-rc  
   ```
 
 ### 2. Easy mode installation
@@ -44,6 +46,10 @@ Install the toolbox globally with pip:
 
 ```bash
 pip install openstack-toolbox
+```
+
+```bash
+chmod +x scripts/*
 ```
 
 ---
