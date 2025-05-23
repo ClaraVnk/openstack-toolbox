@@ -1,22 +1,20 @@
+#!/usr/bin/env python3
+
 import getpass
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-
 import configparser
-
 try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:
     from importlib_metadata import version, PackageNotFoundError
 from rich import print
 from notification import generate_report
-from cron_notification import setup_cron
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 CONFIG_PATH = os.path.expanduser("~/.openstack_toolbox_config.ini")
 
 def get_version():
@@ -67,6 +65,13 @@ def load_config():
         print("[bold red]❌ Section [SMTP] manquante dans le fichier de configuration.[/]")
         sys.exit(1)
     return config['SMTP']
+
+def generate_report():
+    try:
+        with open('/tmp/openstack_optimization_report.txt', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "❌ Le fichier /tmp/openstack_optimization_report.txt est introuvable."
 
 def send_email(subject, body):
     smtp_config = load_config()
@@ -124,6 +129,11 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
 """
     print(header)
 
+    # Générer le rapport
+    print("[bold cyan]📝 Génération du rapport hebdomadaire...[/]")
+    content = generate_report()
+    print(content)
+
     try:
         email_body = generate_report()
         send_email(
@@ -149,13 +159,14 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
         else:
             print("[bold cyan]ℹ️ Vous pouvez relancer ce script plus tard après correction de la configuration.[/]")
 
-    print("\n💌 Voulez-vous paramétrer l'envoi hebdomadaire d'un e-mail avec le résumé de la semaine ? (o/n)")
-    choice = input().strip().lower()
-    if choice == 'o':
-        setup_cron()
-        print("[bold green]✅ Configuration terminée. Vous pouvez maintenant envoyer des e-mails.[/]")
-    else:
-        print("[bold yellow]❌ Configuration annulée.[/]")
+    # Demander à l'utilisateur s'il souhaite configurer l'envoi hebdomadaire
+    # print("\n💌 Voulez-vous paramétrer l'envoi hebdomadaire d'un e-mail avec le résumé de la semaine ? (o/n)")
+    # choice = input().strip().lower()
+    # if choice == 'o':
+        # setup_cron()
+        # print("[bold green]✅ Configuration terminée. Vous pouvez maintenant envoyer des e-mails.[/]")
+    # else:
+        # print("[bold yellow]❌ Configuration annulée.[/]")
 
 if __name__ == '__main__':
     main()
