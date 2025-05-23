@@ -3,6 +3,7 @@
 import sys
 import importlib
 import os
+import tomllib  # Python 3.11+
 from datetime import datetime
 from rich import print
 from rich.console import Console
@@ -16,10 +17,16 @@ console = Console()
 
 # Fonction pour récupérer la version
 def get_version():
+    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
+    pyproject_path = os.path.abspath(pyproject_path)
+
     try:
-        return version("openstack-toolbox")
-    except PackageNotFoundError:
-        return "unknown"
+        with open(pyproject_path, "rb") as f:
+            pyproject_data = tomllib.load(f)
+        version = pyproject_data.get("project", {}).get("version", "unknown")
+    except Exception as e:
+        version = "unknown"
+    return version
 
 # Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():

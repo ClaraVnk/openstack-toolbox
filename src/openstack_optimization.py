@@ -4,6 +4,7 @@ import sys
 import importlib
 import json
 import os
+import tomllib  # Python 3.11+
 import subprocess
 from dotenv import load_dotenv
 from openstack import connection
@@ -17,10 +18,16 @@ except ImportError:
 
 # Fonction pour récupérer la version
 def get_version():
+    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
+    pyproject_path = os.path.abspath(pyproject_path)
+
     try:
-        return version("openstack-toolbox")
-    except PackageNotFoundError:
-        return "unknown"
+        with open(pyproject_path, "rb") as f:
+            pyproject_data = tomllib.load(f)
+        version = pyproject_data.get("project", {}).get("version", "unknown")
+    except Exception as e:
+        version = "unknown"
+    return version
 
 # Fonction pour générer le fichier de billing
 def generate_billing():
