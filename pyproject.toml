@@ -16,12 +16,12 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
-License = "Apache-2.0"
+license = "Apache-2.0"
 license-files = ["LICENCE*"]
 dependencies = [
   "openstacksdk",
   "python-dotenv",
-  "rich"
+  "rich",
   "tomli"
 ]
 
