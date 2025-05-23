@@ -69,18 +69,19 @@ def parse_flavor_name(name):
 def load_openstack_credentials():
     load_dotenv()  # essaie de charger depuis .env s’il existe
 
+    # Cherche les variables d'environnement, qu'elles viennent du .env ou de l'environnement système
     creds = {
-        "auth_url": os.getenv("OS_AUTH_URL"),
-        "project_name": os.getenv("OS_PROJECT_NAME"),
-        "username": os.getenv("OS_USERNAME"),
-        "password": os.getenv("OS_PASSWORD"),
-        "user_domain_name": os.getenv("OS_USER_DOMAIN_NAME"),
-        "project_domain_name": os.getenv("OS_PROJECT_DOMAIN_NAME"),
+        "auth_url": os.environ.get("OS_AUTH_URL"),
+        "project_name": os.environ.get("OS_PROJECT_NAME"),
+        "username": os.environ.get("OS_USERNAME"),
+        "password": os.environ.get("OS_PASSWORD"),
+        "user_domain_name": os.environ.get("OS_USER_DOMAIN_NAME"),
+        "project_domain_name": os.environ.get("OS_PROJECT_DOMAIN_NAME"),
     }
 
     # Si une des variables est absente, on lève une exception directement
     if not all(creds.values()):
-        raise RuntimeError("❌ Identifiants OpenStack incomplets dans le fichier .env")
+        raise RuntimeError("❌ Identifiants OpenStack incomplets (manque dans .env ou variables d'environnement)")
 
     return creds
 
