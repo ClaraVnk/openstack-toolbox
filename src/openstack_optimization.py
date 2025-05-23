@@ -4,6 +4,7 @@ import sys
 import importlib
 import json
 import os
+import subprocess
 from dotenv import load_dotenv
 from openstack import connection
 from rich import print
@@ -31,10 +32,10 @@ def generate_billing():
         return f"❌ Erreur lors de l'exécution de weekly_billing.py : {e}"
 
     try:
-        with open('/tmp/weekly_billing.json', 'r') as f:
+        with open('weekly_billing.json', 'r') as f:
             return f.read()
     except FileNotFoundError:
-        return "❌ Le fichier /tmp/weekly_billing.json est introuvable."
+        return "❌ Le fichier weekly_billing.json est introuvable."
 
 # Fonction pour traduire le nom du flavor 
 def parse_flavor_name(name):
@@ -213,12 +214,7 @@ def collect_and_analyze_data():
     
     report_body += "[TOTAL DES RESSOURCES CONSOMMÉES]\n"
     try:
-        from openstack import connection
-        from dotenv import load_dotenv
-
-        creds = load_openstack_credentials()
-        conn_summary = connection.Connection(**creds)
-        instances = list(conn_summary.compute.servers())
+        instances = list(conn.compute.servers())
         total_instances = len(instances)
 
         total_vcpus = 0
@@ -271,22 +267,15 @@ def main():
     billing_text = generate_billing()
     if "introuvable" in billing_text:
         print("[bold red]❌ Échec de la récupération du billing[/]")
-        billing_data = []
-    else:
-        try:
-            billing_data = json.loads(billing_text)
-        except json.JSONDecodeError:
-            print("[bold red]❌ Erreur de parsing du fichier billing[/]")
-            billing_data = []
 
     # Collecter et analyser les données
     report_body = collect_and_analyze_data()
 
     # Enregistrer le rapport dans un fichier
-    with open('/tmp/openstack_optimization_report.txt', 'w') as f:
+    with open('openstack_optimization_report.txt', 'w') as f:
         f.write(report_body)
 
-    print("[bold green]🎉 Rapport généré avec succès :[/] /tmp/openstack_optimization_report.txt")
+    print("[bold green]🎉 Rapport généré avec succès :[/] openstack_optimization_report.txt")
     
     # Afficher le rapport
     print(report_body)

@@ -30,10 +30,10 @@ def generate_billing():
         return f"❌ Erreur lors de l'exécution de fetch_billing.py : {e}"
 
     try:
-        with open('/tmp/billing.json', 'r') as f:
+        with open('billing.json', 'r') as f:
             return f.read()
     except FileNotFoundError:
-        return "❌ Le fichier /tmp/billing.json est introuvable."
+        return "❌ Le fichier billing.json est introuvable."
 
 # Fonction pour traduire le nom du flavor
 def parse_flavor_name(name):
