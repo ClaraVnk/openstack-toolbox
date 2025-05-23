@@ -22,7 +22,7 @@ def get_version():
 
     try:
         with open(pyproject_path, "rb") as f:
-            pyproject_data = tomllib.load(f)
+            pyproject_data = tomli.load(f)
         version = pyproject_data.get("project", {}).get("version", "unknown")
     except Exception as e:
         version = "unknown"

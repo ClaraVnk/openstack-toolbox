@@ -2,6 +2,7 @@
 
 import os
 import tomli
+from rich import print
 
 def get_version():
     pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
@@ -9,7 +10,7 @@ def get_version():
 
     try:
         with open(pyproject_path, "rb") as f:
-            pyproject_data = tomllib.load(f)
+            pyproject_data = tomli.load(f)
         version = pyproject_data.get("project", {}).get("version", "unknown")
     except Exception as e:
         version = "unknown"
@@ -18,7 +19,7 @@ def get_version():
 def main():
     version = get_version()
 
-    header = """
+    header = r"""
   ___                       _             _    
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __
 | | | | '_ \ / _ \ '_ \/ __| __/ _` |/ __| |/ /
@@ -32,9 +33,9 @@ def main():
 """
 
     print(header)
-    print(f"\n[cyan]🧰 Commandes disponibles (version {version}:[/]")
+    print(f"\n[cyan]🧰 Commandes disponibles (version {version}):[/]")
     print("  • [bold]openstack-summary[/]      → Génère un résumé global du projet")
-    print(f"  • [bold]openstack-admin[/]       → Génère un résumé global de tous les projets (mode SysAdmin)")
+    print("  • [bold]openstack-admin[/]        → Génère un résumé global de tous les projets (mode SysAdmin)")
     print("  • [bold]openstack-optimization[/] → Identifie les ressources sous-utilisées dans la semaine")
     print("  • [bold]weekly-notification[/]    → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
 
