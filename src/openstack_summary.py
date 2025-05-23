@@ -67,29 +67,46 @@ def parse_flavor_name(name):
 
 # Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():
-    load_dotenv()  # essaie de charger depuis .env s’il existe
+    load_dotenv()  # Charge .env si présent
 
-    # Cherche les variables d'environnement, qu'elles viennent du .env ou de l'environnement système
-    creds = {
-        "auth_url": os.environ.get("OS_AUTH_URL"),
-        "project_name": os.environ.get("OS_PROJECT_NAME"),
-        "username": os.environ.get("OS_USERNAME"),
-        "password": os.environ.get("OS_PASSWORD"),
-        "user_domain_name": os.environ.get("OS_USER_DOMAIN_NAME"),
-        "project_domain_name": os.environ.get("OS_PROJECT_DOMAIN_NAME"),
-    }
+    expected_vars = [
+        "OS_AUTH_URL",
+        "OS_PROJECT_NAME",
+        "OS_USERNAME",
+        "OS_PASSWORD",
+        "OS_USER_DOMAIN_NAME",
+    ]
 
-    # Si une des variables est absente, on lève une exception directement
-    if not all(creds.values()):
-        raise RuntimeError("❌ Identifiants OpenStack incomplets (manque dans .env ou variables d'environnement)")
+    creds = {}
+    missing_vars = []
+
+    # Récupération des variables obligatoires
+    for var in expected_vars:
+        value = os.getenv(var)
+        if not value:
+            missing_vars.append(var)
+        else:
+            key = var.lower().replace("os_", "")
+            creds[key] = value
+
+    # Récupération du project_domain_name ou project_domain_id
+    project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
+    project_domain_id = os.getenv("OS_PROJECT_DOMAIN_ID")
+
+    if project_domain_name:
+        creds["project_domain_name"] = project_domain_name
+    elif project_domain_id:
+        creds["project_domain_id"] = project_domain_id
+    else:
+        missing_vars.append("OS_PROJECT_DOMAIN_NAME/OS_PROJECT_DOMAIN_ID")
+
+    if missing_vars:
+        print(f"[bold red]❌ Variables OpenStack manquantes : {', '.join(missing_vars)}[/]")
+        return None
 
     return creds
 
 console = Console()
-
-# Connexion à OpenStack
-creds = load_openstack_credentials()
-conn = connection.Connection(**creds)
 
 # Fonction pour afficher les en-têtes
 def print_header(header):
@@ -432,11 +449,15 @@ def main():
 
     print(header)
 
-    # Test de connection à OpenStack
+    # Test des credentials
+    creds = load_openstack_credentials()
+    if not creds:
+        print("[bold red]❌ Impossible de charger les identifiants OpenStack. Vérifiez votre configuration.[/]")
+        return
+
+    conn = connection.Connection(**creds)
     if not conn.authorize():
         print("[bold red]❌ Échec de la connexion à OpenStack[/]")
-        print("ℹ️ Vérifiez que votre fichier .env contient bien toutes les variables requises :")
-        print("   OS_AUTH_URL, OS_PROJECT_NAME, OS_USERNAME, OS_PASSWORD, OS_USER_DOMAIN_NAME, OS_PROJECT_DOMAIN_NAME")
         return
 
     # Générer le fichier de billing
