@@ -3,29 +3,6 @@
 import subprocess
 import sys
 import importlib
-
-def install_package(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-# Vérifier et installer les dépendances manquantes
-try:
-    importlib.import_module('openstack')
-except ImportError:
-    print("[yellow]⚙️ Installation du package openstack...[/]")
-    install_package('openstacksdk')
-
-try:
-    importlib.import_module('dotenv')
-except ImportError:
-    print("[yellow]⚙️ Installation du package dotenv...[/]")
-    install_package('python-dotenv')
-
-try:
-    importlib.import_module('rich')
-except ImportError:
-    print("[yellow]⚙️ Installation du package rich...[/]")
-    install_package('rich')
-
 import openstack
 from datetime import datetime
 from rich import print

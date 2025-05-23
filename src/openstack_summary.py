@@ -7,16 +7,6 @@ try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:
     from importlib_metadata import version, PackageNotFoundError
-
-def install_package(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-try:
-    importlib.import_module('rich')
-except ImportError:
-    print("[yellow]⚙️ Installation du package rich...[/]")
-    install_package('rich')
-
 from rich import print
 
 def get_version():

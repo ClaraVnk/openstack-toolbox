@@ -6,6 +6,12 @@ import importlib
 import json
 from datetime import datetime
 import os
+from openstack import connection
+from dotenv import load_dotenv
+from rich import print
+from rich.console import Console
+from rich.table import Table
+from rich.tree import Tree
 
 # Fonction pour traduire le nom du flavor
 def parse_flavor_name(name):
@@ -52,35 +58,6 @@ def load_openstack_credentials():
             raise RuntimeError("❌ Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
 
     return creds
-
-def install_package(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-# Vérifier et installer les dépendances manquantes
-try:
-    importlib.import_module('openstack')
-except ImportError:
-    print("⚙️ Installation du package openstack...")
-    install_package('openstacksdk')
-
-try:
-    importlib.import_module('dotenv')
-except ImportError:
-    print("⚙️ Installation du package dotenv...")
-    install_package('python-dotenv')
-
-try:
-    importlib.import_module('rich')
-except ImportError:
-    print("⚙️ Installation du package rich...")
-    install_package('rich')
-
-from openstack import connection
-from dotenv import load_dotenv
-from rich import print
-from rich.console import Console
-from rich.table import Table
-from rich.tree import Tree
 
 console = Console()
 
