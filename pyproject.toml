@@ -18,6 +18,11 @@ classifiers = [
 ]
 License = "Apache-2.0"
 license-files = ["LICENCE*"]
+dependencies = [
+  "openstacksdk",
+  "python-dotenv",
+  "rich"
+]
 
 [project.urls]
 Homepage = "https://github.com/ClaraVnk/openstack-toolbox"
