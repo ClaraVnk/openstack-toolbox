@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-def get_version:
+from importlib.metadata import version, PackageNotFoundError
+
+def get_version():
     try:
         return version("openstack-toolbox")
     except PackageNotFoundError:
@@ -29,5 +31,5 @@ def main():
     print ("  • [bold]openstack-optimization[/] → Identifie les ressources sous-utilisées dans la semaine")
     print ("  • [bold]weekly-notification[/]    → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
 
-if __name__ == 'main_main':
+if __name__ == '__main__':
     main()

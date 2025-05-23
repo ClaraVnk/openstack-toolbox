@@ -5,12 +5,13 @@ import smtplib
 import os
 import sys
 import configparser
+import subprocess
+import shutil
 try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:
     from importlib_metadata import version, PackageNotFoundError
 from rich import print
-from notification import generate_report
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -68,10 +69,10 @@ def load_config():
 
 def generate_report():
     try:
-        with open('/tmp/openstack_optimization_report.txt', 'r') as f:
+        with open('openstack_optimization_report.txt', 'r') as f:
             return f.read()
     except FileNotFoundError:
-        return "❌ Le fichier /tmp/openstack_optimization_report.txt est introuvable."
+        return "❌ Le fichier openstack_optimization_report.txt est introuvable."
 
 def send_email(subject, body):
     smtp_config = load_config()
@@ -103,13 +104,8 @@ def send_email(subject, body):
 
 def main():
     version = get_version()
-    # Afficher le message d'accueil
-    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v{version} 🎉[/]")
-    print("[cyan]Commandes disponibles :[/]")
-    print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
-    print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
-    print("  • [bold]openstack_weekly_notification[/]   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
 
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{version} 🎉[/]")
     header = r"""
   ___                       _             _          
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __      
@@ -124,6 +120,7 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
 |  \| |/ _ \| __| | |_| |/ __/ _` | __| |/ _ \| '_ \ 
 | |\  | (_) | |_| |  _| | (_| (_| | |_| | (_) | | | |
 |_| \_|\___/ \__|_|_| |_|\___\__,_|\__|_|\___/|_| |_|                                                
+         
          By Loutre
 
 """
@@ -157,6 +154,29 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
                 print("[bold cyan]ℹ️ Veuillez vérifier vos identifiants ou paramètres SMTP.[/]")
         else:
             print("[bold cyan]ℹ️ Vous pouvez relancer ce script plus tard après correction de la configuration.[/]")
+
+    # Proposer d'ajouter une tâche cron pour envoi hebdomadaire
+    print("💌 Voulez-vous paramétrer l'envoi hebdomadaire automatique par email ? (o/n)")
+    reponse = input().strip().lower()
+    if reponse == 'o':
+        script_path = os.path.abspath(__file__)
+        cron_line = f"0 8 * * 1 python3 {script_path}"
+
+        # Vérifier si la tâche cron existe déjà
+        try:
+            current_crontab = subprocess.check_output(['crontab', '-l'], stderr=subprocess.DEVNULL, text=True)
+        except subprocess.CalledProcessError:
+            current_crontab = ''
+
+        if cron_line in current_crontab:
+            print("ℹ️ La tâche cron existe déjà.")
+        else:
+            updated_crontab = current_crontab + f"\n{cron_line}\n"
+            subprocess.run(['crontab', '-'], input=updated_crontab, text=True)
+            print("✅ Tâche cron ajoutée : vous recevrez un email tous les lundis à 8h.")
+    else:
+        print("❌ Configuration de la tâche cron annulée.")
+
 
 if __name__ == '__main__':
     main()

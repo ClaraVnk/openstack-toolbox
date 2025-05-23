@@ -404,8 +404,8 @@ def list_containers(conn):
 
 # Fonction principale
 def main():
-    version = get_version()
-    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{version} 🎉[/]")
+    toolbox_version = get_version()
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{toolbox_version} 🎉[/]")
 
     header = r"""
   ___                       _             _       
@@ -427,6 +427,8 @@ def main():
     # Test de connection à OpenStack
     if not conn.authorize():
         print("[bold red]❌ Échec de la connexion à OpenStack[/]")
+        print("ℹ️ Vérifiez que votre fichier .env contient bien toutes les variables requises :")
+        print("   OS_AUTH_URL, OS_PROJECT_NAME, OS_USERNAME, OS_PASSWORD, OS_USER_DOMAIN_NAME, OS_PROJECT_DOMAIN_NAME")
         return
 
     # Générer le fichier de billing

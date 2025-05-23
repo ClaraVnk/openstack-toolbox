@@ -24,6 +24,7 @@ def get_version():
 
 # Fonction pour générer le fichier de billing
 def generate_billing():
+    import os
     try:
         # Importer et exécuter le script weekly_billing.py comme module
         import weekly_billing
@@ -31,11 +32,14 @@ def generate_billing():
     except Exception as e:
         return f"❌ Erreur lors de l'exécution de weekly_billing.py : {e}"
 
+    if not os.path.isfile('weekly_billing.json'):
+        return "❌ Le fichier weekly_billing.json est introuvable après exécution du script."
+
     try:
         with open('weekly_billing.json', 'r') as f:
             return f.read()
-    except FileNotFoundError:
-        return "❌ Le fichier weekly_billing.json est introuvable."
+    except Exception as e:
+        return f"❌ Erreur lors de la lecture du fichier weekly_billing.json : {e}"
 
 # Fonction pour traduire le nom du flavor 
 def parse_flavor_name(name):
@@ -240,8 +244,8 @@ def collect_and_analyze_data():
     return report_body
 
 def main():
-    version = get_version()
-    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{version} 🎉[/]")
+    toolbox_version = get_version()
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{toolbox_version} 🎉[/]")
     header = r"""
   ___                       _             _               
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __           
