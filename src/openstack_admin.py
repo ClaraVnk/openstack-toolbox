@@ -3,7 +3,7 @@
 import sys
 import importlib
 import os
-import tomllib  # Python 3.11+
+import tomli
 from datetime import datetime
 from rich import print
 from rich.console import Console

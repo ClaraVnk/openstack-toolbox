@@ -5,7 +5,7 @@ import importlib
 import json
 from datetime import datetime
 import os
-import tomllib  # Python 3.11+
+import tomli
 from importlib.metadata import version, PackageNotFoundError
 from openstack import connection
 from dotenv import load_dotenv

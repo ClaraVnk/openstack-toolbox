@@ -4,7 +4,7 @@ import sys
 import importlib
 import json
 import os
-import tomllib  # Python 3.11+
+import tomli
 import subprocess
 from dotenv import load_dotenv
 from openstack import connection

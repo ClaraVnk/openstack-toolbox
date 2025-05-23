@@ -22,7 +22,7 @@ dependencies = [
   "openstacksdk",
   "python-dotenv",
   "rich"
-  "tomllib
+  "tomli"
 ]
 
 [project.urls]

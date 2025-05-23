@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-import tomllib  # Python 3.11+
+import tomli
 
 def get_version():
     pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
