@@ -30,17 +30,19 @@ def get_version():
 # Fonction pour générer le fichier de billing
 def generate_billing():
     try:
-        # Importer et exécuter le script fetch_billing.py comme module
-        import fetch_billing
-        fetch_billing.main() 
+        from . import fetch_billing
+        fetch_billing.main()
     except Exception as e:
         return f"❌ Erreur lors de l'exécution de fetch_billing.py : {e}"
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    billing_path = os.path.join(script_dir, "billing.json")
+
     try:
-        with open('billing.json', 'r') as f:
+        with open(billing_path, 'r') as f:
             return f.read()
     except FileNotFoundError:
-        return "❌ Le fichier billing.json est introuvable."
+        return f"❌ Le fichier billing.json est introuvable à l'emplacement attendu : {billing_path}"
 
 # Fonction pour traduire le nom du flavor
 def parse_flavor_name(name):
@@ -191,7 +193,7 @@ def list_images(conn):
         return
 
     # Affichage avec rich.Table
-    table = Table(title="Images OpenStack")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Visibilité", style="green")
@@ -245,7 +247,7 @@ def list_instances(conn, billing_data):
     total_ram_go = 0
     total_disk_go = 0
 
-    table = Table(title="Instances OpenStack")
+    table = Table(title="")
 
     table.add_column("État", justify="center", style="bold")
     table.add_column("ID", style="magenta")
@@ -301,7 +303,7 @@ def list_snapshots(conn):
         return
 
     # Affichage avec rich.Table
-    table = Table(title="Snapshots OpenStack")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Volume associé", style="green")
@@ -320,7 +322,7 @@ def list_backups(conn):
         return
 
     # Affichage avec rich.Table
-    table = Table(title="Backups OpenStack")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Volume associé", style="green")
@@ -339,7 +341,7 @@ def list_volumes(conn):
         return
 
     # Affichage avec rich.Table
-    table = Table(title="Volumes OpenStack")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
     table.add_column("Taille", justify="right")
@@ -400,7 +402,7 @@ def list_floating_ips(conn):
         return
 
     # Affichage avec rich.Table
-    table = Table(title="IP Flottantes OpenStack")
+    table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("IP", style="cyan")
     table.add_column("Statut", style="green")
@@ -419,7 +421,7 @@ def list_containers(conn):
         return
 
     # Affichage avec rich.Table
-    table = Table(title="Containers OpenStack")
+    table = Table(title="")
     table.add_column("Nom", style="cyan")
     table.add_column("Taille totale", justify="right", style="magenta")
     for container in containers:
@@ -468,7 +470,7 @@ def main():
     else:
         try:
             billing_data = json.loads(billing_text)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             print("[bold red]❌ Erreur de parsing du fichier billing[/]")
             billing_data = []
 

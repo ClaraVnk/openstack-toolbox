@@ -57,8 +57,10 @@ def main():
 
     if result.returncode == 0:
         import os
+
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_path = os.path.join(script_dir, "billing.json")
+
         with open(output_path, "w") as f:
             f.write(result.stdout)
     else:

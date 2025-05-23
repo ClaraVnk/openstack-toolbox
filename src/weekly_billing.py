@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import subprocess
 from datetime import datetime, timedelta, timezone
 
@@ -30,7 +31,11 @@ def main():
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
-        with open("weekly_billing.json", "w") as f:
+        import os
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        billing_path = os.path.join(script_dir, "weekly_billing.json")
+
+        with open(billing_path, "w") as f:
             f.write(result.stdout)
     else:
         print("❌ Échec de la récupération des données")

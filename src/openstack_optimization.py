@@ -6,8 +6,8 @@ import json
 import os
 import tomli
 import subprocess
-from dotenv import load_dotenv
 from openstack import connection
+from dotenv import load_dotenv
 from rich import print
 from rich.console import Console
 from rich.table import Table
@@ -15,6 +15,9 @@ try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:
     from importlib_metadata import version, PackageNotFoundError
+
+# Ajoute le dossier src au path pour les imports locaux
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Fonction pour récupérer la version
 def get_version():
@@ -31,22 +34,20 @@ def get_version():
 
 # Fonction pour générer le fichier de billing
 def generate_billing():
-    import os
     try:
-        # Importer et exécuter le script weekly_billing.py comme module
-        import weekly_billing
-        weekly_billing.main() 
+        from . import weekly_billing
+        weekly_billing.main()
     except Exception as e:
         return f"❌ Erreur lors de l'exécution de weekly_billing.py : {e}"
 
-    if not os.path.isfile('weekly_billing.json'):
-        return "❌ Le fichier weekly_billing.json est introuvable après exécution du script."
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    billing_path = os.path.join(script_dir, "weekly_billing.json")
 
     try:
-        with open('weekly_billing.json', 'r') as f:
+        with open(billing_path, 'r') as f:
             return f.read()
-    except Exception as e:
-        return f"❌ Erreur lors de la lecture du fichier weekly_billing.json : {e}"
+    except FileNotFoundError:
+        return f"❌ Le fichier weekly_billing.json est introuvable à l'emplacement attendu : {billing_path}"
 
 # Fonction pour traduire le nom du flavor 
 def parse_flavor_name(name):
@@ -306,6 +307,13 @@ def main():
     billing_text = generate_billing()
     if "introuvable" in billing_text:
         print("[bold red]❌ Échec de la récupération du billing[/]")
+        billing_data = []
+    else:
+        try:
+            billing_data = json.loads(billing_text)
+        except json.JSONDecodeError as e:
+            print("[bold red]❌ Erreur de parsing du fichier billing[/]")
+            billing_data = []
 
     # Collecter et analyser les données
     report_body = collect_and_analyze_data()
