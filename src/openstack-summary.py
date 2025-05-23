@@ -1,17 +1,39 @@
 #!/usr/bin/env python3
 
-import subprocess
 import sys
 import importlib
 import json
 from datetime import datetime
 import os
+from importlib.metadata import version, PackageNotFoundError
 from openstack import connection
 from dotenv import load_dotenv
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
+
+# Fonction pour récupérer la version
+def get_version():
+    try:
+        return version("openstack-toolbox")
+    except PackageNotFoundError:
+        return "unknown"
+
+# Fonction pour générer le fichier de billing
+def generate_billing():
+    try:
+        # Importer et exécuter le script fetch_billing.py comme module
+        import fetch_billing
+        fetch_billing.main() 
+    except Exception as e:
+        return f"❌ Erreur lors de l'exécution de fetch_billing.py : {e}"
+
+    try:
+        with open('/tmp/billing.json', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "❌ Le fichier /tmp/billing.json est introuvable."
 
 # Fonction pour traduire le nom du flavor
 def parse_flavor_name(name):
@@ -49,13 +71,9 @@ def load_openstack_credentials():
         "project_domain_name": os.getenv("OS_PROJECT_DOMAIN_NAME"),
     }
 
-    # Si une des variables est absente, on essaie de charger depuis un fichier JSON
+    # Si une des variables est absente, on lève une exception directement
     if not all(creds.values()):
-        try:
-            with open("secrets.json") as f:
-                creds = json.load(f)
-        except FileNotFoundError:
-            raise RuntimeError("❌ Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
+        raise RuntimeError("❌ Identifiants OpenStack incomplets dans le fichier .env")
 
     return creds
 
@@ -385,17 +403,43 @@ def list_containers(conn):
     console.print(table)
 
 # Fonction principale
-def main(billing_path=None):
+def main():
+    version = get_version()
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{version} 🎉[/]")
+
+    header = r"""
+  ___                       _             _       
+ / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __   
+| | | | '_ \ / _ \ '_ \/ __| __/ _` |/ __| |/ /   
+| |_| | |_) |  __/ | | \__ \ || (_| | (__|   <    
+ \___/| .__/ \___|_| |_|___/\__\__,_|\___|_|\_\   
+/ ___||_|  _ _ __ ___  _ __ ___   __ _ _ __ _   _ 
+\___ \| | | | '_ ` _ \| '_ ` _ \ / _` | '__| | | |
+ ___) | |_| | | | | | | | | | | | (_| | |  | |_| |
+|____/ \__,_|_| |_| |_|_| |_| |_|\__,_|_|   \__, |
+                                            |___/ 
+            By Loutre
+    
+    """
+
+    print(header)
+
     # Test de connection à OpenStack
     if not conn.authorize():
         print("[bold red]❌ Échec de la connexion à OpenStack[/]")
         return
 
-    if not billing_path:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        billing_path = os.path.join(script_dir, 'billing.json')
-
-    billing_data = get_billing_data_from_file(billing_path)
+    # Générer le fichier de billing
+    billing_text = generate_billing()
+    if "introuvable" in billing_text:
+        print("[bold red]❌ Échec de la récupération du billing[/]")
+        billing_data = []
+    else:
+        try:
+            billing_data = json.loads(billing_text)
+        except json.JSONDecodeError:
+            print("[bold red]❌ Erreur de parsing du fichier billing[/]")
+            billing_data = []
 
     # Lister les ressources
     list_images(conn)
@@ -410,6 +454,4 @@ def main(billing_path=None):
     list_containers(conn)
 
 if __name__ == "__main__":
-    import sys
-    billing_arg = sys.argv[1] if len(sys.argv) > 1 else None
-    main(billing_arg)
+    main()

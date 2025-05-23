@@ -37,7 +37,7 @@ exclude = [
 packages = ["src"]
 
 [project.scripts]
-openstack-toolbox = "scripts/openstack-toolbox"
-openstack-summary = "scripts/openstack-summary"
-openstack-optimization = "scripts/openstack-optimization"
-weekly-notification = "scripts/weekly-notification"
+openstack-summary = "src.openstack_summary:main"
+openstack-optimization = "src.openstack_optimization:main"
+openstack-admin = "src.openstack_admin:main"
+weekly-notification-optimization = "src.weekly_notification_optimization:main"

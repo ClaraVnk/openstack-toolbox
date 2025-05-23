@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
-import subprocess
 import sys
 import importlib
 import json
 import os
+from dotenv import load_dotenv
+from openstack import connection
+from rich import print
+from rich.console import Console
+from rich.table import Table
 try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:
@@ -39,12 +43,6 @@ def parse_flavor_name(name):
         print(f"❌ Échec du parsing pour le flavor '{name}' : {str(e)}")
         return name, None, None, None
 
-def run_script(script_name):
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # = src/
-    script_path = os.path.join(script_dir, script_name)
-
-    result = subprocess.run([sys.executable, script_path], check=True)
-
 def load_openstack_credentials():
     load_dotenv()  # essaie de charger depuis .env s’il existe
 
@@ -66,34 +64,6 @@ def load_openstack_credentials():
             raise RuntimeError("❌ Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
 
     return creds
-
-def install_package(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-# Vérifier et installer les dépendances manquantes
-try:
-    importlib.import_module('openstack')
-except ImportError:
-    print("⚙️ Installation du package openstack...")
-    install_package('openstacksdk')
-
-try:
-    importlib.import_module('dotenv')
-except ImportError:
-    print("⚙️ Installation du package dotenv...")
-    install_package('python-dotenv')
-
-try:
-    importlib.import_module('rich')
-except ImportError:
-    print("⚙️ Installation du package rich...")
-    install_package('rich')
-
-from dotenv import load_dotenv
-from openstack import connection
-from rich import print
-from rich.console import Console
-from rich.table import Table
 
 console = Console()
 
@@ -261,20 +231,8 @@ def collect_and_analyze_data():
     return report_body
 
 def main():
-    # Test de connection à OpenStack
-    if not conn.authorize():
-        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
-        return
-    
     version = get_version()
-
-    # Afficher le message d'accueil
-    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v{version} 🎉[/]")
-    print("[cyan]Commandes disponibles :[/]")
-    print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
-    print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
-    print("  • [bold]openstack_weekly_notification[/]   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
-
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{version} 🎉[/]")
     header = r"""
   ___                       _             _               
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __           
@@ -290,6 +248,11 @@ def main():
 
 """
     print(header)
+    
+    # Test de connection à OpenStack
+    if not conn.authorize():
+        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
+        return
 
     # Exécuter le script weekly_billing.py pour récupérer les données de facturation
     run_script("weekly_billing.py")

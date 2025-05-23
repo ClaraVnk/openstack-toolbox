@@ -1,47 +1,50 @@
 #!/usr/bin/env python3
 
-import subprocess
 import sys
 import importlib
-import openstack
+import os
 from datetime import datetime
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
+from openstack import connection
+from dotenv import load_dotenv
+from importlib.metadata import version, PackageNotFoundError
 
 console = Console()
 
-# Se connecter à OpenStackv 
-from dotenv import load_dotenv
-import os
+# Fonction pour récupérer la version
+def get_version():
+    try:
+        return version("openstack-toolbox")
+    except PackageNotFoundError:
+        return "unknown"
 
-load_dotenv()
+# Fonction pour charger les identifiants OpenStack
+def load_openstack_credentials():
+    load_dotenv()  # essaie de charger depuis .env s’il existe
 
-auth_url = os.getenv("OS_AUTH_URL")
-project_name = os.getenv("OS_PROJECT_NAME")
-username = os.getenv("OS_USERNAME")
-password = os.getenv("OS_PASSWORD")
-user_domain_name = os.getenv("OS_USER_DOMAIN_NAME")
-project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
+    creds = {
+        "auth_url": os.getenv("OS_AUTH_URL"),
+        "project_name": os.getenv("OS_PROJECT_NAME"),
+        "username": os.getenv("OS_USERNAME"),
+        "password": os.getenv("OS_PASSWORD"),
+        "user_domain_name": os.getenv("OS_USER_DOMAIN_NAME"),
+        "project_domain_name": os.getenv("OS_PROJECT_DOMAIN_NAME"),
+    }
 
-# Créer la connexion OpenStack
-conn = openstack.connect(
-    auth_url=auth_url,
-    project_name=project_name,
-    username=username,
-    password=password,
-    user_domain_name=user_domain_name,
-    project_domain_name=project_domain_name,
-)
+    # Si une des variables est absente, on lève une exception directement
+    if not all(creds.values()):
+        raise RuntimeError("❌ Identifiants OpenStack incomplets dans le fichier .env")
 
-# Vérifier la connexion
-if conn.authorize():
-    print("[bold green]✅ Connexion réussie à OpenStack[/]")
-else:
-    print("[bold red]❌ Échec de la connexion à OpenStack[/]")
-    exit(1)
+    return creds
 
+# Connexion à OpenStack
+creds = load_openstack_credentials()
+conn = connection.Connection(**creds)
+
+# Fonction header
 def print_header(header):
     print("\n" + "=" * 50)
     print(f"[bold yellow]{header.center(50)}[/]")
@@ -60,10 +63,6 @@ def get_project_details(conn, project_id):
         print(f"Actif: {'Oui' if project.is_enabled else 'Non'}")
     else:
         print(f"[bold red]❌ Aucun projet trouvé avec l'ID:[/] {project_id}")
-
-# Demander à l'utilisateur de saisir l'ID du projet
-project_id = input("Veuillez entrer l'ID du projet: ")
-get_project_details(conn, project_id)
 
 # Lister les images privées et partagées
 def list_images(conn):
@@ -85,8 +84,6 @@ def list_images(conn):
     for image in all_images:
         table.add_row(image.id, image.name, image.visibility)
     console.print(table)
-
-list_images(conn)
 
 # Lister les instances
 def list_instances(conn):
@@ -112,8 +109,6 @@ def list_instances(conn):
         table.add_row(instance.id, instance.name, flavor_id, uptime_str)
     console.print(table)
 
-list_instances(conn)
-
 # Lister les snapshots
 def list_snapshots(conn):
     print_header("LISTE DES SNAPSHOTS")
@@ -130,8 +125,6 @@ def list_snapshots(conn):
     for snapshot in snapshots:
         table.add_row(snapshot.id, snapshot.name, snapshot.volume_id)
     console.print(table)
-    
-list_snapshots(conn)
 
 # Lister les backups
 def list_backups(conn):
@@ -149,8 +142,6 @@ def list_backups(conn):
     for backup in backups:
         table.add_row(backup.id, backup.name, backup.volume_id)
     console.print(table)
-
-list_backups(conn)
 
 # Lister les volumes 
 def list_volumes(conn):
@@ -173,8 +164,6 @@ def list_volumes(conn):
         snapshot_id = volume.snapshot_id if volume.snapshot_id else 'Aucun'
         table.add_row(volume.id, volume.name, str(volume.size), volume.volume_type, attached, snapshot_id)
     console.print(table)
-
-list_volumes(conn)
 
 # Lister les volumes sous forme d'arborescence
 print_header("ARBORESCENCE DES VOLUMES")
@@ -236,8 +225,6 @@ def list_floating_ips(conn):
         table.add_row(ip.id, ip.floating_ip_address, ip.status)
     console.print(table)
 
-list_floating_ips(conn)
-
 def format_size(size_bytes):
     # Définir les unités et leurs seuils
     units = [
@@ -271,4 +258,47 @@ def list_containers(conn):
         table.add_row(container.name, size_formatted)
     console.print(table)
 
-list_containers(conn)
+def main():
+    version = get_version()
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{version} 🎉[/]")
+
+    header = r"""
+  ___                       _             _    
+ / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __
+| | | | '_ \ / _ \ '_ \/ __| __/ _` |/ __| |/ /
+| |_| | |_) |  __/ | | \__ \ || (_| | (__|   < 
+ \___/| .__/_\___|_| |_|___/\__\__,_|\___|_|\_\
+   / \|_|__| |_ __ ___ (_)_ __                 
+  / _ \ / _` | '_ ` _ \| | '_ \                
+ / ___ \ (_| | | | | | | | | | |               
+/_/   \_\__,_|_| |_| |_|_|_| |_|               
+            
+            By Loutre
+    
+    """
+
+    print(header)
+
+    # Test de connection à OpenStack
+    if not conn.authorize():
+        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
+        return
+
+    # Demander à l'utilisateur de saisir l'ID du projet
+    project_id = input("Veuillez entrer l'ID du projet: ")
+    get_project_details(conn, project_id)
+
+    # Lister les ressources
+    list_images(conn)
+    list_instances(conn)
+    list_snapshots(conn)
+    list_backups(conn)
+    list_volumes(conn)
+    print_header("ARBORESCENCE DES VOLUMES")
+    tree = mounted_volumes(conn)
+    print_tree(tree)
+    list_floating_ips(conn)
+    list_containers(conn)
+
+if __name__ == "__main__":
+    main()

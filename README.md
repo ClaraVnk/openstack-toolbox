@@ -49,7 +49,7 @@ pip install openstack-toolbox
 ```
 
 ```bash
-chmod +x scripts/*
+pip install .
 ```
 
 ---
