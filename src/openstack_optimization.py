@@ -1,22 +1,55 @@
 #!/usr/bin/env python3
 
-import subprocess
 import sys
 import importlib
 import json
 import os
+import tomli
+import subprocess
+from openstack import connection
+from dotenv import load_dotenv
+from rich import print
+from rich.console import Console
+from rich.table import Table
 try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:
     from importlib_metadata import version, PackageNotFoundError
 
-def get_version():
-    try:
-        return version("openstack-toolbox")
-    except PackageNotFoundError:
-        return "unknown"
+# Ajoute le dossier src au path pour les imports locaux
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Fonction pour traduire le nom du flavor (copié depuis openstack_script.py)
+# Fonction pour récupérer la version
+def get_version():
+    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
+    pyproject_path = os.path.abspath(pyproject_path)
+
+    try:
+        with open(pyproject_path, "rb") as f:
+            pyproject_data = tomli.load(f)
+        version = pyproject_data.get("project", {}).get("version", "unknown")
+    except Exception as e:
+        version = "unknown"
+    return version
+
+# Fonction pour générer le fichier de billing
+def generate_billing():
+    try:
+        from . import weekly_billing
+        weekly_billing.main()
+    except Exception as e:
+        return f"❌ Erreur lors de l'exécution de weekly_billing.py : {e}"
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    billing_path = os.path.join(script_dir, "weekly_billing.json")
+
+    try:
+        with open(billing_path, 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return f"❌ Le fichier weekly_billing.json est introuvable à l'emplacement attendu : {billing_path}"
+
+# Fonction pour traduire le nom du flavor 
 def parse_flavor_name(name):
     """
     Parse un nom de flavor du type 'aX-ramY-diskZ-...' et retourne une chaîne lisible + les valeurs numériques.
@@ -39,61 +72,46 @@ def parse_flavor_name(name):
         print(f"❌ Échec du parsing pour le flavor '{name}' : {str(e)}")
         return name, None, None, None
 
-def run_script(script_name):
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # = src/
-    script_path = os.path.join(script_dir, script_name)
-
-    result = subprocess.run([sys.executable, script_path], check=True)
-
+# Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():
-    load_dotenv()  # essaie de charger depuis .env s’il existe
+    load_dotenv()  # Charge .env si présent
 
-    creds = {
-        "auth_url": os.getenv("OS_AUTH_URL"),
-        "project_name": os.getenv("OS_PROJECT_NAME"),
-        "username": os.getenv("OS_USERNAME"),
-        "password": os.getenv("OS_PASSWORD"),
-        "user_domain_name": os.getenv("OS_USER_DOMAIN_NAME"),
-        "project_domain_name": os.getenv("OS_PROJECT_DOMAIN_NAME"),
-    }
+    expected_vars = [
+        "OS_AUTH_URL",
+        "OS_PROJECT_NAME",
+        "OS_USERNAME",
+        "OS_PASSWORD",
+        "OS_USER_DOMAIN_NAME",
+    ]
 
-    # Si une des variables est absente, on essaie de charger depuis un fichier JSON
-    if not all(creds.values()):
-        try:
-            with open("secrets.json") as f:
-                creds = json.load(f)
-        except FileNotFoundError:
-            raise RuntimeError("❌ Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
+    creds = {}
+    missing_vars = []
+
+    # Récupération des variables obligatoires
+    for var in expected_vars:
+        value = os.getenv(var)
+        if not value:
+            missing_vars.append(var)
+        else:
+            key = var.lower().replace("os_", "")
+            creds[key] = value
+
+    # Récupération du project_domain_name ou project_domain_id
+    project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
+    project_domain_id = os.getenv("OS_PROJECT_DOMAIN_ID")
+
+    if project_domain_name:
+        creds["project_domain_name"] = project_domain_name
+    elif project_domain_id:
+        creds["project_domain_id"] = project_domain_id
+    else:
+        missing_vars.append("OS_PROJECT_DOMAIN_NAME/OS_PROJECT_DOMAIN_ID")
+
+    if missing_vars:
+        print(f"[bold red]❌ Variables OpenStack manquantes : {', '.join(missing_vars)}[/]")
+        return None
 
     return creds
-
-def install_package(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-# Vérifier et installer les dépendances manquantes
-try:
-    importlib.import_module('openstack')
-except ImportError:
-    print("⚙️ Installation du package openstack...")
-    install_package('openstacksdk')
-
-try:
-    importlib.import_module('dotenv')
-except ImportError:
-    print("⚙️ Installation du package dotenv...")
-    install_package('python-dotenv')
-
-try:
-    importlib.import_module('rich')
-except ImportError:
-    print("⚙️ Installation du package rich...")
-    install_package('rich')
-
-from dotenv import load_dotenv
-from openstack import connection
-from rich import print
-from rich.console import Console
-from rich.table import Table
 
 console = Console()
 
@@ -230,12 +248,7 @@ def collect_and_analyze_data():
     
     report_body += "[TOTAL DES RESSOURCES CONSOMMÉES]\n"
     try:
-        from openstack import connection
-        from dotenv import load_dotenv
-
-        creds = load_openstack_credentials()
-        conn_summary = connection.Connection(**creds)
-        instances = list(conn_summary.compute.servers())
+        instances = list(conn.compute.servers())
         total_instances = len(instances)
 
         total_vcpus = 0
@@ -261,20 +274,8 @@ def collect_and_analyze_data():
     return report_body
 
 def main():
-    # Test de connection à OpenStack
-    if not conn.authorize():
-        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
-        return
-    
-    version = get_version()
-
-    # Afficher le message d'accueil
-    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v{version} 🎉[/]")
-    print("[cyan]Commandes disponibles :[/]")
-    print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
-    print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
-    print("  • [bold]openstack_weekly_notification[/]   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
-
+    toolbox_version = get_version()
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{toolbox_version} 🎉[/]")
     header = r"""
   ___                       _             _               
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __           
@@ -290,18 +291,38 @@ def main():
 
 """
     print(header)
+    
+    # Test des credentials
+    creds = load_openstack_credentials()
+    if not creds:
+        print("[bold red]❌ Impossible de charger les identifiants OpenStack. Vérifiez votre configuration.[/]")
+        return
 
-    # Exécuter le script weekly_billing.py pour récupérer les données de facturation
-    run_script("weekly_billing.py")
+    conn = connection.Connection(**creds)
+    if not conn.authorize():
+        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
+        return
+
+    # Générer le fichier de billing
+    billing_text = generate_billing()
+    if "introuvable" in billing_text:
+        print("[bold red]❌ Échec de la récupération du billing[/]")
+        billing_data = []
+    else:
+        try:
+            billing_data = json.loads(billing_text)
+        except json.JSONDecodeError as e:
+            print("[bold red]❌ Erreur de parsing du fichier billing[/]")
+            billing_data = []
 
     # Collecter et analyser les données
     report_body = collect_and_analyze_data()
 
     # Enregistrer le rapport dans un fichier
-    with open('/tmp/openstack_optimization_report.txt', 'w') as f:
+    with open('openstack_optimization_report.txt', 'w') as f:
         f.write(report_body)
 
-    print("[bold green]🎉 Rapport généré avec succès :[/] /tmp/openstack_optimization_report.txt")
+    print("[bold green]🎉 Rapport généré avec succès :[/] openstack_optimization_report.txt")
     
     # Afficher le rapport
     print(report_body)

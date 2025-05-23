@@ -1,0 +1,22 @@
+============================================================
+RÉCAPITULATIF HEBDOMADAIRE DES RESSOURCES SOUS-UTILISÉES
+============================================================
+
+[INSTANCES INACTIVES]
+✅ Aucune instance inactive détectée.
+
+--------------------------------------------------
+[VOLUMES NON UTILISÉS]
+✅ Aucun volume inutilisé détecté.
+
+--------------------------------------------------
+[COÛTS DES RESSOURCES SOUS-UTILISÉES]
+❌ Aucune donnée de facturation disponible (trop faibles ou non disponibles).
+
+--------------------------------------------------
+[TOTAL DES RESSOURCES CONSOMMÉES]
+  - Instances : 2
+  - CPU : 3
+  - RAM : 8 Go
+  - Disque : 40 Go
+============================================================

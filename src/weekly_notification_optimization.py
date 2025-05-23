@@ -1,22 +1,21 @@
+#!/usr/bin/env python3
+
 import getpass
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
 import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-
 import configparser
-
+import subprocess
+import shutil
 try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:
     from importlib_metadata import version, PackageNotFoundError
 from rich import print
-from notification import generate_report
-from cron_notification import setup_cron
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 CONFIG_PATH = os.path.expanduser("~/.openstack_toolbox_config.ini")
 
 def get_version():
@@ -68,6 +67,13 @@ def load_config():
         sys.exit(1)
     return config['SMTP']
 
+def generate_report():
+    try:
+        with open('openstack_optimization_report.txt', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "❌ Le fichier openstack_optimization_report.txt est introuvable."
+
 def send_email(subject, body):
     smtp_config = load_config()
     smtp_server = smtp_config.get('smtp_server')
@@ -98,13 +104,8 @@ def send_email(subject, body):
 
 def main():
     version = get_version()
-    # Afficher le message d'accueil
-    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox v{version} 🎉[/]")
-    print("[cyan]Commandes disponibles :[/]")
-    print("  • [bold]openstack_summary[/]        → Génère un résumé global du projet")
-    print("  • [bold]openstack_optimization[/]   → Identifie les ressources sous-utilisées et propose un résumé de la semaine")
-    print("  • [bold]openstack_weekly_notification[/]   → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
 
+    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{version} 🎉[/]")
     header = r"""
   ___                       _             _          
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __      
@@ -119,13 +120,18 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
 |  \| |/ _ \| __| | |_| |/ __/ _` | __| |/ _ \| '_ \ 
 | |\  | (_) | |_| |  _| | (_| (_| | |_| | (_) | | | |
 |_| \_|\___/ \__|_|_| |_|\___\__,_|\__|_|\___/|_| |_|                                                
+         
          By Loutre
 
 """
     print(header)
 
+    # Générer le rapport
+    print("[bold cyan]📝 Génération du rapport hebdomadaire...[/]")
+    email_body = generate_report()
+    print(email_body)
+
     try:
-        email_body = generate_report()
         send_email(
             "Rapport hebdomadaire : Infomaniak Openstack Optimisation",
             email_body
@@ -149,13 +155,28 @@ _\___/| .__/ \___|_|_|_|___/\__\__,_|\___|_|\_\
         else:
             print("[bold cyan]ℹ️ Vous pouvez relancer ce script plus tard après correction de la configuration.[/]")
 
-    print("\n💌 Voulez-vous paramétrer l'envoi hebdomadaire d'un e-mail avec le résumé de la semaine ? (o/n)")
-    choice = input().strip().lower()
-    if choice == 'o':
-        setup_cron()
-        print("[bold green]✅ Configuration terminée. Vous pouvez maintenant envoyer des e-mails.[/]")
+    # Proposer d'ajouter une tâche cron pour envoi hebdomadaire
+    print("💌 Voulez-vous paramétrer l'envoi hebdomadaire automatique par email ? (o/n)")
+    reponse = input().strip().lower()
+    if reponse == 'o':
+        script_path = os.path.abspath(__file__)
+        cron_line = f"0 8 * * 1 python3 {script_path}"
+
+        # Vérifier si la tâche cron existe déjà
+        try:
+            current_crontab = subprocess.check_output(['crontab', '-l'], stderr=subprocess.DEVNULL, text=True)
+        except subprocess.CalledProcessError:
+            current_crontab = ''
+
+        if cron_line in current_crontab:
+            print("ℹ️ La tâche cron existe déjà.")
+        else:
+            updated_crontab = current_crontab + f"\n{cron_line}\n"
+            subprocess.run(['crontab', '-'], input=updated_crontab, text=True)
+            print("✅ Tâche cron ajoutée : vous recevrez un email tous les lundis à 8h.")
     else:
-        print("[bold yellow]❌ Configuration annulée.[/]")
+        print("❌ Configuration de la tâche cron annulée.")
+
 
 if __name__ == '__main__':
     main()
