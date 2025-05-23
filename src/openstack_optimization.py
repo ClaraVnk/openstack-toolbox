@@ -14,13 +14,29 @@ try:
 except ImportError:
     from importlib_metadata import version, PackageNotFoundError
 
+# Fonction pour récupérer la version
 def get_version():
     try:
         return version("openstack-toolbox")
     except PackageNotFoundError:
         return "unknown"
 
-# Fonction pour traduire le nom du flavor (copié depuis openstack_script.py)
+# Fonction pour générer le fichier de billing
+def generate_billing():
+    try:
+        # Importer et exécuter le script weekly_billing.py comme module
+        import weekly_billing
+        weekly_billing.main() 
+    except Exception as e:
+        return f"❌ Erreur lors de l'exécution de weekly_billing.py : {e}"
+
+    try:
+        with open('/tmp/weekly_billing.json', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "❌ Le fichier /tmp/weekly_billing.json est introuvable."
+
+# Fonction pour traduire le nom du flavor 
 def parse_flavor_name(name):
     """
     Parse un nom de flavor du type 'aX-ramY-diskZ-...' et retourne une chaîne lisible + les valeurs numériques.
@@ -43,6 +59,7 @@ def parse_flavor_name(name):
         print(f"❌ Échec du parsing pour le flavor '{name}' : {str(e)}")
         return name, None, None, None
 
+# Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():
     load_dotenv()  # essaie de charger depuis .env s’il existe
 
@@ -55,13 +72,9 @@ def load_openstack_credentials():
         "project_domain_name": os.getenv("OS_PROJECT_DOMAIN_NAME"),
     }
 
-    # Si une des variables est absente, on essaie de charger depuis un fichier JSON
+    # Si une des variables est absente, on lève une exception directement
     if not all(creds.values()):
-        try:
-            with open("secrets.json") as f:
-                creds = json.load(f)
-        except FileNotFoundError:
-            raise RuntimeError("❌ Aucun identifiant OpenStack disponible (.env ou secrets.json manquant)")
+        raise RuntimeError("❌ Identifiants OpenStack incomplets dans le fichier .env")
 
     return creds
 
@@ -254,8 +267,17 @@ def main():
         print("[bold red]❌ Échec de la connexion à OpenStack[/]")
         return
 
-    # Exécuter le script weekly_billing.py pour récupérer les données de facturation
-    run_script("weekly_billing.py")
+    # Générer le fichier de billing
+    billing_text = generate_billing()
+    if "introuvable" in billing_text:
+        print("[bold red]❌ Échec de la récupération du billing[/]")
+        billing_data = []
+    else:
+        try:
+            billing_data = json.loads(billing_text)
+        except json.JSONDecodeError:
+            print("[bold red]❌ Erreur de parsing du fichier billing[/]")
+            billing_data = []
 
     # Collecter et analyser les données
     report_body = collect_and_analyze_data()
