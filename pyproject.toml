@@ -25,8 +25,7 @@ dependencies = [
   "tomli",
   "prometheus-client",
   "python-json-logger",
-  "requests",
-  "pythondate-util"
+  "requests"
 ]
 
 [project.urls]
