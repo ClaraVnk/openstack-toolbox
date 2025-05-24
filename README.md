@@ -51,10 +51,6 @@ Install the toolbox globally with pip:
 pip install openstack-toolbox
 ```
 
-```bash
-pip install .
-```
-
 ---
 
 ## Available Commands
@@ -116,7 +112,7 @@ weekly-notification
 
 ---
 
-## Important Note: SMTP Configuration with Gmail
+* Important Note: SMTP Configuration with Gmail
 
 Google now requires secure authentication via **OAuth 2.0** or the use of an **App Password** (if two-step verification is enabled) for SMTP access.
 
@@ -129,6 +125,96 @@ Google now requires secure authentication via **OAuth 2.0** or the use of an **A
   https://support.google.com/accounts/answer/185833#app-passwords
 
 **Tip:** Enable two-step verification and create an App Password to use Gmail SMTP with this project.
+
+---
+
+### Export OpenStack Metrics to Prometheus
+
+This toolbox integrates an optional Prometheus exporter script to expose OpenStack metrics.
+
+- Collects data from:
+  - Identity (Keystone)
+  - Compute (Nova)
+  - Used Images (Glance)
+  - Block Storage (Cinder)
+  - Network (Neutron)
+  - Object Storage (Swift)
+  - Quotas (Compute)
+  - Gnocchi metrics (via REST API)
+- Exposes a `/metrics` endpoint compatible with Prometheus
+- Supports multiple projects
+
+**Running the exporter:**
+
+```bash
+openstack-metrics-exporter
+```
+
+The exporter exposes metrics at: `http://localhost:8000/metrics`
+
+**Prometheus scrape config:**
+
+Ensure Prometheus is configured to scrape the metrics from the endpoint `/metrics` exposed by your script.
+
+The Prometheus scraper will store the collected data in its configured data directory. If you're using a custom Prometheus setup, make sure that the `--storage.tsdb.path` option in your Prometheus configuration points to a persistent and appropriate directory. This is important to retain the metrics between restarts and for long-term analysis.
+
+Example startup with a custom data path:
+
+```bash
+./prometheus --config.file=prometheus.yml --storage.tsdb.path=/data/prometheus
+```
+
+Add the following configuration to your `prometheus.yml` file:
+
+```yaml
+scrape_configs:
+  - job_name: 'openstack-metrics'
+    static_configs:
+      - targets: ['localhost:8000']
+```
+
+**Example Prometheus alerts:**
+
+Then create an `alerts.yml` file with the following content:
+
+```yaml
+groups:
+  - name: exporter-alerts
+    rules:
+      - alert: ExporterTooManyErrors
+        expr: exporter_errors_total > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Exporter has encountered too many errors"
+      - alert: TooManyInstancesUsed
+        expr: openstack_compute_instance_count{project_name="myproj"} / openstack_quota_metrics{resource="instances"} > 0.9
+        annotations:
+          summary: "Too many instances are used"
+      - alert: HighCPUUsage
+        expr: openstack_gnocchi_metric{metric_name="cpu"} > 90
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU usage detected on an OpenStack resource"
+```
+
+**Logs**
+
+The exporter writes logs to a file named `openstack-metrics.log` in the directory where you run the script. Logs are formatted in JSON to facilitate parsing and integration with log management tools.
+
+By default, the log file is created in the current working directory:
+
+```bash
+./openstack-metrics.log
+```
+
+To monitor logs in real time, use:
+```bash
+tail -f openstack-metrics.log
+```
 
 ---
 
@@ -169,99 +255,6 @@ cd openstack-toolbox/src
   ```bash
   python3 openstack_metrics_collector.py
   ```
-
----
-
-## Export OpenStack Metrics to Prometheus
-
-This toolbox integrates with an optional Prometheus exporter script to expose OpenStack metrics.
-
-### Features
-
-- Collects data from:
-  - Identity (Keystone)
-  - Compute (Nova)
-  - Used Images (Glance)
-  - Block Storage (Cinder)
-  - Network (Neutron)
-  - Object Storage (Swift)
-  - Quotas (Compute or Identity)
-  - Gnocchi metrics (via REST API)
-- Exposes a `/metrics` endpoint compatible with Prometheus
-- Supports multiple projects
-- Configurable via `.env` file
-
-### Running the exporter
-
-```bash
-openstack-metrics-exporter
-```
-
-The exporter exposes metrics at: `http://localhost:8000/metrics`
-
-### Prometheus scrape config
-
-Ensure Prometheus is configured to scrape the metrics from the endpoint `/metrics` exposed by your script.
-
-The Prometheus scraper will store the collected data in its configured data directory. If you're using a custom Prometheus setup, make sure that the `--storage.tsdb.path` option in your Prometheus configuration points to a persistent and appropriate directory. This is important to retain the metrics between restarts and for long-term analysis.
-
-Example startup with a custom data path:
-
-```bash
-./prometheus --config.file=prometheus.yml --storage.tsdb.path=/data/prometheus
-```
-
-Add the following configuration to your `prometheus.yml` file:
-
-```yaml
-scrape_configs:
-  - job_name: 'openstack-metrics'
-    static_configs:
-      - targets: ['localhost:8000']
-```
-
-### Example Prometheus alerts
-
-Then create an `alerts.yml` file with the following content:
-
-```yaml
-groups:
-  - name: exporter-alerts
-    rules:
-      - alert: ExporterTooManyErrors
-        expr: exporter_errors_total > 10
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Exporter has encountered too many errors"
-      - alert: TooManyInstancesUsed
-        expr: openstack_compute_instance_count{project_name="myproj"} / openstack_quota_metrics{resource="instances"} > 0.9
-        annotations:
-          summary: "Too many instances are used"
-      - alert: HighCPUUsage
-        expr: openstack_gnocchi_metric{metric_name="cpu"} > 90
-        for: 2m
-        labels:
-          severity: critical
-        annotations:
-          summary: "High CPU usage detected on an OpenStack resource"
-```
-
-### Logs
-
-The exporter writes logs to a file named `openstack-metrics.log` in the directory where you run the script. Logs are formatted in JSON to facilitate parsing and integration with log management tools.
-
-By default, the log file is created in the current working directory:
-
-```bash
-./openstack-metrics.log
-```
-
-To monitor logs in real time, use:
-```bash
-tail -f openstack-metrics.log
-```
 
 ---
 
