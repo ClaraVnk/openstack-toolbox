@@ -6,6 +6,7 @@ import json
 import os
 import tomli
 import subprocess
+from datetime import datetime, timedelta, timezone
 from openstack import connection
 from dotenv import load_dotenv
 from rich import print
@@ -33,21 +34,39 @@ def get_version():
     return version
 
 # Fonction pour générer le fichier de billing
+def isoformat(dt):
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
 def generate_billing():
     try:
-        from . import weekly_billing
-        weekly_billing.main()
+        today = datetime.now(timezone.utc).date()
+        last_monday = today - timedelta(days=today.weekday() + 7)
+        last_sunday = last_monday + timedelta(days=6)
+
+        start_dt = datetime.combine(last_monday, datetime.min.time()).replace(tzinfo=timezone.utc)
+        end_dt = datetime.combine(last_sunday, datetime.max.time()).replace(tzinfo=timezone.utc)
+
+        print(f"📅 Période choisie automatiquement : la semaine dernière {start_dt} → {end_dt}")
+
+        start_iso = isoformat(start_dt)
+        end_iso = isoformat(end_dt)
+
+        cmd = [
+            "openstack", "rating", "dataframes", "get",
+            "-b", start_iso,
+            "-e", end_iso,
+            "-c", "Resources",
+            "-f", "json"
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode == 0:
+            return result.stdout
+        else:
+            return f"❌ Échec de la récupération des données : {result.stderr.strip()}"
     except Exception as e:
-        return f"❌ Erreur lors de l'exécution de weekly_billing.py : {e}"
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    billing_path = os.path.join(script_dir, "weekly_billing.json")
-
-    try:
-        with open(billing_path, 'r') as f:
-            return f.read()
-    except FileNotFoundError:
-        return f"❌ Le fichier weekly_billing.json est introuvable à l'emplacement attendu : {billing_path}"
+        return f"❌ Exception lors de la récupération du billing : {e}"
 
 # Fonction pour traduire le nom du flavor 
 def parse_flavor_name(name):
@@ -162,27 +181,20 @@ def get_unused_volumes():
 
     return unused_volumes
 
-def calculate_underutilized_costs():
-    try:
-        with open('weekly_billing.json', 'r') as f:
-            billing_data = json.load(f)
-    except FileNotFoundError:
-        print("❌ Le fichier weekly_billing.json est introuvable.")
-        billing_data = []
-    except json.JSONDecodeError:
-        print("❌ Erreur lors de la lecture du fichier weekly_billing.json : format JSON invalide.")
-        billing_data = []
-
+def calculate_underutilized_costs(billing_json):
     ICU_to_CHF = 1 / 50
     ICU_to_EUR = 1 / 55.5
 
+    try:
+        billing_data = json.loads(billing_json)
+    except json.JSONDecodeError:
+        print("❌ Erreur lors de la lecture des données de facturation : format JSON invalide.")
+        return {}
+
     underutilized_costs = {}
-    # Parcours de la liste d'objets retournée par OpenStack
     for entry in billing_data:
-        # Adapte ici les clés selon la structure exacte de chaque dict
         resource = entry.get("name") or entry.get("resource") or entry.get("ID") or entry.get("id")
         cost_icu = entry.get("rate:unit") or entry.get("ICU") or entry.get("icu") or entry.get("cost") or entry.get("rate:sum")
-        # Si tu connais la clé exacte pour le coût ICU, remplace la ligne ci-dessus par entry["<clé>"]
         if resource is not None and cost_icu is not None:
             try:
                 cost_icu = float(cost_icu)
@@ -195,10 +207,9 @@ def calculate_underutilized_costs():
                 'CHF': round(cost_chf, 2),
                 'EUR': round(cost_eur, 2)
             }
-
     return underutilized_costs
 
-def collect_and_analyze_data():
+def collect_and_analyze_data(billing_json=None):
     inactive_instances = get_inactive_instances_from_cli()
     unused_volumes = get_unused_volumes()
 
@@ -233,7 +244,7 @@ def collect_and_analyze_data():
     report_body += "\n" + "-"*50 + "\n"
 
     report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
-    underutilized_costs = calculate_underutilized_costs()
+    underutilized_costs = calculate_underutilized_costs(billing_json) if billing_json else {}
     if not underutilized_costs:
         report_body += "❌ Aucune donnée de facturation disponible (trop faibles ou non disponibles).\n"
     else:
@@ -245,31 +256,6 @@ def collect_and_analyze_data():
             table.add_row(resource, f"{costs['CHF']} CHF", f"{costs['EUR']} EUR")
         console.print(table)
     report_body += "\n" + "-"*50 + "\n"
-    
-    report_body += "[TOTAL DES RESSOURCES CONSOMMÉES]\n"
-    try:
-        instances = list(conn.compute.servers())
-        total_instances = len(instances)
-
-        total_vcpus = 0
-        total_ram_go = 0
-        total_disk_go = 0
-
-        for instance in instances:
-            flavor_id = instance.flavor['id']
-            _, cpu, ram, disk = parse_flavor_name(flavor_id)
-
-            total_vcpus += cpu if cpu else 0
-            total_ram_go += ram if ram else 0
-            total_disk_go += disk if disk else 0
-
-        report_body += f"  - Instances : {total_instances}\n"
-        report_body += f"  - CPU : {total_vcpus}\n"
-        report_body += f"  - RAM : {total_ram_go} Go\n"
-        report_body += f"  - Disque : {total_disk_go} Go\n"
-    except Exception as e:
-        report_body += f"❌ Impossible de calculer le total des ressources consommées : {e}\n"
-    report_body += "="*60 + "\n"
 
     return report_body
 
@@ -303,19 +289,7 @@ def main():
         print("[bold red]❌ Échec de la connexion à OpenStack[/]")
         return
 
-    # Générer le fichier de billing
     billing_text = generate_billing()
-    if "introuvable" in billing_text:
-        print("[bold red]❌ Échec de la récupération du billing[/]")
-        billing_data = []
-    else:
-        try:
-            billing_data = json.loads(billing_text)
-        except json.JSONDecodeError as e:
-            print("[bold red]❌ Erreur de parsing du fichier billing[/]")
-            billing_data = []
-
-    # Collecter et analyser les données
     report_body = collect_and_analyze_data()
 
     # Enregistrer le rapport dans un fichier

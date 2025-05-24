@@ -186,7 +186,6 @@ def get_project_configs():
 
     return projects
 
-
 # Fonction pour mettre à jour les métriques
 def update_metrics(metric, project_name, label_name, label_value):
     label_value_clean = clean_label_value(label_value)
@@ -209,7 +208,6 @@ object_storage_metrics = Gauge('openstack_object_storage_metrics', 'Metrics for 
 quota_metrics = Gauge('openstack_quota_metrics', 'OpenStack resource quotas per project', ['project_name', 'resource'])
 gnocchi_metrics = Gauge('openstack_gnocchi_metric', 'Gnocchi metrics per resource', ['project_name', 'resource_id', 'metric_name'])
 
-
 # Classe GnocchiAPI pour interagir avec l'API REST Gnocchi
 class GnocchiAPI:
     def __init__(self, gnocchi_url, token):
@@ -224,7 +222,7 @@ class GnocchiAPI:
         url = f"{self.gnocchi_url}/v1/resource/{resource_type}"
         resp = requests.get(url, headers=self.headers)
         if resp.status_code != 200:
-            logger.error(f"Erreur récupération ressources: {resp.status_code} {resp.text}")
+            logger.error(f"❌ Erreur récupération ressources: {resp.status_code} {resp.text}")
             return []
         return resp.json()
 
@@ -232,7 +230,7 @@ class GnocchiAPI:
         url = f"{self.gnocchi_url}/v1/resource/instance/{resource_id}/metric"
         resp = requests.get(url, headers=self.headers)
         if resp.status_code != 200:
-            logger.warning(f"Impossible de récupérer métriques pour ressource {resource_id}: {resp.status_code} {resp.text}")
+            logger.warning(f"⚠️ Impossible de récupérer métriques pour ressource {resource_id}: {resp.status_code} {resp.text}")
             return {}
         return resp.json()
 
@@ -244,7 +242,7 @@ class GnocchiAPI:
         }
         resp = requests.get(url, headers=self.headers, params=params)
         if resp.status_code != 200:
-            logger.warning(f"Impossible de récupérer mesures métrique {metric_id}: {resp.status_code} {resp.text}")
+            logger.warning(f"⚠️ Impossible de récupérer mesures métrique {metric_id}: {resp.status_code} {resp.text}")
             return []
         return resp.json()
 
