@@ -3,8 +3,9 @@
 import sys
 import importlib
 import json
-from datetime import datetime
 import os
+import subprocess
+from datetime import datetime, timedelta, timezone
 import tomli
 from importlib.metadata import version, PackageNotFoundError
 from openstack import connection
@@ -28,21 +29,53 @@ def get_version():
     return version
 
 # Fonction pour générer le fichier de billing
+def isoformat(dt):
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+# Ajout des fonctions auxiliaires
+def trim_to_minute(dt_str):
+    return dt_str.replace("T", " ")[:16]
+
+def input_with_default(prompt, default):
+    s = input(f"{prompt} [Défaut: {default}]: ")
+    return s.strip() or default
+
 def generate_billing():
     try:
-        from . import fetch_billing
-        fetch_billing.main()
+        # Dates par défaut : 2 dernières heures UTC
+        default_start_dt = datetime.now(timezone.utc) - timedelta(hours=2)
+        default_end_dt = datetime.now(timezone.utc)
+
+        print("Entrez la période de facturation souhaitée (format: YYYY-MM-DD HH:MM), appuyez sur Entrée pour la valeur par défaut.")
+
+        start_input = input_with_default("Date de début", trim_to_minute(isoformat(default_start_dt)))
+        end_input = input_with_default("Date de fin", trim_to_minute(isoformat(default_end_dt)))
+
+        # Parsing des dates saisies
+        start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+
+        start_iso = isoformat(start_dt)
+        end_iso = isoformat(end_dt)
+
+        print(f"\n🗓️ Période de facturation sélectionnée : {start_iso} → {end_iso}\n")
+
+        cmd = [
+            "openstack", "rating", "dataframes", "get",
+            "-b", start_iso,
+            "-e", end_iso,
+            "-c", "Resources",
+            "-f", "json"
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout
+        else:
+            return f"❌ Échec de la récupération des données : {result.stderr.strip()}"
+
     except Exception as e:
-        return f"❌ Erreur lors de l'exécution de fetch_billing.py : {e}"
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    billing_path = os.path.join(script_dir, "billing.json")
-
-    try:
-        with open(billing_path, 'r') as f:
-            return f.read()
-    except FileNotFoundError:
-        return f"❌ Le fichier billing.json est introuvable à l'emplacement attendu : {billing_path}"
+        return f"❌ Exception lors de la récupération du billing : {e}"
 
 # Fonction pour traduire le nom du flavor
 def parse_flavor_name(name):
