@@ -65,7 +65,7 @@ openstack-toolbox
 
 Resume all the available commands.
 
-[![openstack-toolbox.png](https://github.com/ClaraVnk/docs/raw/main/openstack-toolbox.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox.png)  
+[![openstack-toolbox.png](https://github.com/ClaraVnk/docs/raw/main/openstack-toolbox/openstack-toolbox.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox/openstack-toolbox.png) 
 
 ### OpenStack Summary
 
@@ -75,9 +75,9 @@ Generates a detailed summary of your OpenStack environment: instances, costs, ba
 openstack-summary
 ```
 
-[![openstack-summary-1.png](https://github.com/ClaraVnk/docs/raw/main/openstack-summary-1.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-summary-1.png)  
-[![openstack-summary-2.png](https://github.com/ClaraVnk/docs/raw/main/openstack-summary-2.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-summary-2.png)  
-[![openstack-summary-3.png](https://github.com/ClaraVnk/docs/raw/main/openstack-summary-3.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-summary-3.png)  
+[![openstack-summary-1.png](https://github.com/ClaraVnk/docs/raw/main/openstack-toolbox/openstack-summary-1.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox/openstack-summary-1.png)  
+[![openstack-summary-2.png](https://github.com/ClaraVnk/docs/raw/main/openstack-toolbox/openstack-summary-2.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox/openstack-summary-2.png)  
+[![openstack-summary-3.png](https://github.com/ClaraVnk/docs/raw/main/openstack-toolbox/openstack-summary-3.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox/openstack-summary-3.png)  
 
 ---
 
@@ -88,7 +88,7 @@ Maybe, as a SysAdmin, you don't want the billing but you need to focus on a spec
 openstack-admin
 ```
 
-[![openstack-admin.png](https://github.com/ClaraVnk/docs/raw/main/openstack-admin.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-admin.png)  
+[![openstack-admin.png](https://github.com/ClaraVnk/docs/raw/main/openstack-toolbox/openstack-admin.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox/openstack-admin.png)  
 
 ---
 
@@ -100,7 +100,7 @@ Identifies underutilized resources like inactive instances and unused volumes, w
 openstack-optimization
 ```
 
-[![openstack-optimization.png](https://github.com/ClaraVnk/docs/raw/main/openstack-optimization.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-optimization.png)  
+[![openstack-optimization.png](https://github.com/ClaraVnk/docs/raw/main/openstack-toolbox/openstack-optimization.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox/openstack-optimization.png) 
 
 ---
 
@@ -112,7 +112,7 @@ Sends the weekly optimization report by email. Requires SMTP configuration.
 weekly-notification
 ```
 
-[![weekly_notification.png](https://github.com/ClaraVnk/docs/raw/main/weekly_notification.png)](https://github.com/ClaraVnk/docs/blob/main/weekly_notification.png)  
+[![weekly_notification.png](https://github.com/ClaraVnk/docs/raw/main/openstack-toolbox/weekly_notification.png)](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox/weekly_notification.png)  
 
 ---
 
