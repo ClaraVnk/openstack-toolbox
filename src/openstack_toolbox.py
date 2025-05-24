@@ -34,10 +34,11 @@ def main():
 
     print(header)
     print(f"\n[cyan]🧰 Commandes disponibles (version {version}):[/]")
-    print("  • [bold]openstack-summary[/]      → Génère un résumé global du projet")
-    print("  • [bold]openstack-admin[/]        → Génère un résumé global de tous les projets (mode SysAdmin)")
-    print("  • [bold]openstack-optimization[/] → Identifie les ressources sous-utilisées dans la semaine")
-    print("  • [bold]weekly-notification[/]    → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
+    print("  • [bold]openstack-summary[/]             → Génère un résumé global du projet")
+    print("  • [bold]openstack-admin[/]               → Génère un résumé global de tous les projets (mode SysAdmin)")
+    print("  • [bold]openstack-optimization[/]        → Identifie les ressources sous-utilisées dans la semaine")
+    print("  • [bold]weekly-notification[/]           → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
+    print("  • [bold]openstack-metrics-collector[/]   → Lance un exporter passif pour Prometheus")
 
 if __name__ == '__main__':
     main()

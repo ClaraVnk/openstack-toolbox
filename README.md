@@ -1,8 +1,10 @@
 # OpenStack SysAdmin Toolbox 🧰
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) 
+![PyPi](https://img.shields.io/badge/pypi-%23ececec.svg?style=for-the-badge&logo=pypi&logoColor=1f73b7)
 ![Infomaniak](https://img.shields.io/badge/infomaniak-0098FF?style=for-the-badge&logo=infomaniak&logoColor=white) 
 ![OpenStack](https://img.shields.io/badge/OpenStack-%23f01742.svg?style=for-the-badge&logo=openstack&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white)
 
 ---
 
@@ -16,6 +18,7 @@
   - [Optimization Email Notification (Weekly)](#optimization-email-notification-weekly)
 - [Important Note: SMTP Configuration with Gmail](#important-note-smtp-configuration-with-gmail)
 - [Manual Mode](#manual-mode)
+- [Export OpenStack Metrics to Prometheus](#export-openstack-metrics-to-prometheus)
 - [Acknowledgments](#acknowledgments)
 
 ---
@@ -56,12 +59,18 @@ pip install .
 
 ## Available Commands
 
+```bash
+openstack-toolbox
+```
+
+Resume all the available commands.
+
 ### OpenStack Summary
 
 Generates a detailed summary of your OpenStack environment: instances, costs, backups, images, volumes, etc.
 
 ```bash
-openstack_summary
+openstack-summary
 ```
 
 ![OpenStack Summary Screenshot 1](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_summary_1.png)
@@ -74,7 +83,7 @@ openstack_summary
 Identifies underutilized resources like inactive instances and unused volumes, with cost analysis.
 
 ```bash
-openstack_optimization
+openstack-optimization
 ```
 
 ![OpenStack Optimization](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_optimization.png)
@@ -86,7 +95,7 @@ openstack_optimization
 Sends the weekly optimization report by email. Requires SMTP configuration.
 
 ```bash
-weekly_notification_optimization
+weekly-notification
 ```
 
 ![Weekly Notification Screenshot](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/weekly_notification.png)
@@ -129,7 +138,7 @@ cd openstack-toolbox/src
 
 - OpenStack admin summary (beta):  
   ```bash
-  python3 openstack_admin_script.py
+  python3 openstack_admin.py
   ```
 
 - OpenStack optimization:  
@@ -141,6 +150,99 @@ cd openstack-toolbox/src
   ```bash
   python3 weekly_notification_optimization.py
   ```
+
+---
+
+## Export OpenStack Metrics to Prometheus
+
+This toolbox integrates with an optional Prometheus exporter script to expose OpenStack metrics.
+
+### Features
+
+- Collects data from:
+  - Identity (Keystone)
+  - Compute (Nova)
+  - Used Images (Glance)
+  - Block Storage (Cinder)
+  - Network (Neutron)
+  - Object Storage (Swift)
+  - Quotas (Compute or Identity)
+  - Gnocchi metrics (via REST API)
+- Exposes a `/metrics` endpoint compatible with Prometheus
+- Supports multiple projects
+- Configurable via `.env` file
+
+### Running the exporter
+
+```bash
+openstack-metrics-exporter
+```
+
+The exporter exposes metrics at: `http://localhost:8000/metrics`
+
+### Prometheus scrape config
+
+Ensure Prometheus is configured to scrape the metrics from the endpoint `/metrics` exposed by your script.
+
+The Prometheus scraper will store the collected data in its configured data directory. If you're using a custom Prometheus setup, make sure that the `--storage.tsdb.path` option in your Prometheus configuration points to a persistent and appropriate directory. This is important to retain the metrics between restarts and for long-term analysis.
+
+Example startup with a custom data path:
+
+```bash
+./prometheus --config.file=prometheus.yml --storage.tsdb.path=/data/prometheus
+```
+
+Add the following configuration to your `prometheus.yml` file:
+
+```yaml
+scrape_configs:
+  - job_name: 'openstack-metrics'
+    static_configs:
+      - targets: ['localhost:8000']
+```
+
+### Example Prometheus alerts
+
+Then create an `alerts.yml` file with the following content:
+
+```yaml
+groups:
+  - name: exporter-alerts
+    rules:
+      - alert: ExporterTooManyErrors
+        expr: exporter_errors_total > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Exporter has encountered too many errors"
+      - alert: TooManyInstancesUsed
+        expr: openstack_compute_instance_count{project_name="myproj"} / openstack_quota_metrics{resource="instances"} > 0.9
+        annotations:
+          summary: "Too many instances are used"
+      - alert: HighCPUUsage
+        expr: openstack_gnocchi_metric{metric_name="cpu"} > 90
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU usage detected on an OpenStack resource"
+```
+
+### Logs
+
+The exporter writes logs to a file named `openstack-metrics.log` in the directory where you run the script. Logs are formatted in JSON to facilitate parsing and integration with log management tools.
+
+By default, the log file is created in the current working directory:
+
+```bash
+./openstack-metrics.log
+```
+
+To monitor logs in real time, use:
+```bash
+tail -f openstack-metrics.log
+```
 
 ---
 
