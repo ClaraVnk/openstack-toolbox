@@ -75,7 +75,6 @@ def list_instances(conn):
         logging.exception("❌ Erreur lors de la récupération des instances")
         return None
     if not instances:
-        logging.info("ℹ️ Aucune instance trouvée.")
         return []
     logging.info("✅ Computes récupérées avec succès")
     return instances
@@ -88,7 +87,6 @@ def list_images(conn):
         logging.exception("❌ Erreur lors de la récupération des images")
         return None
     if not images:
-        logging.info("ℹ️ Aucune image trouvée.")
         return []
     logging.info("✅ Images récupérées avec succès")
     return images
@@ -101,7 +99,6 @@ def list_snapshots(conn):
         logging.exception("❌ Erreur lors de la récupération des snapshots")
         return None
     if not snapshots:
-        logging.info("ℹ️ Aucun snapshot trouvé.")
         return []
     logging.info("✅ Snapshots récupérées avec succès")
     return snapshots
@@ -113,7 +110,6 @@ def list_backups(conn):
         logging.exception("❌ Erreur lors de la récupération des backups")
         return None
     if not backups:
-        logging.info("ℹ️ Aucun backup trouvé.")
         return []
     logging.info("✅ Backups récupérées avec succès")
     return backups
@@ -125,7 +121,6 @@ def list_volumes(conn):
         logging.exception("❌ Erreur lors de la récupération des volumes")
         return None
     if not volumes:
-        logging.info("ℹ️ Aucun volume trouvé.")
         return []
     logging.info("✅ Volumes récupérées avec succès")
     return volumes
@@ -137,7 +132,6 @@ def list_floating_ips(conn):
         logging.exception("❌ Erreur lors de la récupération des IP flottantes")
         return None
     if not floating_ips:
-        logging.info("ℹ️ Aucune IP flottante trouvée.")
         return []
     logging.info("✅ IP flottantes récupérées avec succès")
     return floating_ips
@@ -149,9 +143,7 @@ def list_containers(conn):
         logging.exception("❌ Erreur lors de la récupération des containers")
         return None
     if not containers:
-        logging.info("ℹ️ Aucun container trouvé.")
         return []
-
     logging.info("✅ Containers récupérées avec succès")
     return containers
 
@@ -299,7 +291,6 @@ start_time = time.time()
 
 # Collecter les métrics
 def collect_project_metrics(project_config, conn_cache):
-    logger.info(f"Début collecte pour le projet {project_config.get('project_name', 'unknown')}")
     project_name = project_config.get('project_name') or 'unknown'
     project_os_id = project_config.get('project_id') or None
     cache_key = (
@@ -307,8 +298,15 @@ def collect_project_metrics(project_config, conn_cache):
         project_name,
         project_config['username'],
         project_config['user_domain_name'],
-        project_config['project_domain_name']
+        project_config['project_domain_name'],
+        os.getenv("OS_REGION_NAME", "").lower()
     )
+
+    region = os.getenv("OS_REGION_NAME", "").lower()
+    if not region:
+        logger.error("❌ Variable d'environnement OS_REGION_NAME non définie.")
+        exporter_errors.inc()
+        return
 
     # Connexion OpenStack 
     conn = None
@@ -322,18 +320,14 @@ def collect_project_metrics(project_config, conn_cache):
                 username=project_config['username'],
                 password=project_config['password'],
                 user_domain_name=project_config['user_domain_name'],
-                project_domain_name=project_config['project_domain_name']
+                project_domain_name=project_config['project_domain_name'],
+                region_name=region
             )
-            try:
-                token = conn.authorize()
-                if not token:
-                    raise Exception("Token non récupéré")
-            except Exception as e:
-                logger.error(f"❌ Connexion OpenStack échouée pour {project_name} : {e}")
-                exporter_errors.inc()
-                return
+            token = conn.authorize()
+            if not token:
+                raise Exception("Token non récupéré")
             conn_cache[cache_key] = conn
-        logger.info(f"✅ Connexion réussie : {project_name}")
+        logger.info(f"✅ Connexion réussie : {project_name} (region: {region})")
     except Exception as exc:
         exporter_errors.inc()
         logger.exception(f"❌ Erreur de connexion OpenStack pour {project_name}")
@@ -431,12 +425,11 @@ def collect_project_metrics(project_config, conn_cache):
     quota_service = detect_quota_service(conn, project_os_id)
     if quota_service is None:
         exporter_errors.inc()
-        logger.error(f"Impossible de détecter le service quotas pour le projet {project_name}")
+        logger.error(f"❌ Impossible de détecter le service quotas pour le projet {project_name}")
         quotas = None
     else:
         quotas = get_project_quotas(conn, project_os_id, service=quota_service)
         if quotas:
-            logger.info(f"Quotas récupérés pour {project_name} : {quotas}")
             allowed_quotas = {
                 "cores", "ram", "instances",
                 "injected_file_content_bytes", "injected_file_path_bytes", "injected_files",
@@ -480,7 +473,6 @@ def collect_project_metrics(project_config, conn_cache):
             if not rid:
                 continue
             metrics = gnocchi.get_metrics_for_resource(rid)
-            # Correction: metrics est une liste de dicts, pas un dict
             for metric in metrics:
                 metric_id = metric.get("id")
                 metric_name = metric.get("name")
@@ -499,6 +491,7 @@ def collect_project_metrics(project_config, conn_cache):
                         resource_id=clean_label_value(rid),
                         metric_name=clean_label_value(metric_name)
                     ).set(float(value))
+        logging.info("✅ Metrics récupérées avec succès")
     except Exception:
         exporter_errors.inc()
         logger.exception(f"❌ Erreur lors de la collecte Gnocchi pour le projet {project_name}")
@@ -507,21 +500,10 @@ def detect_quota_service(conn, project_id):
     try:
         quotas = conn.compute.get_quota_set(project_id)
         if quotas:
-            logger.info("Quotas récupérés via service Compute")
             return "compute"
     except Exception as e:
-        logger.debug(f"Échec quotas via Compute: {e}")
-
-    try:
-        quotas = conn.identity.get_quota_set(project_id)
-        if quotas:
-            logger.info("Quotas récupérés via service Identity")
-            return "identity"
-    except Exception as e:
-        logger.debug(f"Échec quotas via Identity: {e}")
-
-    logger.error("Impossible de récupérer les quotas via Compute ou Identity")
-    return None
+        logger.error("❌ Impossible de récupérer les quotas")
+        return None
 
 def get_project_quotas(conn, project_id, service="compute"):
     try:
@@ -532,21 +514,20 @@ def get_project_quotas(conn, project_id, service="compute"):
         else:
             logger.error(f"Service quotas inconnu : {service}")
             return None
+        logger.info("✅ Quotas récupérés avec succès")
         return quota_set.to_dict() if hasattr(quota_set, "to_dict") else dict(quota_set)
     except Exception as e:
-        logger.error(f"Erreur récupération quotas pour {project_id} via {service} : {e}")
+        logger.error(f"❌ Erreur récupération quotas pour {project_id} via {service} : {e}")
         return None
 
-# Fonction pour la collecte des métriques (exécutée à chaque scrape) - version parallèle
+# Fonction pour la collecte des métriques (exécutée à chaque scrape) 
 def collect_metrics():
-    logger.info("Début de la collecte métriques sur tous les projets")
     with exporter_scrape_duration.time():
         projects = get_project_configs()
         conn_cache = {}
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = []
             for project_name, config in projects.items():
-                logger.info(f"Lancement collecte pour projet: {project_name}")
                 futures.append(executor.submit(collect_project_metrics, config, conn_cache))
             for future in as_completed(futures):
                 try:
@@ -556,7 +537,6 @@ def collect_metrics():
                     logger.exception("❌ Erreur lors de la collecte parallèle d'un projet")
         uptime_seconds = time.time() - start_time
         exporter_uptime.set(uptime_seconds)
-    logger.info("Fin de la collecte métriques sur tous les projets")
 
 # CustomCollector pour déclencher la collecte à chaque scrape
 class CustomCollector:
@@ -590,10 +570,6 @@ def main():
     app = make_wsgi_app(registry)
     httpd = make_server('', 8000, app)
     logger.info("📡 Exporter Prometheus démarré sur le port 8000...")
-
-    # Lancer une collecte initiale pour déboguer plus facilement
-    logger.info("Lancement première collecte métriques")
-    collect_metrics()
 
     try:
         httpd.serve_forever()

@@ -1,4 +1,4 @@
-# OpenStack SysAdmin Toolbox 🧰
+# OpenStack Toolbox 🧰
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) 
 ![PyPi](https://img.shields.io/badge/pypi-%23ececec.svg?style=for-the-badge&logo=pypi&logoColor=1f73b7)
@@ -65,6 +65,8 @@ openstack-toolbox
 
 Resume all the available commands.
 
+[openstack-toolbox.png](https://github.com/ClaraVnk/docs/blob/main/openstack-toolbox.png)  
+
 ### OpenStack Summary
 
 Generates a detailed summary of your OpenStack environment: instances, costs, backups, images, volumes, etc.
@@ -73,8 +75,20 @@ Generates a detailed summary of your OpenStack environment: instances, costs, ba
 openstack-summary
 ```
 
-![OpenStack Summary Screenshot 1](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_summary_1.png)
-![OpenStack Summary Screenshot 2](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_summary_2.png)
+[openstack-summary-1.png](https://github.com/ClaraVnk/docs/blob/main/openstack-summary-1.png) 
+[openstack-summary-2.png](https://github.com/ClaraVnk/docs/blob/main/openstack-summary-2.png)  
+[openstack-summary-3.png](https://github.com/ClaraVnk/docs/blob/main/openstack-summary-3.png) 
+
+---
+
+### Openstack Admin mode
+
+Maybe, as a SysAdmin, you don't want the billing but you need to focus on a special project ID:
+```bash
+openstack-admin
+```
+
+[openstack-admin.png](https://github.com/ClaraVnk/docs/blob/main/openstack-admin.png)  
 
 ---
 
@@ -86,7 +100,7 @@ Identifies underutilized resources like inactive instances and unused volumes, w
 openstack-optimization
 ```
 
-![OpenStack Optimization](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/openstack_optimization.png)
+[openstack-optimization.png](https://github.com/ClaraVnk/docs/blob/main/openstack-optimization.png) 
 
 ---
 
@@ -98,7 +112,7 @@ Sends the weekly optimization report by email. Requires SMTP configuration.
 weekly-notification
 ```
 
-![Weekly Notification Screenshot](https://raw.githubusercontent.com/ClaraVnk/openstack-toolbox/main/img/weekly_notification.png)
+[weekly_notification.png](https://github.com/ClaraVnk/docs/blob/main/weekly_notification.png)  
 
 ---
 
@@ -136,7 +150,7 @@ cd openstack-toolbox/src
   python3 openstack_summary.py
   ```
 
-- OpenStack admin summary (beta):  
+- OpenStack admin summary:  
   ```bash
   python3 openstack_admin.py
   ```
@@ -149,6 +163,11 @@ cd openstack-toolbox/src
 - Weekly notification (email):  
   ```bash
   python3 weekly_notification_optimization.py
+  ```
+
+- Metrics exporter:
+  ```bash
+  python3 openstack_metrics_collector.py
   ```
 
 ---
