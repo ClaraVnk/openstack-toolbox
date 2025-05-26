@@ -169,7 +169,7 @@ def load_openstack_credentials():
         missing_vars.append("OS_PROJECT_DOMAIN_NAME/OS_PROJECT_DOMAIN_ID")
 
     if missing_vars:
-        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars'].format(', '.join(missing_vars))}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars'].format(', '.join(missing_vars))}[/bold red]")
         return None
 
     return creds
@@ -187,7 +187,7 @@ def get_project_details(conn, project_id):
         is_active = TRANSLATIONS[lang]['yes'] if project.is_enabled else TRANSLATIONS[lang]['no']
         print(TRANSLATIONS[lang]['project_active'].format(is_active))
     else:
-        print(f"[bold red]{TRANSLATIONS[lang]['no_project'].format(project_id)}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['no_project'].format(project_id)}[/bold red]")
 
 def list_images(conn):
     lang = get_language_preference()
@@ -406,7 +406,7 @@ def process_resource_parallel(resource_type, resource, conn):
                 "details": f"Size: {size}, Status: {resource.status}"
             }
     except Exception as e:
-        print(f"[red]Erreur lors du traitement de la ressource {resource.id}: {str(e)}[/]")
+        print(f"[red]Erreur lors du traitement de la ressource {resource.id}: {str(e)}[/red]")
         return None
 
 def list_all_resources(conn):
@@ -463,7 +463,7 @@ def list_all_resources(conn):
                 if result:
                     processed_resources.append(result)
             except Exception as e:
-                print(f"[red]Erreur lors du traitement d'une ressource : {str(e)}[/]")
+                print(f"[red]Erreur lors du traitement d'une ressource : {str(e)}[/red]")
 
     # Affichage des résultats
     table = Table(title="")
@@ -486,7 +486,7 @@ def list_all_resources(conn):
 def main():
     lang = get_language_preference()
     version = get_version()
-    print(f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]")
+    print(f"[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]")
 
     header = r"""
   ___                       _             _    
@@ -508,12 +508,12 @@ def main():
     # Test des credentials
     creds = load_openstack_credentials()
     if not creds:
-        print(f"[bold red]{TRANSLATIONS[lang]['connection_error']}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['connection_error']}[/bold red]")
         return
 
     conn = connection.Connection(**creds)
     if not conn.authorize():
-        print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/bold red]")
         return
 
     # Demander à l'utilisateur de saisir l'ID du projet

@@ -182,7 +182,7 @@ def load_openstack_credentials():
         missing_vars.append("OS_PROJECT_DOMAIN_NAME/OS_PROJECT_DOMAIN_ID")
 
     if missing_vars:
-        print(f"[bold red]❌ Variables OpenStack manquantes : {', '.join(missing_vars)}[/]")
+        print(f"[bold red]❌ Variables OpenStack manquantes : {', '.join(missing_vars)}[/bold red]")
         return None
 
     return creds
@@ -261,7 +261,7 @@ def get_instance_details(conn, instance, flavors):
             "uptime": uptime_str
         }
     except Exception as e:
-        print(f"[red]Erreur lors de la récupération des détails de l'instance {instance.id}: {str(e)}[/]")
+        print(f"[bold red]Erreur lors de la récupération des détails de l'instance {instance.id}: {str(e)}[/bold red]")
         return None
 
 def list_instances(conn):
@@ -293,7 +293,7 @@ def list_instances(conn):
                 if details:
                     instance_details.append(details)
             except Exception as e:
-                print(f"[red]Erreur lors de la récupération des détails d'une instance : {str(e)}[/]")
+                print(f"[bold red]Erreur lors de la récupération des détails d'une instance : {str(e)}[/bold red]")
     
     # Affichage des résultats
     table = Table(title="")
@@ -308,7 +308,7 @@ def list_instances(conn):
             details["id"],
             details["name"],
             details["flavor"],
-            f"[{details['status_color']}]{details['status']}[/]",
+            f"[{details['status_color']}]{details['status']}[/{details['status_color']}]",
             details["uptime"]
         )
     
@@ -452,7 +452,7 @@ def list_containers(conn):
 def main():
     lang = get_language_preference()
     toolbox_version = get_version()
-    print(f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/yellow bold]")
+    print(f"[yellow bold]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/yellow bold]")
 
     header = r"""
   ___                       _             _       
@@ -474,24 +474,24 @@ def main():
     # Test des credentials
     creds = load_openstack_credentials()
     if not creds:
-        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars']}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars']}[/bold red]")
         return
 
     conn = connection.Connection(**creds)
     if not conn.authorize():
-        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
+        print(f"[bold red]❌ Échec de la connexion à OpenStack[/bold red]")
         return
 
     # Générer le fichier de billing
     billing_text = generate_billing()
     if "introuvable" in billing_text:
-        print("[bold red]❌ Échec de la récupération du billing[/]")
+        print(f"[bold red]❌ Échec de la récupération du billing[/bold red]")
         billing_data = []
     else:
         try:
             billing_data = json.loads(billing_text)
         except json.JSONDecodeError as e:
-            print("[bold red]❌ Erreur de parsing du fichier billing[/]")
+            print("[bold red]❌ Erreur de parsing du fichier billing[/bold red]")
             billing_data = []
 
     # Lister les ressources

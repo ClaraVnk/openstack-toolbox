@@ -151,7 +151,7 @@ def load_openstack_credentials():
         missing_vars.append("OS_PROJECT_DOMAIN_NAME/OS_PROJECT_DOMAIN_ID")
 
     if missing_vars:
-        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars'].format(', '.join(missing_vars))}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars'].format(', '.join(missing_vars))}[/bold red]")
         return None
 
     return creds
@@ -288,8 +288,8 @@ def collect_and_analyze_data(billing_json=None):
 
 def main():
     lang = get_language_preference()
-    toolbox_version = get_version()
-    print(f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/yellow bold]")
+    version = get_version()
+    print(f"[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]")
     header = r"""
   ___                       _             _               
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __           
@@ -309,12 +309,12 @@ def main():
     # Test des credentials
     creds = load_openstack_credentials()
     if not creds:
-        print(f"[bold red]{TRANSLATIONS[lang]['connection_error']}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['connection_error']}[/bold red]")
         return
 
     conn = connection.Connection(**creds)
     if not conn.authorize():
-        print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/bold red]")
         return
 
     billing_text = generate_billing()
@@ -324,7 +324,7 @@ def main():
     with open('openstack_optimization_report.txt', 'w') as f:
         f.write(report_body)
 
-    print(f"[bold green]{TRANSLATIONS[lang]['report_generated'].format('openstack_optimization_report.txt')}[/]")
+    print(f"[bold green]{TRANSLATIONS[lang]['report_generated'].format('openstack_optimization_report.txt')}[/bold green]")
     
     # Afficher le rapport
     print(report_body)

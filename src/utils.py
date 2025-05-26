@@ -92,17 +92,17 @@ def isoformat(dt: datetime) -> str:
 
 def print_header(header):
     """
-    Affiche un en-tête formaté avec des séparateurs.
+    Affiche un en-tête formaté avec Rich.
     
     Args:
-        header (str): Texte de l'en-tête à afficher
+        header (str): Le texte de l'en-tête à afficher
         
     Examples:
         >>> print_header("LISTE DES INSTANCES")
-        =================================================
-                    LISTE DES INSTANCES                    
-        =================================================
+        ==========================================
+        [yellow bold]         LISTE DES INSTANCES         [/yellow bold]
+        ==========================================
     """
-    print("\n" + "=" * 50)
+    print("\n" + "="*50)
     print(f"[yellow bold]{header.center(50)}[/yellow bold]")
-    print("=" * 50 + "\n") 
+    print("="*50 + "\n") 

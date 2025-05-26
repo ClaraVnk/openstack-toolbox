@@ -113,7 +113,7 @@ def main():
     print(f"[dim]{TRANSLATIONS[lang]['usage']}[/]\n")
 
     for cmd, desc in get_commands(lang):
-        print(f"  • [bold]{cmd}[/]" + " " * (30 - len(cmd)) + f"→ {desc}")
+        print(f"  • [bold]{cmd}[/bold]" + " " * (30 - len(cmd)) + f"→ {desc}")
 
 if __name__ == '__main__':
     main()
