@@ -104,5 +104,5 @@ def print_header(header):
         =================================================
     """
     print("\n" + "=" * 50)
-    print(f"[bold yellow]{header.center(50)}[/]")
+    print(f"[yellow bold]{header.center(50)}[/yellow bold]")
     print("=" * 50 + "\n") 

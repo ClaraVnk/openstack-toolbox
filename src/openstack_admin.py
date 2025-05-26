@@ -43,7 +43,15 @@ TRANSLATIONS = {
         "none": "Aucun",
         "resources_header": "LISTE DES RESSOURCES",
         "name_column": "Nom",
-        "details_column": "Détails"
+        "details_column": "Détails",
+        "images_header": "LISTE DES IMAGES UTILISEES",
+        "instances_header": "LISTE DES INSTANCES",
+        "snapshots_header": "LISTE DES SNAPSHOTS",
+        "backups_header": "LISTE DES BACKUPS",
+        "volumes_header": "LISTE DES VOLUMES",
+        "volumes_tree_header": "ARBORESCENCE DES VOLUMES",
+        "floating_ips_header": "LISTE DES FLOATING IPs",
+        "containers_header": "LISTE DES CONTAINERS"
     },
     "en": {
         "welcome": "🎉 Welcome to OpenStack Toolbox 🧰 v{} 🎉",
@@ -72,7 +80,15 @@ TRANSLATIONS = {
         "none": "None",
         "resources_header": "LIST OF RESOURCES",
         "name_column": "Name",
-        "details_column": "Details"
+        "details_column": "Details",
+        "images_header": "LIST OF USED IMAGES",
+        "instances_header": "LIST OF INSTANCES",
+        "snapshots_header": "LIST OF SNAPSHOTS",
+        "backups_header": "LIST OF BACKUPS",
+        "volumes_header": "LIST OF VOLUMES",
+        "volumes_tree_header": "VOLUMES TREE VIEW",
+        "floating_ips_header": "LIST OF FLOATING IPs",
+        "containers_header": "LIST OF CONTAINERS"
     }
 }
 
@@ -175,7 +191,7 @@ def get_project_details(conn, project_id):
 
 def list_images(conn):
     lang = get_language_preference()
-    print_header("LISTE DES IMAGES UTILISEES")
+    print_header(TRANSLATIONS[lang]["images_header"])
     private_images = list(conn.image.images(visibility='private'))
     shared_images = list(conn.image.images(visibility='shared'))
     all_images = private_images + shared_images
@@ -194,7 +210,7 @@ def list_images(conn):
 
 def list_instances(conn):
     lang = get_language_preference()
-    print_header("LISTE DES INSTANCES")
+    print_header(TRANSLATIONS[lang]["instances_header"])
     instances = list(conn.compute.servers())
 
     if not instances:
@@ -216,7 +232,7 @@ def list_instances(conn):
 
 def list_snapshots(conn):
     lang = get_language_preference()
-    print_header("LISTE DES SNAPSHOTS")
+    print_header(TRANSLATIONS[lang]["snapshots_header"])
     snapshots = list(conn.block_storage.snapshots())
 
     if not snapshots:
@@ -233,7 +249,7 @@ def list_snapshots(conn):
 
 def list_backups(conn):
     lang = get_language_preference()
-    print_header("LISTE DES BACKUPS")
+    print_header(TRANSLATIONS[lang]["backups_header"])
     backups = list(conn.block_storage.backups())
 
     if not backups:
@@ -250,7 +266,7 @@ def list_backups(conn):
 
 def list_volumes(conn):
     lang = get_language_preference()
-    print_header("LISTE DES VOLUMES")
+    print_header(TRANSLATIONS[lang]["volumes_header"])
     volumes = list(conn.block_storage.volumes())
 
     if not volumes:
@@ -308,7 +324,7 @@ def print_tree(tree_data):
 
 def list_floating_ips(conn):
     lang = get_language_preference()
-    print_header("LISTE DES FLOATING IPs")
+    print_header(TRANSLATIONS[lang]["floating_ips_header"])
     floating_ips = list(conn.network.ips())
 
     if not floating_ips:
@@ -325,7 +341,7 @@ def list_floating_ips(conn):
 
 def list_containers(conn):
     lang = get_language_preference()
-    print_header("LISTE DES CONTAINERS")
+    print_header(TRANSLATIONS[lang]["containers_header"])
     containers = list(conn.object_store.containers())
 
     if not containers:
@@ -510,7 +526,7 @@ def main():
     list_snapshots(conn)
     list_backups(conn)
     list_volumes(conn)
-    print_header("ARBORESCENCE DES VOLUMES")
+    print_header(TRANSLATIONS[lang]["volumes_tree_header"])
     tree = mounted_volumes(conn)
     print_tree(tree)
     list_floating_ips(conn)
