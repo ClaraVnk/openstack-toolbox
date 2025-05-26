@@ -11,8 +11,8 @@ from rich.table import Table
 from rich.tree import Tree
 from openstack import connection
 from dotenv import load_dotenv
-from config import get_language_preference
-from utils import format_size, print_header
+from src.config import get_language_preference
+from src.utils import format_size, print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {

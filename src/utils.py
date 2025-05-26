@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import datetime, timezone
-from config import get_language_preference
+from src.config import get_language_preference
 
 def format_size(size_bytes):
     """

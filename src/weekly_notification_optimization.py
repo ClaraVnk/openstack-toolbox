@@ -10,8 +10,8 @@ from importlib.metadata import version, PackageNotFoundError
 from rich import print
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from config import get_language_preference, create_smtp_config_interactive, load_smtp_config
-from utils import print_header
+from src.config import get_language_preference, create_smtp_config_interactive, load_smtp_config
+from src.utils import print_header
 import tomli
 
 # Dictionnaire des traductions

@@ -14,8 +14,8 @@ from dotenv import load_dotenv
 from openstack import connection
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, make_wsgi_app
 from pythonjsonlogger import jsonlogger
-from config import get_language_preference
-from utils import isoformat, parse_flavor_name
+from src.config import get_language_preference
+from src.utils import isoformat, parse_flavor_name
 
 # Dictionnaire des traductions
 TRANSLATIONS = {

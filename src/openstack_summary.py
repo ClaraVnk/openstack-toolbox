@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import json
 import os
 import subprocess
@@ -12,8 +11,8 @@ from rich import print
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
-from config import get_language_preference
-from utils import format_size, parse_flavor_name, isoformat, print_header
+from src.config import get_language_preference
+from src.utils import format_size, parse_flavor_name, isoformat, print_header
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Dictionnaire des traductions
