@@ -197,12 +197,18 @@ Configures and sends weekly reports via email.
 ## 🌍 Internationalization
 
 The project supports French (default) and English.
-To change the language:
+To change the language, use:
 
-```python
-from config import set_language_preference
+```bash
+openstack-toolbox --config
+```
 
-set_language_preference('en')  # or 'fr'
+This will display an interactive menu to select your preferred language. The choice will be saved and used across all tools in the suite.
+
+You can also view all available commands in your preferred language with:
+
+```bash
+openstack-toolbox
 ```
 
 ## 📚 Function Documentation
