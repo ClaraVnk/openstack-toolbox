@@ -452,7 +452,7 @@ def list_containers(conn):
 def main():
     lang = get_language_preference()
     toolbox_version = get_version()
-    print(f"\n[bold yellow]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/]")
+    print(f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/yellow bold]")
 
     header = r"""
   ___                       _             _       
