@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import json
 import os
 import tomli
@@ -11,8 +10,8 @@ from dotenv import load_dotenv
 from rich import print
 from rich.console import Console
 from rich.table import Table
-from config import get_language_preference
-from utils import parse_flavor_name, isoformat, print_header
+from src.config import get_language_preference
+from src.utils import parse_flavor_name, isoformat, print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
