@@ -19,7 +19,7 @@ A suite of tools to optimize and manage your OpenStack resources, with multiling
   - Instance list and details
   - Volumes and snapshots
   - Images and containers
-  - Cost estimation
+  - Cost estimation (calibrated for Infomaniak pricing in EUR/CHF)
   - Mounted volumes tree view
 
 - 👨‍💼 **Administration** (`openstack_admin.py`)
@@ -119,7 +119,7 @@ Displays a complete summary of your OpenStack resources:
 - Instances (CPU, RAM, disk)
 - Volumes and snapshots
 - Images and containers
-- Estimated costs
+- Estimated costs (specific to Infomaniak hosting provider, in EUR and CHF)
 
 ### Administration
 
