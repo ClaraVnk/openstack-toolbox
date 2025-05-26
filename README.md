@@ -34,7 +34,14 @@ A suite of tools to optimize and manage your OpenStack resources, with multiling
 
 ## 🛠️ Installation
 
-Clone the repository and install:
+You can install the toolbox in two ways:
+
+### From PyPI (recommended)
+```bash
+pip install openstack-toolbox
+```
+
+### From source
 ```bash
 git clone https://github.com/your-username/openstack-toolbox.git
 cd openstack-toolbox
@@ -47,8 +54,20 @@ Dependencies will be automatically managed through `pyproject.toml`.
 
 ### OpenStack Environment Variables
 
-Create a `.env` file at the project root:
+The toolbox supports two methods for configuring OpenStack credentials:
 
+1. Using environment variables directly:
+```bash
+export OS_AUTH_URL=https://your-auth-url
+export OS_PROJECT_NAME=your-project
+export OS_USERNAME=your-username
+export OS_PASSWORD=your-password
+export OS_USER_DOMAIN_NAME=your-domain
+export OS_PROJECT_DOMAIN_NAME=your-project-domain
+export OS_REGION_NAME=your-region
+```
+
+2. Using a `.env` file at the project root:
 ```bash
 OS_AUTH_URL=https://your-auth-url
 OS_PROJECT_NAME=your-project
@@ -59,11 +78,13 @@ OS_PROJECT_DOMAIN_NAME=your-project-domain
 OS_REGION_NAME=your-region
 ```
 
+Choose the method that best suits your workflow. The toolbox will automatically detect and use the credentials from either source.
+
 ### SMTP Configuration (for notifications)
 
 SMTP configuration is interactive. Run:
 ```bash
-python src/weekly_notification_optimization.py
+weekly-notification
 ```
 
 The script will guide you to configure:
@@ -77,7 +98,7 @@ The script will guide you to configure:
 ### Metrics Collector
 
 ```bash
-python src/openstack_metrics_collector.py
+openstack-metrics-collector
 ```
 
 The collector starts a Prometheus server on port 8000.
@@ -91,7 +112,7 @@ Available metrics:
 ### Resource Summary
 
 ```bash
-python src/openstack_summary.py
+openstack-summary
 ```
 
 Displays a complete summary of your OpenStack resources:
@@ -103,7 +124,7 @@ Displays a complete summary of your OpenStack resources:
 ### Administration
 
 ```bash
-python src/openstack_admin.py
+openstack-admin
 ```
 
 Enter the project ID to view:
@@ -114,7 +135,7 @@ Enter the project ID to view:
 ### Weekly Notifications
 
 ```bash
-python src/weekly_notification_optimization.py
+weekly-notification
 ```
 
 Configures and sends weekly reports via email.
@@ -176,6 +197,10 @@ Contributions are welcome! Feel free to:
 3. Commit (`git commit -am 'Add feature'`)
 4. Push (`git push origin feature/improvement`)
 5. Open a Pull Request
+
+## ✨ Credits
+
+Special thanks to [Kevin Allioli](https://github.com/kallioli), Cloud Architect & SysAdmin, for his valuable contributions and expertise in OpenStack development.
 
 ## 📝 License
 
