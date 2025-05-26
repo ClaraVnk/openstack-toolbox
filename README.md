@@ -101,13 +101,16 @@ The script will guide you to configure:
 openstack-metrics-collector
 ```
 
-The collector starts a Prometheus server on port 8000.
+The collector implements a passive Prometheus exporter that starts a server on port 8000. Metrics are stored in a custom directory and served on demand when Prometheus scrapes them.
+
 Available metrics:
 - `openstack_identity_metrics`
 - `openstack_compute_metrics`
 - `openstack_block_storage_metrics`
 - `openstack_network_metrics`
 - `openstack_gnocchi_metric`
+
+All metrics are stored in `/var/lib/openstack-metrics-collector/` by default. You can customize this path in the configuration.
 
 #### Prometheus Configuration
 
