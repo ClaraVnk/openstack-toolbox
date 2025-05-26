@@ -109,6 +109,57 @@ Available metrics:
 - `openstack_network_metrics`
 - `openstack_gnocchi_metric`
 
+#### Prometheus Configuration
+
+Add this job to your `prometheus.yml`:
+```yaml
+scrape_configs:
+  - job_name: 'openstack'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: /metrics
+    scrape_interval: 30s
+```
+
+This will collect OpenStack metrics every 30 seconds. Adjust the `scrape_interval` and `targets` according to your needs.
+
+#### Alerting Rules
+
+Create an `alert.yml` file with these example rules:
+```yaml
+groups:
+- name: openstack_alerts
+  rules:
+  - alert: OpenStackInstanceDown
+    expr: openstack_instance_status == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance_name }} is down"
+      description: "Instance {{ $labels.instance_name }} in project {{ $labels.project_name }} has been down for more than 5 minutes"
+
+  - alert: OpenStackHighCPUUsage
+    expr: openstack_instance_cpu_usage > 90
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on {{ $labels.instance_name }}"
+      description: "Instance {{ $labels.instance_name }} has had CPU usage above 90% for 15 minutes"
+
+  - alert: OpenStackLowDiskSpace
+    expr: openstack_volume_free_space / openstack_volume_total_space * 100 < 10
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low disk space on volume {{ $labels.volume_name }}"
+      description: "Volume {{ $labels.volume_name }} has less than 10% free space"
+```
+
+Add this file to your Prometheus configuration to enable alerting on common OpenStack issues.
+
 ### Resource Summary
 
 ```bash
