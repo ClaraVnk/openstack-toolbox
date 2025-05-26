@@ -486,7 +486,7 @@ def list_all_resources(conn):
 def main():
     lang = get_language_preference()
     version = get_version()
-    print(f"\n[bold yellow]{TRANSLATIONS[lang]['welcome'].format(version)}[/]")
+    print(f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]")
 
     header = r"""
   ___                       _             _    
