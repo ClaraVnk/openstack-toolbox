@@ -1,19 +1,78 @@
 #!/usr/bin/env python3
 
 import sys
-import importlib
 import json
 import os
 import subprocess
 from datetime import datetime, timedelta, timezone
 import tomli
-from importlib.metadata import version, PackageNotFoundError
 from openstack import connection
 from dotenv import load_dotenv
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
+from config import get_language_preference
+from utils import format_size, parse_flavor_name, isoformat, print_header
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Dictionnaire des traductions
+TRANSLATIONS = {
+    "fr": {
+        "welcome": "🎉 Bienvenue dans OpenStack Toolbox 🧰 v{} 🎉",
+        "missing_vars": "❌ Variables OpenStack manquantes : {}",
+        "no_project": "❌ Aucun projet trouvé avec l'ID: {}",
+        "no_billing": "❌ Aucune donnée de facturation disponible (indisponible ou trop faible) — les coûts affichés seront à 0.\n",
+        "no_instances": "🚫 Aucune instance trouvée.",
+        "no_snapshots": "🚫 Aucun snapshot trouvé.",
+        "no_backups": "🚫 Aucun backup trouvé.",
+        "no_volumes": "🚫 Aucun volume trouvé.",
+        "no_floating_ips": "🚫 Aucune IP flottante trouvée.",
+        "no_containers": "🚫 Aucun container trouvé.",
+        "no_images": "🚫 Aucune image privée ou partagée trouvée.",
+        "total_resources": "📊 Total des ressources consommées : {} CPU, {} Go de RAM, {} Go de stockage",
+        "total_cost": "💰 Coût total des ressources consommées : {:.2f} CHF, {:.2f} EUR",
+        "hourly_cost": "💸 Coût horaire moyen : {:.5f} CHF, {:.5f} EUR",
+        "insufficient_data": "💸 Coût horaire moyen : Données insuffisantes",
+        "mounted_volumes": "📦 Volumes montés par instance",
+        "no_volume_mounted": "🚫 Aucun volume",
+        "billing_period": "🗓️ Période de facturation sélectionnée : {} → {}\n",
+        "enter_billing_period": "Entrez la période de facturation souhaitée (format: YYYY-MM-DD HH:MM), appuyez sur Entrée pour la valeur par défaut.",
+        "start_date": "Date de début",
+        "end_date": "Date de fin",
+        "billing_error": "❌ Échec de la récupération des données : {}",
+        "billing_exception": "❌ Exception lors de la récupération du billing : {}",
+        "instances_header": "LISTE DES INSTANCES",
+        "name_column": "Nom"
+    },
+    "en": {
+        "welcome": "🎉 Welcome to OpenStack Toolbox 🧰 v{} 🎉",
+        "missing_vars": "❌ Missing OpenStack variables: {}",
+        "no_project": "❌ No project found with ID: {}",
+        "no_billing": "❌ No billing data available (unavailable or too low) — costs will be displayed as 0.\n",
+        "no_instances": "🚫 No instances found.",
+        "no_snapshots": "🚫 No snapshots found.",
+        "no_backups": "🚫 No backups found.",
+        "no_volumes": "🚫 No volumes found.",
+        "no_floating_ips": "🚫 No floating IPs found.",
+        "no_containers": "🚫 No containers found.",
+        "no_images": "🚫 No private or shared images found.",
+        "total_resources": "📊 Total resources consumed: {} vCPUs, {} GB RAM, {} GB storage",
+        "total_cost": "💰 Total cost of resources: {:.2f} CHF, {:.2f} EUR",
+        "hourly_cost": "💸 Average hourly cost: {:.5f} CHF, {:.5f} EUR",
+        "insufficient_data": "💸 Average hourly cost: Insufficient data",
+        "mounted_volumes": "📦 Volumes mounted by instance",
+        "no_volume_mounted": "🚫 No volume",
+        "billing_period": "🗓️ Selected billing period: {} → {}\n",
+        "enter_billing_period": "Enter the desired billing period (format: YYYY-MM-DD HH:MM), press Enter for default value.",
+        "start_date": "Start date",
+        "end_date": "End date",
+        "billing_error": "❌ Failed to retrieve data: {}",
+        "billing_exception": "❌ Exception while retrieving billing: {}",
+        "instances_header": "LIST OF INSTANCES",
+        "name_column": "Name"
+    }
+}
 
 # Fonction pour récupérer la version
 def get_version():
@@ -28,10 +87,6 @@ def get_version():
         version = "unknown"
     return version
 
-# Fonction pour générer le fichier de billing
-def isoformat(dt):
-    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
-
 # Ajout des fonctions auxiliaires
 def trim_to_minute(dt_str):
     return dt_str.replace("T", " ")[:16]
@@ -42,14 +97,15 @@ def input_with_default(prompt, default):
 
 def generate_billing():
     try:
+        lang = get_language_preference()
         # Dates par défaut : 2 dernières heures UTC
         default_start_dt = datetime.now(timezone.utc) - timedelta(hours=2)
         default_end_dt = datetime.now(timezone.utc)
 
-        print("Entrez la période de facturation souhaitée (format: YYYY-MM-DD HH:MM), appuyez sur Entrée pour la valeur par défaut.")
+        print(TRANSLATIONS[lang]["enter_billing_period"])
 
-        start_input = input_with_default("Date de début", trim_to_minute(isoformat(default_start_dt)))
-        end_input = input_with_default("Date de fin", trim_to_minute(isoformat(default_end_dt)))
+        start_input = input_with_default(TRANSLATIONS[lang]["start_date"], trim_to_minute(isoformat(default_start_dt)))
+        end_input = input_with_default(TRANSLATIONS[lang]["end_date"], trim_to_minute(isoformat(default_end_dt)))
 
         # Parsing des dates saisies
         start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
@@ -58,7 +114,7 @@ def generate_billing():
         start_iso = isoformat(start_dt)
         end_iso = isoformat(end_dt)
 
-        print(f"\n🗓️ Période de facturation sélectionnée : {start_iso} → {end_iso}\n")
+        print(TRANSLATIONS[lang]["billing_period"].format(start_iso, end_iso))
 
         cmd = [
             "openstack", "rating", "dataframes", "get",
@@ -72,33 +128,10 @@ def generate_billing():
         if result.returncode == 0:
             return result.stdout
         else:
-            return f"❌ Échec de la récupération des données : {result.stderr.strip()}"
+            return TRANSLATIONS[lang]["billing_error"].format(result.stderr.strip())
 
     except Exception as e:
-        return f"❌ Exception lors de la récupération du billing : {e}"
-
-# Fonction pour traduire le nom du flavor
-def parse_flavor_name(name):
-    """
-    Parse un nom de flavor du type 'aX-ramY-diskZ-...' et retourne une chaîne lisible + les valeurs numériques.
-    Exemple : 'a2-ram8-disk40' → ('2 vCPU / 8 Go RAM / 40 Go disque', 2, 8, 40)
-    """
-    try:
-        parts = name.split('-')
-        cpu_part = next((p for p in parts if p.startswith('a') and p[1:].isdigit()), None)
-        ram_part = next((p for p in parts if p.startswith('ram') and p[3:].isdigit()), None)
-        disk_part = next((p for p in parts if p.startswith('disk') and p[4:].isdigit()), None)
-
-        cpu = int(cpu_part[1:]) if cpu_part else None
-        ram = int(ram_part[3:]) if ram_part else None
-        disk = int(disk_part[4:]) if disk_part else None
-
-        human_readable = f"{cpu} CPU / {ram} Go RAM / {disk} Go disque"
-        return human_readable, cpu, ram, disk
-    except Exception as e:
-        # En cas d'échec, retourne le nom original et None pour les valeurs numériques
-        print(f"❌ Échec du parsing pour le flavor '{name}' : {str(e)}")
-        return name, None, None, None
+        return TRANSLATIONS[lang]["billing_exception"].format(e)
 
 # Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():
@@ -143,31 +176,6 @@ def load_openstack_credentials():
 
 console = Console()
 
-# Fonction pour afficher les en-têtes
-def print_header(header):
-    print("\n" + "=" * 50)
-    print(f"[bold yellow]{header.center(50)}[/]")
-    print("=" * 50 + "\n")
-
-# Fonction pour obtenir les détails d'un projet spécifique
-def get_project_details(conn, project_id):
-    print_header(f"DÉTAILS DU PROJET AVEC ID: {project_id}")
-    project = conn.identity.get_project(project_id)
-
-    if project:
-        print(f"ID: {project.id}")
-        print(f"Nom: {project.name}")
-        print(f"Description: {project.description}")
-        print(f"Domaine: {project.domain_id}")
-        print(f"Actif: {'Oui' if project.is_enabled else 'Non'}")
-    else:
-        print(f"[bold red]❌ Aucun projet trouvé avec l'ID:[/] {project_id}")
-
-# Fonction pour obtenir les détails d'une instance
-def get_billing_data_from_file(filepath):
-    with open(filepath, 'r') as f:
-        return json.load(f)
-
 # Fonction pour calculer le coût d'une instance
 def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
@@ -194,38 +202,18 @@ def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_t
 
     return cost_chf, cost_euro
 
-# Fonction pour formater la taille
-def format_size(size_bytes):
-    # Définir les unités et leurs seuils
-    units = [
-        ('To', 1000000000000),
-        ('Go', 1000000000),
-        ('Mo', 1000000),
-        ('Ko', 1000)
-    ]
-
-    # Parcourir les unités pour trouver la plus appropriée
-    for unit, threshold in units:
-        if size_bytes >= threshold:
-            size = size_bytes / threshold
-            return f"{size:.2f} {unit}"
-    return f"{size_bytes} octets"
-
 # Lister les images privées et partagées
 def list_images(conn):
+    lang = get_language_preference()
     print_header("LISTE DES IMAGES UTILISEES")
-    # Récupérer les images privées et les convertir en liste
     private_images = list(conn.image.images(visibility='private'))
-    # Récupérer les images partagées et les convertir en liste
     shared_images = list(conn.image.images(visibility='shared'))
-    # Combiner les images privées et partagées
     all_images = private_images + shared_images
 
     if not all_images:
-        print("🚫 Aucune image privée ou partagée trouvée.")
+        print(TRANSLATIONS[lang]["no_images"])
         return
 
-    # Affichage avec rich.Table
     table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
@@ -234,108 +222,96 @@ def list_images(conn):
         table.add_row(image.id, image.name, image.visibility)
     console.print(table)
 
-# Lister les instances
-def list_instances(conn, billing_data):
-    print_header("LISTE DES INSTANCES")
-    if not billing_data:
-        print("❌ Aucune donnée de facturation disponible (indisponible ou trop faible) — les coûts affichés seront à 0.\n")
+def get_instance_details(conn, instance, flavors):
+    """
+    Récupère les détails d'une instance de manière parallèle.
+    """
+    lang = get_language_preference()
+    try:
+        flavor_id = instance.flavor['id']
+        flavor = flavors.get(flavor_id, {"name": TRANSLATIONS[lang]["unknown"]})
+        flavor_name = flavor.get("name", TRANSLATIONS[lang]["unknown"])
+        
+        created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
+        uptime = datetime.now() - created_at
+        uptime_str = str(uptime).split('.')[0]
+        
+        status = instance.status
+        status_color = "green" if status == "ACTIVE" else "red"
+        
+        return {
+            "id": instance.id,
+            "name": instance.name,
+            "flavor": flavor_name,
+            "status": status,
+            "status_color": status_color,
+            "uptime": uptime_str
+        }
+    except Exception as e:
+        print(f"[red]Erreur lors de la récupération des détails de l'instance {instance.id}: {str(e)}[/]")
+        return None
 
-    # Récupérer les instances
-    instances = list(conn.compute.servers())  
-
-    if not instances:
-        print("🚫 Aucune instance trouvée.")
-        return
-
-    # Taux de conversion ICU vers monnaies
-    icu_to_chf = 50  # Taux de conversion ICU vers CHF
-    icu_to_euro = 55.5  # Taux de conversion ICU vers EUR
-
-    # Calculer le coût total des ressources consommées
-    total_cost_chf = 0.0
-    total_cost_euro = 0.0
-    for instance in instances:
-        cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id, icu_to_chf=icu_to_chf, icu_to_euro=icu_to_euro)
-        total_cost_chf += cost_chf
-        total_cost_euro += cost_euro
+def list_instances(conn):
+    """
+    Liste toutes les instances avec parallélisation de la collecte des détails.
+    """
+    lang = get_language_preference()
+    print_header(TRANSLATIONS[lang]["instances_header"])
     
-    # Calculer le coût horaire moyen global à partir des données
-    rate_values = []
-    for group in billing_data:
-        for resource in group.get("Resources", []):
-            rate = resource.get("rate_value")
-            if rate is not None:
-                try:
-                    rate_values.append(float(rate))
-                except ValueError:
-                    continue
-
-    if rate_values:
-        avg_rate_icu = sum(rate_values) / len(rate_values)
-        avg_rate_eur = avg_rate_icu / icu_to_euro
-        avg_rate_chf = avg_rate_icu / icu_to_chf
-
-    # Initialiser les totaux
-    total_vcpus = 0
-    total_ram_go = 0
-    total_disk_go = 0
-
+    instances = list(conn.compute.servers())
+    if not instances:
+        print(TRANSLATIONS[lang]["no_instances"])
+        return
+    
+    # Récupération des flavors en une seule fois
+    flavors = {f.id: f for f in conn.compute.flavors()}
+    
+    # Collecte parallèle des détails des instances
+    instance_details = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [
+            executor.submit(get_instance_details, conn, instance, flavors)
+            for instance in instances
+        ]
+        
+        for future in as_completed(futures):
+            try:
+                details = future.result()
+                if details:
+                    instance_details.append(details)
+            except Exception as e:
+                print(f"[red]Erreur lors de la récupération des détails d'une instance : {str(e)}[/]")
+    
+    # Affichage des résultats
     table = Table(title="")
-
-    table.add_column("État", justify="center", style="bold")
     table.add_column("ID", style="magenta")
-    table.add_column("Nom", style="cyan")
-    table.add_column("Flavor ID", style="green")
+    table.add_column(TRANSLATIONS[lang]["name_column"], style="cyan")
+    table.add_column("Flavor", style="green")
+    table.add_column("Status", justify="center")
     table.add_column("Uptime", justify="right")
-    table.add_column("Coût (CHF)", justify="right")
-    table.add_column("Coût (EUR)", justify="right")
-
-    for instance in instances:
-        try:
-            flavor_id = instance.flavor['id']
-            _, cpu, ram, disk = parse_flavor_name(flavor_id)
-
-            total_vcpus += cpu if cpu else 0
-            total_ram_go += ram if ram else 0
-            total_disk_go += disk if disk else 0
-
-            created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
-            uptime = datetime.now() - created_at
-            uptime_str = str(uptime).split('.')[0]
-
-            cost_chf, cost_euro = calculate_instance_cost(billing_data, instance_id=instance.id)
-            state = instance.status.lower()
-            emoji = "🟢" if state == "active" else "🔴"
-
-            table.add_row(emoji, instance.id, instance.name, flavor_id, uptime_str, f"{cost_chf:.2f}", f"{cost_euro:.2f}")
-        except Exception as e:
-            print(f"❌ Erreur lors du traitement de l'instance '{instance.name}' : {str(e)}")
-            continue
-
+    
+    for details in sorted(instance_details, key=lambda x: x["name"]):
+        table.add_row(
+            details["id"],
+            details["name"],
+            details["flavor"],
+            f"[{details['status_color']}]{details['status']}[/]",
+            details["uptime"]
+        )
+    
+    console = Console()
     console.print(table)
-
-    # 4. Afficher le total
-    print(f"\n📊 Total des ressources consommées : {total_vcpus} CPU, {total_ram_go} Go de RAM, {total_disk_go} Go de stockage")
-
-    # Afficher le coût total des ressources consommées
-    print(f"\n💰 Coût total des ressources consommées : {total_cost_chf:.2f} CHF, {total_cost_euro:.2f} EUR")
-
-    if rate_values:
-        print(f"\n💸 Coût horaire moyen : {avg_rate_chf:.5f} CHF, {avg_rate_eur:.5f} EUR")
-    else:
-        print("\n💸 Coût horaire moyen : Données insuffisantes")
 
 # Lister les snapshots
 def list_snapshots(conn):
+    lang = get_language_preference()
     print_header("LISTE DES SNAPSHOTS")
-    # Récupérer les snapshots
     snapshots = list(conn.block_storage.snapshots())
 
     if not snapshots:
-        print("🚫 Aucun snapshot trouvé.")
+        print(TRANSLATIONS[lang]["no_snapshots"])
         return
 
-    # Affichage avec rich.Table
     table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
@@ -346,15 +322,14 @@ def list_snapshots(conn):
 
 # Lister les backups
 def list_backups(conn):
+    lang = get_language_preference()
     print_header("LISTE DES BACKUPS")
-    # Récupérer les backups
     backups = list(conn.block_storage.backups())
 
     if not backups:
-        print("🚫 Aucun backup trouvé.")
+        print(TRANSLATIONS[lang]["no_backups"])
         return
 
-    # Affichage avec rich.Table
     table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
@@ -365,15 +340,14 @@ def list_backups(conn):
 
 # Lister les volumes 
 def list_volumes(conn):
+    lang = get_language_preference()
     print_header("LISTE DES VOLUMES")
-    # Récupérer les volumes
     volumes = list(conn.block_storage.volumes())
 
     if not volumes:
-        print("🚫 Aucun volume trouvé.")
+        print(TRANSLATIONS[lang]["no_volumes"])
         return
 
-    # Affichage avec rich.Table
     table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("Nom", style="cyan")
@@ -414,27 +388,27 @@ def mounted_volumes(conn):
 
 # Afficher l'arborescence
 def print_tree(tree_data):
-    tree = Tree("📦 Volumes montés par instance")
+    lang = get_language_preference()
+    tree = Tree(TRANSLATIONS[lang]["mounted_volumes"])
     for instance, volumes in tree_data.items():
         instance_branch = tree.add(f"🖥️ {instance}")
         if volumes:
             for volume in volumes:
                 instance_branch.add(f"💾 {volume}")
         else:
-            instance_branch.add("🚫 Aucun volume")
+            instance_branch.add(TRANSLATIONS[lang]["no_volume_mounted"])
     console.print(tree)
 
 # Lister les IP flottantes
 def list_floating_ips(conn):
+    lang = get_language_preference()
     print_header("LISTE DES FLOATING IPs")
-    # Récupérer les adresses IP flottantes
     floating_ips = list(conn.network.ips())
 
     if not floating_ips:
-        print("🚫 Aucune IP flottante trouvée.")
+        print(TRANSLATIONS[lang]["no_floating_ips"])
         return
 
-    # Affichage avec rich.Table
     table = Table(title="")
     table.add_column("ID", style="magenta")
     table.add_column("IP", style="cyan")
@@ -445,15 +419,14 @@ def list_floating_ips(conn):
 
 # Lister les containers
 def list_containers(conn):
+    lang = get_language_preference()
     print_header("LISTE DES CONTAINERS")
-    # Récupérer les containers
     containers = list(conn.object_store.containers())
 
     if not containers:
-        print("🚫 Aucun container trouvé.")
+        print(TRANSLATIONS[lang]["no_containers"])
         return
 
-    # Affichage avec rich.Table
     table = Table(title="")
     table.add_column("Nom", style="cyan")
     table.add_column("Taille totale", justify="right", style="magenta")
@@ -464,8 +437,9 @@ def list_containers(conn):
 
 # Fonction principale
 def main():
+    lang = get_language_preference()
     toolbox_version = get_version()
-    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{toolbox_version} 🎉[/]")
+    print(f"\n[bold yellow]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/]")
 
     header = r"""
   ___                       _             _       
@@ -487,7 +461,7 @@ def main():
     # Test des credentials
     creds = load_openstack_credentials()
     if not creds:
-        print("[bold red]❌ Impossible de charger les identifiants OpenStack. Vérifiez votre configuration.[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars']}[/]")
         return
 
     conn = connection.Connection(**creds)
@@ -509,7 +483,7 @@ def main():
 
     # Lister les ressources
     list_images(conn)
-    list_instances(conn, billing_data)
+    list_instances(conn)
     list_snapshots(conn)
     list_backups(conn)
     list_volumes(conn)

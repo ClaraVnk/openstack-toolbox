@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import importlib
 import json
 import os
 import tomli
@@ -12,13 +11,60 @@ from dotenv import load_dotenv
 from rich import print
 from rich.console import Console
 from rich.table import Table
-try:
-    from importlib.metadata import version, PackageNotFoundError
-except ImportError:
-    from importlib_metadata import version, PackageNotFoundError
+from config import get_language_preference
+from utils import parse_flavor_name, isoformat, print_header
 
-# Ajoute le dossier src au path pour les imports locaux
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Dictionnaire des traductions
+TRANSLATIONS = {
+    "fr": {
+        "welcome": "🎉 Bienvenue dans OpenStack Toolbox 🧰 v{} 🎉",
+        "missing_vars": "❌ Variables OpenStack manquantes : {}",
+        "connection_error": "❌ Impossible de charger les identifiants OpenStack. Vérifiez votre configuration.",
+        "auth_error": "❌ Échec de la connexion à OpenStack",
+        "billing_period": "📅 Période choisie automatiquement : la semaine dernière {} → {}",
+        "billing_error": "❌ Échec de la récupération des données : {}",
+        "billing_exception": "❌ Exception lors de la récupération du billing : {}",
+        "flavor_parse_error": "❌ Échec du parsing pour le flavor '{}' : {}",
+        "openstack_error": "❌ La commande `openstack server list` a échoué.",
+        "cli_error": "❌ Erreur lors de l'appel à `openstack server list`: {}",
+        "no_inactive": "✅ Aucune instance inactive détectée.",
+        "no_unused": "✅ Aucun volume inutilisé détecté.",
+        "no_billing": "❌ Aucune donnée de facturation disponible (trop faibles ou non disponibles).",
+        "billing_json_error": "❌ Erreur lors de la lecture des données de facturation : format JSON invalide.",
+        "report_title": "RÉCAPITULATIF HEBDOMADAIRE DES RESSOURCES SOUS-UTILISÉES",
+        "inactive_instances": "INSTANCES INACTIVES",
+        "unused_volumes": "VOLUMES NON UTILISÉS",
+        "underutilized_costs": "COÛTS DES RESSOURCES SOUS-UTILISÉES",
+        "report_generated": "🎉 Rapport généré avec succès : {}",
+        "resource": "Ressource",
+        "status": "Statut",
+        "name": "Nom"
+    },
+    "en": {
+        "welcome": "🎉 Welcome to OpenStack Toolbox 🧰 v{} 🎉",
+        "missing_vars": "❌ Missing OpenStack variables: {}",
+        "connection_error": "❌ Unable to load OpenStack credentials. Please check your configuration.",
+        "auth_error": "❌ Failed to connect to OpenStack",
+        "billing_period": "📅 Automatically selected period: last week {} → {}",
+        "billing_error": "❌ Failed to retrieve data: {}",
+        "billing_exception": "❌ Exception while retrieving billing: {}",
+        "flavor_parse_error": "❌ Failed to parse flavor '{}': {}",
+        "openstack_error": "❌ The `openstack server list` command failed.",
+        "cli_error": "❌ Error calling `openstack server list`: {}",
+        "no_inactive": "✅ No inactive instances detected.",
+        "no_unused": "✅ No unused volumes detected.",
+        "no_billing": "❌ No billing data available (too low or unavailable).",
+        "billing_json_error": "❌ Error reading billing data: invalid JSON format.",
+        "report_title": "WEEKLY SUMMARY OF UNDERUTILIZED RESOURCES",
+        "inactive_instances": "INACTIVE INSTANCES",
+        "unused_volumes": "UNUSED VOLUMES",
+        "underutilized_costs": "COSTS OF UNDERUTILIZED RESOURCES",
+        "report_generated": "🎉 Report generated successfully: {}",
+        "resource": "Resource",
+        "status": "Status",
+        "name": "Name"
+    }
+}
 
 # Fonction pour récupérer la version
 def get_version():
@@ -38,6 +84,7 @@ def isoformat(dt):
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
 def generate_billing():
+    lang = get_language_preference()
     try:
         today = datetime.now(timezone.utc).date()
         last_monday = today - timedelta(days=today.weekday() + 7)
@@ -46,7 +93,7 @@ def generate_billing():
         start_dt = datetime.combine(last_monday, datetime.min.time()).replace(tzinfo=timezone.utc)
         end_dt = datetime.combine(last_sunday, datetime.max.time()).replace(tzinfo=timezone.utc)
 
-        print(f"📅 Période choisie automatiquement : la semaine dernière {start_dt} → {end_dt}")
+        print(TRANSLATIONS[lang]["billing_period"].format(start_dt, end_dt))
 
         start_iso = isoformat(start_dt)
         end_iso = isoformat(end_dt)
@@ -64,35 +111,13 @@ def generate_billing():
         if result.returncode == 0:
             return result.stdout
         else:
-            return f"❌ Échec de la récupération des données : {result.stderr.strip()}"
+            return TRANSLATIONS[lang]["billing_error"].format(result.stderr.strip())
     except Exception as e:
-        return f"❌ Exception lors de la récupération du billing : {e}"
-
-# Fonction pour traduire le nom du flavor 
-def parse_flavor_name(name):
-    """
-    Parse un nom de flavor du type 'aX-ramY-diskZ-...' et retourne une chaîne lisible + les valeurs numériques.
-    Exemple : 'a2-ram8-disk40' → ('2 vCPU / 8 Go RAM / 40 Go disque', 2, 8, 40)
-    """
-    try:
-        parts = name.split('-')
-        cpu_part = next((p for p in parts if p.startswith('a') and p[1:].isdigit()), None)
-        ram_part = next((p for p in parts if p.startswith('ram') and p[3:].isdigit()), None)
-        disk_part = next((p for p in parts if p.startswith('disk') and p[4:].isdigit()), None)
-
-        cpu = int(cpu_part[1:]) if cpu_part else None
-        ram = int(ram_part[3:]) if ram_part else None
-        disk = int(disk_part[4:]) if disk_part else None
-
-        human_readable = f"{cpu} CPU / {ram} Go RAM / {disk} Go disque"
-        return human_readable, cpu, ram, disk
-    except Exception as e:
-        # En cas d'échec, retourne le nom original et None pour les valeurs numériques
-        print(f"❌ Échec du parsing pour le flavor '{name}' : {str(e)}")
-        return name, None, None, None
+        return TRANSLATIONS[lang]["billing_exception"].format(e)
 
 # Fonction pour charger les identifiants OpenStack
 def load_openstack_credentials():
+    lang = get_language_preference()
     load_dotenv()  # Charge .env si présent
 
     expected_vars = [
@@ -127,7 +152,7 @@ def load_openstack_credentials():
         missing_vars.append("OS_PROJECT_DOMAIN_NAME/OS_PROJECT_DOMAIN_ID")
 
     if missing_vars:
-        print(f"[bold red]❌ Variables OpenStack manquantes : {', '.join(missing_vars)}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars'].format(', '.join(missing_vars))}[/]")
         return None
 
     return creds
@@ -140,13 +165,14 @@ conn = connection.Connection(**creds)
 
 # Fonction pour récupérer les statuts des VMs via l'API OpenStack
 def get_vm_statuses_from_cli():
+    lang = get_language_preference()
     try:
         result = subprocess.run(
             ["openstack", "server", "list", "-f", "json"],
             capture_output=True, text=True
         )
         if result.returncode != 0:
-            print("❌ La commande `openstack server list` a échoué.")
+            print(TRANSLATIONS[lang]["openstack_error"])
             print("STDERR:", result.stderr)
             return []
         servers = json.loads(result.stdout)
@@ -160,7 +186,7 @@ def get_vm_statuses_from_cli():
             for s in servers
         ]
     except Exception as e:
-        print("❌ Erreur lors de l'appel à `openstack server list`:", e)
+        print(TRANSLATIONS[lang]["cli_error"].format(e))
         return []
 
 # Liste des statuts de VM à vérifier
@@ -182,13 +208,14 @@ def get_unused_volumes():
     return unused_volumes
 
 def calculate_underutilized_costs(billing_json):
+    lang = get_language_preference()
     ICU_to_CHF = 1 / 50
     ICU_to_EUR = 1 / 55.5
 
     try:
         billing_data = json.loads(billing_json)
     except json.JSONDecodeError:
-        print("❌ Erreur lors de la lecture des données de facturation : format JSON invalide.")
+        print(TRANSLATIONS[lang]["billing_json_error"])
         return {}
 
     underutilized_costs = {}
@@ -210,46 +237,47 @@ def calculate_underutilized_costs(billing_json):
     return underutilized_costs
 
 def collect_and_analyze_data(billing_json=None):
+    lang = get_language_preference()
     inactive_instances = get_inactive_instances_from_cli()
     unused_volumes = get_unused_volumes()
 
     report_body = ""
     report_body += "="*60 + "\n"
-    report_body += "RÉCAPITULATIF HEBDOMADAIRE DES RESSOURCES SOUS-UTILISÉES\n"
+    report_body += TRANSLATIONS[lang]["report_title"] + "\n"
     report_body += "="*60 + "\n\n"
 
-    report_body += "[INSTANCES INACTIVES]\n"
+    report_body += f"[{TRANSLATIONS[lang]['inactive_instances']}]\n"
     if inactive_instances:
-        table = Table(title="Instances inactives")
+        table = Table(title="")
         table.add_column("ID", style="magenta")
-        table.add_column("Nom", style="cyan")
-        table.add_column("Statut", style="red")
+        table.add_column(TRANSLATIONS[lang]["name"], style="cyan")
+        table.add_column(TRANSLATIONS[lang]["status"], style="red")
         for instance in inactive_instances:
             table.add_row(instance["id"], instance["name"], instance["status"])
         console.print(table)
     else:
-        report_body += "✅ Aucune instance inactive détectée.\n"
+        report_body += TRANSLATIONS[lang]["no_inactive"] + "\n"
     report_body += "\n" + "-"*50 + "\n"
 
-    report_body += "[VOLUMES NON UTILISÉS]\n"
+    report_body += f"[{TRANSLATIONS[lang]['unused_volumes']}]\n"
     if unused_volumes:
-        table = Table(title="Volumes non utilisés")
+        table = Table(title="")
         table.add_column("ID", style="magenta")
-        table.add_column("Nom", style="cyan")
+        table.add_column(TRANSLATIONS[lang]["name"], style="cyan")
         for volume in unused_volumes:
             table.add_row(volume.id, volume.name)
         console.print(table)
     else:
-        report_body += "✅ Aucun volume inutilisé détecté.\n"
+        report_body += TRANSLATIONS[lang]["no_unused"] + "\n"
     report_body += "\n" + "-"*50 + "\n"
 
-    report_body += "[COÛTS DES RESSOURCES SOUS-UTILISÉES]\n"
+    report_body += f"[{TRANSLATIONS[lang]['underutilized_costs']}]\n"
     underutilized_costs = calculate_underutilized_costs(billing_json) if billing_json else {}
     if not underutilized_costs:
-        report_body += "❌ Aucune donnée de facturation disponible (trop faibles ou non disponibles).\n"
+        report_body += TRANSLATIONS[lang]["no_billing"] + "\n"
     else:
-        table = Table(title="Coûts des ressources sous-utilisées")
-        table.add_column("Ressource", style="cyan")
+        table = Table(title="")
+        table.add_column(TRANSLATIONS[lang]["resource"], style="cyan")
         table.add_column("CHF", justify="right", style="green")
         table.add_column("EUR", justify="right", style="blue")
         for resource, costs in underutilized_costs.items():
@@ -260,8 +288,9 @@ def collect_and_analyze_data(billing_json=None):
     return report_body
 
 def main():
+    lang = get_language_preference()
     toolbox_version = get_version()
-    print(f"\n[bold yellow]🎉 Bienvenue dans OpenStack Toolbox 🧰 v{toolbox_version} 🎉[/]")
+    print(f"\n[bold yellow]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/]")
     header = r"""
   ___                       _             _               
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __           
@@ -281,12 +310,12 @@ def main():
     # Test des credentials
     creds = load_openstack_credentials()
     if not creds:
-        print("[bold red]❌ Impossible de charger les identifiants OpenStack. Vérifiez votre configuration.[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['connection_error']}[/]")
         return
 
     conn = connection.Connection(**creds)
     if not conn.authorize():
-        print("[bold red]❌ Échec de la connexion à OpenStack[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/]")
         return
 
     billing_text = generate_billing()
@@ -296,7 +325,7 @@ def main():
     with open('openstack_optimization_report.txt', 'w') as f:
         f.write(report_body)
 
-    print("[bold green]🎉 Rapport généré avec succès :[/] openstack_optimization_report.txt")
+    print(f"[bold green]{TRANSLATIONS[lang]['report_generated'].format('openstack_optimization_report.txt')}[/]")
     
     # Afficher le rapport
     print(report_body)

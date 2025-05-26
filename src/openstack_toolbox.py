@@ -3,6 +3,7 @@
 import os
 import tomli
 from rich import print
+from .config import get_language_preference
 
 def get_version():
     pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
@@ -16,8 +17,27 @@ def get_version():
         version = "unknown"
     return version
 
+def get_commands(lang):
+    if lang == "fr":
+        return [
+            ("openstack-summary", "Génère un résumé global du projet"),
+            ("openstack-admin", "Génère un résumé global de tous les projets (mode SysAdmin)"),
+            ("openstack-optimization", "Identifie les ressources sous-utilisées dans la semaine"),
+            ("weekly-notification", "Paramètre l'envoi d'un e-mail avec le résumé de la semaine"),
+            ("openstack-metrics-collector", "Lance un exporter passif pour Prometheus")
+        ]
+    else:
+        return [
+            ("openstack-summary", "Generates a global project summary"),
+            ("openstack-admin", "Generates a global summary of all projects (SysAdmin mode)"),
+            ("openstack-optimization", "Identifies underutilized resources in the week"),
+            ("weekly-notification", "Configure weekly summary email sending"),
+            ("openstack-metrics-collector", "Starts a passive Prometheus exporter")
+        ]
+
 def main():
     version = get_version()
+    lang = get_language_preference()
 
     header = r"""
   ___                       _             _    
@@ -33,12 +53,13 @@ def main():
 """
 
     print(header)
-    print(f"\n[cyan]🧰 Commandes disponibles (version {version}):[/]")
-    print("  • [bold]openstack-summary[/]             → Génère un résumé global du projet")
-    print("  • [bold]openstack-admin[/]               → Génère un résumé global de tous les projets (mode SysAdmin)")
-    print("  • [bold]openstack-optimization[/]        → Identifie les ressources sous-utilisées dans la semaine")
-    print("  • [bold]weekly-notification[/]           → Paramètre l'envoi d'un e-mail avec le résumé de la semaine")
-    print("  • [bold]openstack-metrics-collector[/]   → Lance un exporter passif pour Prometheus")
+    if lang == "fr":
+        print(f"\n[cyan]🧰 Commandes disponibles (version {version}):[/]")
+    else:
+        print(f"\n[cyan]🧰 Available commands (version {version}):[/]")
+
+    for cmd, desc in get_commands(lang):
+        print(f"  • [bold]{cmd}[/]" + " " * (30 - len(cmd)) + f"→ {desc}")
 
 if __name__ == '__main__':
     main()
