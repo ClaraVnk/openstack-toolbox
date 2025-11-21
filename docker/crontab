@@ -1,0 +1,13 @@
+# Crontab pour OpenStack Toolbox
+# Format: minute hour day month weekday command
+
+# Rapport hebdomadaire - Tous les lundis à 8h00
+0 8 * * 1 /usr/local/bin/python -m src.weekly_notification_optimization >> /var/log/openstack-toolbox/weekly-notification.log 2>&1
+
+# Résumé quotidien - Tous les jours à 9h00
+0 9 * * * /usr/local/bin/python -m src.openstack_summary >> /var/log/openstack-toolbox/daily-summary.log 2>&1
+
+# Optimisation - Tous les jours à 10h00
+0 10 * * * /usr/local/bin/python -m src.openstack_optimization >> /var/log/openstack-toolbox/optimization.log 2>&1
+
+# Ligne vide requise à la fin du fichier crontab

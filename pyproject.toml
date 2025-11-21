@@ -1,23 +1,15 @@
 [build-system]
-requires = ["hatchling >= 1.26"]
-build-backend = "hatchling.build"
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "openstack-toolbox"
-version = "1.6.0"
-authors = [
-    { name="Loutre", email="loutre@ikmail.com" },
-]
-description = "A toolbox for OpenStack (Infomaniak hosting)"
+version = "1.7.0"
+description = "A toolbox for OpenStack - Docker deployment with automated monitoring and cron tasks"
 readme = "README.md"
 requires-python = ">=3.9"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
-    "Operating System :: OS Independent",
-]
-license = "Apache-2.0"
-license-files = ["LICENSE*"]
+license = {text = "Apache-2.0"}
+
 dependencies = [
   "openstacksdk",
   "python-dotenv",
@@ -29,18 +21,10 @@ dependencies = [
   "cryptography>=41.0.0",
 ]
 
-
 [project.urls]
 Homepage = "https://github.com/ClaraVnk/openstack-toolbox"
 Issues = "https://github.com/ClaraVnk/openstack-toolbox/issues"
-
-[tool.hatch.build.targets.sdist]
-exclude = [
-    "/bin/python3",
-]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
+Documentation = "https://github.com/ClaraVnk/openstack-toolbox#readme"
 
 [project.scripts]
 openstack-summary = "src.openstack_summary:main"
@@ -48,4 +32,7 @@ openstack-optimization = "src.openstack_optimization:main"
 openstack-admin = "src.openstack_admin:main"
 openstack-toolbox = "src.openstack_toolbox:main"
 weekly-notification = "src.weekly_notification_optimization:main"
-openstack-metrics-collector ="src.openstack_metrics_collector:main"
+openstack-metrics-collector = "src.openstack_metrics_collector:main"
+
+[tool.setuptools]
+packages = ["src"]

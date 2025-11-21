@@ -1,0 +1,58 @@
+# Configuration Prometheus pour OpenStack Toolbox
+# Copiez ce fichier vers prometheus.yml et adaptez-le à vos besoins
+
+global:
+  scrape_interval: 60s
+  evaluation_interval: 60s
+  external_labels:
+    monitor: 'openstack-monitoring'
+
+# Alertmanager configuration (optionnel)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Règles d'alerte (optionnel)
+# rule_files:
+#   - "alerts.yml"
+
+# Configuration des scrapes
+scrape_configs:
+  # OpenStack Toolbox Metrics
+  - job_name: 'openstack-toolbox'
+    static_configs:
+      - targets: ['openstack-toolbox:8000']
+        labels:
+          environment: 'production'
+          project: 'openstack'
+    
+    # Intervalle de collecte (ajustez selon vos besoins)
+    scrape_interval: 60s
+    scrape_timeout: 30s
+    
+    # Métriques path
+    metrics_path: '/metrics'
+    
+    # Relabeling (optionnel)
+    # relabel_configs:
+    #   - source_labels: [__address__]
+    #     target_label: instance
+    #     replacement: 'openstack-toolbox'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node exporter (si vous l'utilisez)
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']
+
+# Configuration du stockage (optionnel)
+# storage:
+#   tsdb:
+#     retention.time: 15d
+#     retention.size: 50GB

@@ -1,37 +1,61 @@
 version: '3.8'
 
 services:
-  openstack-metrics-collector:
+  openstack-toolbox:
     build:
       context: .
       dockerfile: Dockerfile
-    image: openstack-toolbox/metrics-collector:latest
-    container_name: openstack-metrics-collector
+    image: openstack-toolbox:latest
+    container_name: openstack-toolbox
     restart: unless-stopped
     
     # Variables d'environnement OpenStack
     environment:
+      # OpenStack credentials
       - OS_AUTH_URL=${OS_AUTH_URL}
       - OS_PROJECT_NAME=${OS_PROJECT_NAME}
       - OS_USERNAME=${OS_USERNAME}
       - OS_PASSWORD=${OS_PASSWORD}
-      - OS_USER_DOMAIN_NAME=${OS_USER_DOMAIN_NAME}
+      - OS_USER_DOMAIN_NAME=${OS_USER_DOMAIN_NAME:-default}
       - OS_PROJECT_DOMAIN_NAME=${OS_PROJECT_DOMAIN_NAME:-default}
       - OS_PROJECT_DOMAIN_ID=${OS_PROJECT_DOMAIN_ID}
+      - OS_REGION_NAME=${OS_REGION_NAME:-RegionOne}
+      
+      # Prometheus configuration
       - PROMETHEUS_PORT=8000
+      
+      # SMTP configuration (optionnel, pour les notifications)
+      - SMTP_SERVER=${SMTP_SERVER:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_TO_EMAIL=${SMTP_TO_EMAIL:-}
+      
+      # Timezone
+      - TZ=${TZ:-Europe/Paris}
+      
+      # Cron schedules (format: minute hour day month weekday)
+      - CRON_WEEKLY_REPORT=${CRON_WEEKLY_REPORT:-0 8 * * 1}
+      - CRON_DAILY_SUMMARY=${CRON_DAILY_SUMMARY:-0 9 * * *}
+      - CRON_OPTIMIZATION=${CRON_OPTIMIZATION:-0 10 * * *}
     
     # Ports
     ports:
-      - "8000:8000"
+      - "${PROMETHEUS_PORT:-8000}:8000"
     
-    # Volumes pour les logs et configs
+    # Volumes pour persistance
     volumes:
-      - ./logs:/app/logs
-      - ./config:/config:ro
+      # Logs
+      - ./logs:/var/log/openstack-toolbox
+      # Configuration (SMTP, etc.)
+      - ./config:/config
+      # Configuration OpenStack (optionnel)
+      - ./clouds.yaml:/home/openstack/.config/openstack/clouds.yaml:ro
     
     # Healthcheck
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/metrics')"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -41,8 +65,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 512M
+          cpus: '2.0'
+          memory: 1G
         reservations:
           cpus: '0.5'
           memory: 256M
@@ -56,8 +80,12 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "5"
 
 networks:
   monitoring:
     driver: bridge
+
+volumes:
+  logs:
+  config:

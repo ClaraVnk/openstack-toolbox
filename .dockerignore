@@ -48,6 +48,7 @@ logs/
 docs/
 *.md
 !README.md
+!docker/*.sh
 
 # CI/CD
 .github/
