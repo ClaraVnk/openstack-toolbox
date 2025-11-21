@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  openstack-metrics-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openstack-toolbox/metrics-collector:latest
+    container_name: openstack-metrics-collector
+    restart: unless-stopped
+    
+    # Variables d'environnement OpenStack
+    environment:
+      - OS_AUTH_URL=${OS_AUTH_URL}
+      - OS_PROJECT_NAME=${OS_PROJECT_NAME}
+      - OS_USERNAME=${OS_USERNAME}
+      - OS_PASSWORD=${OS_PASSWORD}
+      - OS_USER_DOMAIN_NAME=${OS_USER_DOMAIN_NAME}
+      - OS_PROJECT_DOMAIN_NAME=${OS_PROJECT_DOMAIN_NAME:-default}
+      - OS_PROJECT_DOMAIN_ID=${OS_PROJECT_DOMAIN_ID}
+      - PROMETHEUS_PORT=8000
+    
+    # Ports
+    ports:
+      - "8000:8000"
+    
+    # Volumes pour les logs et configs
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/config:ro
+    
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/metrics')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Limites de ressources
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Réseau
+    networks:
+      - monitoring
+    
+    # Logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  monitoring:
+    driver: bridge

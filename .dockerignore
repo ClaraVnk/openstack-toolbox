@@ -1,8 +1,6 @@
-# OS
-.DS_Store
-
-# Project specific
-report_project.py
+# Git
+.git
+.gitignore
 
 # Python
 __pycache__/
@@ -22,10 +20,6 @@ venv/
 env/
 ENV/
 .venv
-
-# Environment variables
-.env
-.env.local
 
 # IDE
 .vscode/
@@ -48,18 +42,23 @@ htmlcov/
 
 # Logs
 *.log
-openstack-metrics.log
+logs/
 
-# Project generated files
+# Documentation
+docs/
+*.md
+!README.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Development files
+Makefile
+README-DEV.md
+.flake8
+
+# Project specific
 openstack_optimization_report.txt
 report_project.py
-
-# Docker
-.env
-logs/
 config/
-
-# Development tools (local only - use python-dev-toolkit)
-Makefile
-.flake8
-.pre-commit-config.yaml

@@ -1,9 +1,12 @@
 # OpenStack Toolbox 🧰
+
+![Build](https://github.com/ClaraVnk/openstack-toolbox/workflows/Build%20and%20Publish/badge.svg)
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) 
 ![PyPi](https://img.shields.io/badge/pypi-%23ececec.svg?style=for-the-badge&logo=pypi&logoColor=1f73b7)
 ![Infomaniak](https://img.shields.io/badge/infomaniak-0098FF?style=for-the-badge&logo=infomaniak&logoColor=white) 
 ![OpenStack](https://img.shields.io/badge/OpenStack-%23f01742.svg?style=for-the-badge&logo=openstack&logoColor=white)
 ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
 A suite of tools to optimize and manage your OpenStack resources, with multilingual support (FR/EN).
 
@@ -34,18 +37,37 @@ A suite of tools to optimize and manage your OpenStack resources, with multiling
 
 ## 🛠️ Installation
 
-You can install the toolbox in two ways:
+### 📦 PyPI (recommended for CLI tools)
 
-### From PyPI (recommended)
 ```bash
 pip install openstack-toolbox
 ```
 
-### From source
+### 🐳 Docker (recommended for metrics collector)
+
+For running the Prometheus metrics collector as a service:
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/openstack-toolbox.git
+cd openstack-toolbox
+
+# Configure credentials
+cp .env.example .env
+nano .env
+
+# Start the collector
+docker-compose up -d
+```
+
+📖 **See [README-DOCKER.md](README-DOCKER.md) for complete Docker documentation**
+
+### 💻 From source
+
 ```bash
 git clone https://github.com/your-username/openstack-toolbox.git
 cd openstack-toolbox
-pip install
+pip install .
 ```
 
 Dependencies will be automatically managed through `pyproject.toml`.

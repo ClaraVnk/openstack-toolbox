@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
-import sys
 import os
-import tomli
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+
+import tomli
+from openstack import connection
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
-from openstack import connection
-from dotenv import load_dotenv
-from src.config import get_language_preference
+
+from src.config import get_language_preference, load_openstack_credentials
 from src.utils import format_size, print_header
 
 # Dictionnaire des traductions
@@ -51,7 +51,7 @@ TRANSLATIONS = {
         "volumes_header": "LISTE DES VOLUMES",
         "volumes_tree_header": "ARBORESCENCE DES VOLUMES",
         "floating_ips_header": "LISTE DES FLOATING IPs",
-        "containers_header": "LISTE DES CONTAINERS"
+        "containers_header": "LISTE DES CONTAINERS",
     },
     "en": {
         "welcome": "🎉 Welcome to OpenStack Toolbox 🧰 v{} 🎉",
@@ -88,19 +88,20 @@ TRANSLATIONS = {
         "volumes_header": "LIST OF VOLUMES",
         "volumes_tree_header": "VOLUMES TREE VIEW",
         "floating_ips_header": "LIST OF FLOATING IPs",
-        "containers_header": "LIST OF CONTAINERS"
-    }
+        "containers_header": "LIST OF CONTAINERS",
+    },
 }
 
 console = Console()
 
+
 def get_version():
     """
     Récupère la version du projet depuis le fichier pyproject.toml.
-    
+
     Returns:
         str: Version du projet ou "unknown" si non trouvée
-        
+
     Examples:
         >>> get_version()
         '1.2.0'
@@ -112,88 +113,38 @@ def get_version():
         with open(pyproject_path, "rb") as f:
             pyproject_data = tomli.load(f)
         version = pyproject_data.get("project", {}).get("version", "unknown")
-    except Exception as e:
+    except Exception:
         version = "unknown"
     return version
 
-def load_openstack_credentials():
-    """
-    Charge les identifiants OpenStack depuis les variables d'environnement.
-    
-    Les variables requises sont :
-    - OS_AUTH_URL
-    - OS_PROJECT_NAME
-    - OS_USERNAME
-    - OS_PASSWORD
-    - OS_USER_DOMAIN_NAME
-    - OS_PROJECT_DOMAIN_NAME ou OS_PROJECT_DOMAIN_ID
-    
-    Returns:
-        dict: Dictionnaire des identifiants OpenStack ou None si manquants
-        
-    Examples:
-        >>> creds = load_openstack_credentials()
-        >>> if creds:
-        ...     conn = connection.Connection(**creds)
-    """
-    lang = get_language_preference()
-    load_dotenv()
-
-    expected_vars = [
-        "OS_AUTH_URL",
-        "OS_PROJECT_NAME",
-        "OS_USERNAME",
-        "OS_PASSWORD",
-        "OS_USER_DOMAIN_NAME",
-    ]
-
-    creds = {}
-    missing_vars = []
-
-    for var in expected_vars:
-        value = os.getenv(var)
-        if not value:
-            missing_vars.append(var)
-        else:
-            key = var.lower().replace("os_", "")
-            creds[key] = value
-
-    project_domain_name = os.getenv("OS_PROJECT_DOMAIN_NAME")
-    project_domain_id = os.getenv("OS_PROJECT_DOMAIN_ID")
-
-    if project_domain_name:
-        creds["project_domain_name"] = project_domain_name
-    elif project_domain_id:
-        creds["project_domain_id"] = project_domain_id
-    else:
-        missing_vars.append("OS_PROJECT_DOMAIN_NAME/OS_PROJECT_DOMAIN_ID")
-
-    if missing_vars:
-        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars'].format(', '.join(missing_vars))}[/bold red]")
-        return None
-
-    return creds
 
 def get_project_details(conn, project_id):
     lang = get_language_preference()
-    print_header(TRANSLATIONS[lang]['project_details'].format(project_id))
+    print_header(TRANSLATIONS[lang]["project_details"].format(project_id))
     project = conn.identity.get_project(project_id)
 
     if project:
-        print(TRANSLATIONS[lang]['project_id'].format(project.id))
-        print(TRANSLATIONS[lang]['project_name'].format(project.name))
-        print(TRANSLATIONS[lang]['project_description'].format(project.description))
-        print(TRANSLATIONS[lang]['project_domain'].format(project.domain_id))
-        is_active = TRANSLATIONS[lang]['yes'] if project.is_enabled else TRANSLATIONS[lang]['no']
-        print(TRANSLATIONS[lang]['project_active'].format(is_active))
+        print(TRANSLATIONS[lang]["project_id"].format(project.id))
+        print(TRANSLATIONS[lang]["project_name"].format(project.name))
+        print(TRANSLATIONS[lang]["project_description"].format(project.description))
+        print(TRANSLATIONS[lang]["project_domain"].format(project.domain_id))
+        is_active = (
+            TRANSLATIONS[lang]["yes"]
+            if project.is_enabled
+            else TRANSLATIONS[lang]["no"]
+        )
+        print(TRANSLATIONS[lang]["project_active"].format(is_active))
     else:
-        print(f"[bold red]{TRANSLATIONS[lang]['no_project'].format(project_id)}[/bold red]")
+        print(
+            f"[bold red]{TRANSLATIONS[lang]['no_project'].format(project_id)}[/bold red]"
+        )
+
 
 def list_images(conn):
     lang = get_language_preference()
     print_header(TRANSLATIONS[lang]["images_header"])
-    private_images = list(conn.image.images(visibility='private'))
-    shared_images = list(conn.image.images(visibility='shared'))
+    private_images = list(conn.image.images(visibility="private"))
+    shared_images = list(conn.image.images(visibility="shared"))
     all_images = private_images + shared_images
 
     if not all_images:
@@ -207,6 +158,7 @@ def list_images(conn):
     for image in all_images:
         table.add_row(image.id, image.name, image.visibility)
     console.print(table)
+
 
 def list_instances(conn):
     lang = get_language_preference()
@@ -223,12 +175,13 @@ def list_instances(conn):
     table.add_column("Flavor ID", style="green")
     table.add_column("Uptime", justify="right")
     for instance in instances:
-        flavor_id = instance.flavor['id']
+        flavor_id = instance.flavor["id"]
         created_at = datetime.strptime(instance.created_at, "%Y-%m-%dT%H:%M:%SZ")
         uptime = datetime.now() - created_at
-        uptime_str = str(uptime).split('.')[0]
+        uptime_str = str(uptime).split(".")[0]
         table.add_row(instance.id, instance.name, flavor_id, uptime_str)
     console.print(table)
+
 
 def list_snapshots(conn):
     lang = get_language_preference()
@@ -247,6 +200,7 @@ def list_snapshots(conn):
         table.add_row(snapshot.id, snapshot.name, snapshot.volume_id)
     console.print(table)
 
+
 def list_backups(conn):
     lang = get_language_preference()
     print_header(TRANSLATIONS[lang]["backups_header"])
@@ -263,6 +217,7 @@ def list_backups(conn):
     for backup in backups:
         table.add_row(backup.id, backup.name, backup.volume_id)
     console.print(table)
+
 
 def list_volumes(conn):
     lang = get_language_preference()
@@ -281,10 +236,24 @@ def list_volumes(conn):
     table.add_column("Attaché", style="blue")
     table.add_column("Snapshot associé", style="magenta")
     for volume in volumes:
-        attached = TRANSLATIONS[lang]["yes"] if volume.attachments else TRANSLATIONS[lang]["no"]
-        snapshot_id = volume.snapshot_id if volume.snapshot_id else TRANSLATIONS[lang]["none"]
-        table.add_row(volume.id, volume.name, str(volume.size), volume.volume_type, attached, snapshot_id)
+        attached = (
+            TRANSLATIONS[lang]["yes"]
+            if volume.attachments
+            else TRANSLATIONS[lang]["no"]
+        )
+        snapshot_id = (
+            volume.snapshot_id if volume.snapshot_id else TRANSLATIONS[lang]["none"]
+        )
+        table.add_row(
+            volume.id,
+            volume.name,
+            str(volume.size),
+            volume.volume_type,
+            attached,
+            snapshot_id,
+        )
     console.print(table)
+
 
 def mounted_volumes(conn):
     instances = conn.compute.servers()
@@ -294,7 +263,7 @@ def mounted_volumes(conn):
     for volume in volumes:
         if volume.attachments:
             for attachment in volume.attachments:
-                instance_id = attachment['server_id']
+                instance_id = attachment["server_id"]
                 if instance_id not in instance_volumes:
                     instance_volumes[instance_id] = []
                 instance_volumes[instance_id].append(volume)
@@ -304,11 +273,14 @@ def mounted_volumes(conn):
         instance_id = instance.id
         instance_name = instance.name
         if instance_id in instance_volumes:
-            tree[instance_name] = [volume.name for volume in instance_volumes[instance_id]]
+            tree[instance_name] = [
+                volume.name for volume in instance_volumes[instance_id]
+            ]
         else:
             tree[instance_name] = []
 
     return tree
+
 
 def print_tree(tree_data):
     lang = get_language_preference()
@@ -321,6 +293,7 @@ def print_tree(tree_data):
         else:
             instance_branch.add(TRANSLATIONS[lang]["no_volume_mounted"])
     console.print(tree)
+
 
 def list_floating_ips(conn):
     lang = get_language_preference()
@@ -339,6 +312,7 @@ def list_floating_ips(conn):
         table.add_row(ip.id, ip.floating_ip_address, ip.status)
     console.print(table)
 
+
 def list_containers(conn):
     lang = get_language_preference()
     print_header(TRANSLATIONS[lang]["containers_header"])
@@ -356,18 +330,19 @@ def list_containers(conn):
         table.add_row(container.name, size_formatted)
     console.print(table)
 
+
 def process_resource_parallel(resource_type, resource, conn):
     """
     Traite une ressource OpenStack de manière parallèle.
-    
+
     Args:
         resource_type (str): Type de ressource ("instance", "volume", "image")
         resource (obj): Objet ressource OpenStack
         conn (Connection): Connexion OpenStack
-        
+
     Returns:
         dict: Informations formatées sur la ressource ou None si erreur
-        
+
     Examples:
         >>> with ThreadPoolExecutor(max_workers=10) as executor:
         ...     future = executor.submit(process_resource_parallel,
@@ -387,7 +362,7 @@ def process_resource_parallel(resource_type, resource, conn):
                 "id": resource.id,
                 "name": resource.name,
                 "type": "Instance",
-                "details": f"Flavor: {flavor_name}, Uptime: {str(uptime).split('.')[0]}"
+                "details": f"Flavor: {flavor_name}, Uptime: {str(uptime).split('.')[0]}",
             }
         elif resource_type == "volume":
             size = format_size(resource.size * 1024 * 1024 * 1024)
@@ -395,37 +370,44 @@ def process_resource_parallel(resource_type, resource, conn):
                 "id": resource.id,
                 "name": resource.name,
                 "type": "Volume",
-                "details": f"Size: {size}, Status: {resource.status}"
+                "details": f"Size: {size}, Status: {resource.status}",
             }
         elif resource_type == "image":
-            size = format_size(resource.size) if resource.size else TRANSLATIONS[lang]["unknown"]
+            size = (
+                format_size(resource.size)
+                if resource.size
+                else TRANSLATIONS[lang]["unknown"]
+            )
             return {
                 "id": resource.id,
                 "name": resource.name,
                 "type": "Image",
-                "details": f"Size: {size}, Status: {resource.status}"
+                "details": f"Size: {size}, Status: {resource.status}",
             }
     except Exception as e:
-        print(f"[red]Erreur lors du traitement de la ressource {resource.id}: {str(e)}[/red]")
+        print(
+            f"[red]Erreur lors du traitement de la ressource {resource.id}: {str(e)}[/red]"
+        )
         return None
+
 
 def list_all_resources(conn):
     """
     Liste toutes les ressources OpenStack avec parallélisation.
-    
+
     Cette fonction collecte et affiche de manière efficace :
     - Les instances
     - Les volumes
     - Les images
-    
+
     Args:
         conn (Connection): Connexion OpenStack
-        
+
     Examples:
         >>> conn = connection.Connection(**creds)
         >>> list_all_resources(conn)
         ==========================================
-                  LISTE DES RESSOURCES                  
+                  LISTE DES RESSOURCES
         ==========================================
         Type       ID                                  Nom                  Détails
         Instance   123-456                            web-server           Flavor: a2-ram4-disk50, Uptime: 15 days
@@ -436,12 +418,12 @@ def list_all_resources(conn):
     print_header(TRANSLATIONS[lang]["resources_header"])
 
     resources_to_process = []
-    
+
     # Collecte des ressources
     instances = list(conn.compute.servers())
     volumes = list(conn.block_storage.volumes())
     images = list(conn.image.images())
-    
+
     for instance in instances:
         resources_to_process.append(("instance", instance))
     for volume in volumes:
@@ -456,14 +438,16 @@ def list_all_resources(conn):
             executor.submit(process_resource_parallel, res_type, resource, conn)
             for res_type, resource in resources_to_process
         ]
-        
+
         for future in as_completed(futures):
             try:
                 result = future.result()
                 if result:
                     processed_resources.append(result)
             except Exception as e:
-                print(f"[red]Erreur lors du traitement d'une ressource : {str(e)}[/red]")
+                print(
+                    f"[red]Erreur lors du traitement d'une ressource : {str(e)}[/red]"
+                )
 
     # Affichage des résultats
     table = Table(title="")
@@ -474,14 +458,12 @@ def list_all_resources(conn):
 
     for resource in sorted(processed_resources, key=lambda x: (x["type"], x["name"])):
         table.add_row(
-            resource["type"],
-            resource["id"],
-            resource["name"],
-            resource["details"]
+            resource["type"], resource["id"], resource["name"], resource["details"]
         )
 
     console = Console()
     console.print(table)
+
 
 def main():
     lang = get_language_preference()
@@ -489,18 +471,18 @@ def main():
     print(f"[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]")
 
     header = r"""
-  ___                       _             _    
+  ___                       _             _
  / _ \ _ __   ___ _ __  ___| |_ __ _  ___| | __
 | | | | '_ \ / _ \ '_ \/ __| __/ _` |/ __| |/ /
-| |_| | |_) |  __/ | | \__ \ || (_| | (__|   < 
+| |_| | |_) |  __/ | | \__ \ || (_| | (__|   <
  \___/| .__/_\___|_| |_|___/\__\__,_|\___|_|\_\
-   / \|_|__| |_ __ ___ (_)_ __                 
-  / _ \ / _` | '_ ` _ \| | '_ \                
- / ___ \ (_| | | | | | | | | | |               
-/_/   \_\__,_|_| |_| |_|_|_| |_|               
-            
+   / \|_|__| |_ __ ___ (_)_ __
+  / _ \ / _` | '_ ` _ \| | '_ \
+ / ___ \ (_| | | | | | | | | | |
+/_/   \_\__,_|_| |_| |_|_|_| |_|
+
             By Loutre
-    
+
     """
 
     print(header)
@@ -532,6 +514,7 @@ def main():
     list_floating_ips(conn)
     list_containers(conn)
     list_all_resources(conn)
+
 
 if __name__ == "__main__":
     main()

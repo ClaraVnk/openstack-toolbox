@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 
-import getpass
-import smtplib
 import os
-import sys
-import configparser
+import smtplib
 import subprocess
-from importlib.metadata import version, PackageNotFoundError
-from rich import print
-from email.mime.text import MIMEText
+import sys
 from email.mime.multipart import MIMEMultipart
-from src.config import get_language_preference, create_smtp_config_interactive, load_smtp_config
-from src.utils import print_header
+from email.mime.text import MIMEText
+
 import tomli
+from rich import print
+
+from src.config import (
+    create_smtp_config_interactive,
+    get_language_preference,
+    load_smtp_config,
+)
+from src.utils import print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -46,9 +49,10 @@ TRANSLATIONS = {
         "cron_exists": "ℹ️ La tâche cron existe déjà.",
         "cron_added": "✅ Tâche cron ajoutée : vous recevrez un email tous les lundis à 8h.",
         "cron_cancelled": "❌ Configuration de la tâche cron annulée.",
+        "cron_exception": "❌ Erreur lors de la configuration de la tâche cron : {}",
         "email_subject": "Rapport hebdomadaire : Infomaniak Openstack Optimisation",
         "test_email_subject": "Test SMTP - OpenStack Toolbox",
-        "test_email_body": "✅ Ceci est un e-mail test de la configuration SMTP."
+        "test_email_body": "✅ Ceci est un e-mail test de la configuration SMTP.",
     },
     "en": {
         "welcome": "🎉 Welcome to OpenStack Toolbox 🧰 v{} 🎉",
@@ -80,19 +84,21 @@ TRANSLATIONS = {
         "cron_exists": "ℹ️ Cron task already exists.",
         "cron_added": "✅ Cron task added: you will receive an email every Monday at 8 AM.",
         "cron_cancelled": "❌ Cron task configuration cancelled.",
+        "cron_exception": "❌ Error configuring cron task: {}",
         "email_subject": "Weekly Report: Infomaniak Openstack Optimization",
         "test_email_subject": "SMTP Test - OpenStack Toolbox",
-        "test_email_body": "✅ This is a test email from the SMTP configuration."
-    }
+        "test_email_body": "✅ This is a test email from the SMTP configuration.",
+    },
 }
+
 
 def get_version():
     """
     Récupère la version du projet depuis le fichier pyproject.toml.
-    
+
     Returns:
         str: Version du projet ou "unknown" si non trouvée
-        
+
     Examples:
         >>> get_version()
         '1.2.0'
@@ -103,24 +109,24 @@ def get_version():
     try:
         with open(pyproject_path, "rb") as f:
             pyproject_data = tomli.load(f)
-        version = pyproject_data.get("project", {}).get("version", "unknown")
-    except Exception as e:
-        version = "unknown"
-    return version
+        return pyproject_data.get("project", {}).get("version", "unknown")
+    except Exception:
+        return "unknown"
+
 
 def generate_report():
     """
     Génère un rapport hebdomadaire des ressources OpenStack.
-    
+
     Le rapport inclut :
     - Liste des instances
     - Utilisation des ressources
     - Coûts estimés
     - Recommandations d'optimisation
-    
+
     Returns:
         str: Contenu du rapport au format HTML
-        
+
     Examples:
         >>> report = generate_report()
         >>> print(report[:100])  # Affiche le début du rapport
@@ -132,18 +138,22 @@ def generate_report():
     # Exécuter openstack_summary.py pour générer le rapport
     try:
         result = subprocess.run(
-            [sys.executable, os.path.join(os.path.dirname(__file__), "openstack_summary.py")],
+            [
+                sys.executable,
+                os.path.join(os.path.dirname(__file__), "openstack_summary.py"),
+            ],
             capture_output=True,
-            text=True
+            text=True,
         )
         return result.stdout
     except Exception as e:
         return f"Erreur lors de la génération du rapport : {str(e)}"
 
+
 def send_email(smtp_config, subject, body):
     """
     Envoie un email via SMTP avec le rapport hebdomadaire.
-    
+
     Args:
         smtp_config (dict): Configuration SMTP avec les clés :
             - server: Serveur SMTP
@@ -154,10 +164,10 @@ def send_email(smtp_config, subject, body):
             - to_email: Email destinataire
         subject (str): Sujet de l'email
         body (str): Corps de l'email (HTML)
-        
+
     Returns:
         bool: True si l'email a été envoyé avec succès, False sinon
-        
+
     Examples:
         >>> config = load_smtp_config()
         >>> if config:
@@ -170,30 +180,31 @@ def send_email(smtp_config, subject, body):
     """
     try:
         msg = MIMEMultipart()
-        msg['From'] = smtp_config['from_email']
-        msg['To'] = smtp_config['to_email']
-        msg['Subject'] = subject
+        msg["From"] = smtp_config["from_email"]
+        msg["To"] = smtp_config["to_email"]
+        msg["Subject"] = subject
 
-        msg.attach(MIMEText(body, 'html'))
+        msg.attach(MIMEText(body, "html"))
 
-        with smtplib.SMTP(smtp_config['server'], smtp_config['port']) as server:
+        with smtplib.SMTP(smtp_config["server"], smtp_config["port"]) as server:
             server.starttls()
-            server.login(smtp_config['username'], smtp_config['password'])
+            server.login(smtp_config["username"], smtp_config["password"])
             server.send_message(msg)
         return True
     except Exception as e:
         print(f"[bold red]❌ Erreur lors de l'envoi de l'email : {str(e)}[/]")
         return False
 
+
 def setup_cron():
     """
     Configure une tâche cron pour l'envoi hebdomadaire du rapport.
-    
+
     La tâche est configurée pour s'exécuter tous les lundis à 8h00.
-    
+
     Returns:
         bool: True si la tâche cron a été configurée avec succès, False sinon
-        
+
     Examples:
         >>> if setup_cron():
         ...     print("Tâche cron configurée")
@@ -204,47 +215,48 @@ def setup_cron():
     try:
         script_path = os.path.abspath(__file__)
         cron_cmd = f"0 8 * * 1 {sys.executable} {script_path}"
-        
+
         # Lire le crontab actuel
-        result = subprocess.run(['crontab', '-l'], capture_output=True, text=True)
+        result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
         if result.returncode == 0:
             current_crontab = result.stdout
         else:
             current_crontab = ""
-        
+
         # Vérifier si la tâche existe déjà
         if script_path in current_crontab:
             print(f"[yellow]{TRANSLATIONS[lang]['cron_exists']}[/]")
             return True
-        
+
         # Ajouter la nouvelle tâche
         new_crontab = current_crontab.strip() + f"\n{cron_cmd}\n"
-        
+
         # Écrire le nouveau crontab
-        process = subprocess.Popen(['crontab', '-'], stdin=subprocess.PIPE)
+        process = subprocess.Popen(["crontab", "-"], stdin=subprocess.PIPE)
         process.communicate(input=new_crontab.encode())
-        
+
         if process.returncode == 0:
             print(f"[green]{TRANSLATIONS[lang]['cron_added']}[/]")
             return True
         else:
             print(f"[red]{TRANSLATIONS[lang]['cron_cancelled']}[/]")
             return False
-            
+
     except Exception as e:
         print(f"[red]{TRANSLATIONS[lang]['cron_exception'].format(str(e))}[/]")
         return False
 
+
 def main():
     """
     Fonction principale du script de notification hebdomadaire.
-    
+
     Cette fonction :
     1. Vérifie la configuration SMTP
     2. Génère le rapport hebdomadaire
     3. Envoie le rapport par email
     4. Configure la tâche cron si nécessaire
-    
+
     Examples:
         >>> if __name__ == "__main__":
         ...     main()
@@ -252,7 +264,9 @@ def main():
     lang = get_language_preference()
     version = get_version()
 
-    print(f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]")
+    print(
+        f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]"
+    )
     print_header("WEEKLY NOTIFICATION")
 
     # Vérifier/créer la configuration SMTP
@@ -270,7 +284,7 @@ def main():
     print(email_body)
 
     # Envoyer l'email
-    if send_email(smtp_config, TRANSLATIONS[lang]['test_email_subject'], email_body):
+    if send_email(smtp_config, TRANSLATIONS[lang]["test_email_subject"], email_body):
         print(f"[bold green]{TRANSLATIONS[lang]['email_sent']}[/]")
     else:
         print(f"[bold red]{TRANSLATIONS[lang]['email_error']}[/]")
@@ -278,6 +292,7 @@ def main():
 
     # Configurer la tâche cron
     setup_cron()
+
 
 if __name__ == "__main__":
     main()
