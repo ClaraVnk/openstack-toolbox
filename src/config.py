@@ -4,10 +4,20 @@ import configparser
 import getpass
 import json
 import os
+from pathlib import Path
+from typing import Dict, Optional, Tuple, List
 
 from dotenv import load_dotenv
 from rich import print
 from rich.prompt import Prompt
+
+from .exceptions import (
+    ConfigurationError,
+    CredentialsError,
+    SMTPConfigError,
+    FileOperationError,
+)
+from .security import SecureConfig
 
 CONFIG_DIR = os.path.expanduser("~/.config/openstack-toolbox")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
@@ -17,7 +27,7 @@ SMTP_CONFIG_FILE = os.path.join(CONFIG_DIR, "smtp_config.ini")
 os.makedirs(CONFIG_DIR, exist_ok=True)
 
 
-def get_language_preference():
+def get_language_preference() -> str:
     """
     Récupère la préférence de langue depuis le fichier de configuration.
 
@@ -36,23 +46,24 @@ def get_language_preference():
     """
     try:
         if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, "r") as f:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 config = json.load(f)
                 return config.get("language", "fr")
-    except Exception:
+    except (OSError, IOError, json.JSONDecodeError) as e:
+        # Log error but return default
         pass
     return "fr"
 
 
-def set_language_preference(lang):
+def set_language_preference(lang: str) -> bool:
     """
     Définit la préférence de langue dans le fichier de configuration.
 
     Args:
-        lang (str): Code de langue à définir ('fr' ou 'en')
+        lang: Code de langue à définir ('fr' ou 'en')
 
     Returns:
-        bool: True si la langue a été définie avec succès, False sinon
+        True si la langue a été définie avec succès, False sinon
 
     Examples:
         >>> set_language_preference('en')
@@ -64,21 +75,21 @@ def set_language_preference(lang):
         return False
 
     try:
-        config = {}
+        config: Dict[str, str] = {}
         if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, "r") as f:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 config = json.load(f)
 
         config["language"] = lang
 
-        with open(CONFIG_FILE, "w") as f:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4)
         return True
-    except Exception:
+    except (OSError, IOError, json.JSONDecodeError) as e:
         return False
 
 
-def create_smtp_config_interactive():
+def create_smtp_config_interactive() -> bool:
     """
     Crée interactivement la configuration SMTP pour l'envoi d'emails.
 
@@ -86,14 +97,18 @@ def create_smtp_config_interactive():
     - Le serveur SMTP
     - Le port
     - L'utilisateur
-    - Le mot de passe
+    - Le mot de passe (chiffré)
     - L'adresse email d'envoi
     - L'adresse email de réception
 
     La configuration est sauvegardée dans ~/.config/openstack-toolbox/smtp_config.ini
+    Le mot de passe est chiffré pour plus de sécurité.
 
     Returns:
-        bool: True si la configuration a été créée avec succès, False sinon
+        True si la configuration a été créée avec succès, False sinon
+
+    Raises:
+        SMTPConfigError: Si la configuration ne peut pas être sauvegardée
 
     Examples:
         >>> create_smtp_config_interactive()
@@ -107,40 +122,58 @@ def create_smtp_config_interactive():
         True
     """
     config = configparser.ConfigParser()
+    
+    server = input("Serveur SMTP [smtp.gmail.com]: ").strip() or "smtp.gmail.com"
+    port = input("Port SMTP [587]: ").strip() or "587"
+    username = input("Utilisateur SMTP: ").strip()
+    password = getpass.getpass("Mot de passe SMTP: ").strip()
+    
+    # Encrypt password for security
+    secure = SecureConfig(Path(CONFIG_DIR))
+    encrypted_password = secure.encrypt(password)
+    
     config["SMTP"] = {
-        "server": input("Serveur SMTP [smtp.gmail.com]: ").strip() or "smtp.gmail.com",
-        "port": input("Port SMTP [587]: ").strip() or "587",
-        "username": input("Utilisateur SMTP: ").strip(),
-        "password": getpass.getpass("Mot de passe SMTP: ").strip(),
+        "server": server,
+        "port": port,
+        "username": username,
+        "password": encrypted_password,
+        "encrypted": "true",  # Flag to indicate password is encrypted
     }
 
+    from_email = input(f"Email expéditeur [{username}]: ").strip() or username
+    to_email = input("Email destinataire: ").strip()
+    
     config["Email"] = {
-        "from": input(f"Email expéditeur [{config['SMTP']['username']}]: ").strip()
-        or config["SMTP"]["username"],
-        "to": input("Email destinataire: ").strip(),
+        "from": from_email,
+        "to": to_email,
     }
 
     try:
-        with open(SMTP_CONFIG_FILE, "w") as f:
+        with open(SMTP_CONFIG_FILE, "w", encoding="utf-8") as f:
             config.write(f)
+        # Set file permissions to 600 (read/write for owner only)
+        os.chmod(SMTP_CONFIG_FILE, 0o600)
         return True
-    except Exception:
-        return False
+    except (OSError, IOError) as e:
+        raise SMTPConfigError(f"Failed to save SMTP configuration: {e}") from e
 
 
-def load_smtp_config():
+def load_smtp_config() -> Optional[Dict[str, any]]:
     """
     Charge la configuration SMTP depuis le fichier de configuration.
 
     Returns:
-        dict: Configuration SMTP avec les clés suivantes:
+        Configuration SMTP avec les clés suivantes:
             - server: Serveur SMTP
             - port: Port SMTP
             - username: Nom d'utilisateur
-            - password: Mot de passe
+            - password: Mot de passe (déchiffré)
             - from_email: Email expéditeur
             - to_email: Email destinataire
-        None: Si la configuration n'existe pas ou est invalide
+        None si la configuration n'existe pas ou est invalide
+
+    Raises:
+        SMTPConfigError: Si la configuration existe mais est invalide
 
     Examples:
         >>> config = load_smtp_config()
@@ -155,25 +188,52 @@ def load_smtp_config():
 
     try:
         config = configparser.ConfigParser()
-        config.read(SMTP_CONFIG_FILE)
+        config.read(SMTP_CONFIG_FILE, encoding="utf-8")
+
+        password = config["SMTP"]["password"]
+        is_encrypted = config["SMTP"].get("encrypted", "false") == "true"
+        
+        # Decrypt password if it's encrypted
+        if is_encrypted:
+            secure = SecureConfig(Path(CONFIG_DIR))
+            password = secure.decrypt(password)
 
         return {
             "server": config["SMTP"]["server"],
             "port": int(config["SMTP"]["port"]),
             "username": config["SMTP"]["username"],
-            "password": config["SMTP"]["password"],
+            "password": password,
             "from_email": config["Email"]["from"],
             "to_email": config["Email"]["to"],
         }
-    except Exception:
-        return None
+    except (KeyError, ValueError, configparser.Error) as e:
+        raise SMTPConfigError(
+            f"Invalid SMTP configuration file: {e}"
+        ) from e
+    except Exception as e:
+        raise SMTPConfigError(
+            f"Failed to load SMTP configuration: {e}"
+        ) from e
 
 
-def load_openstack_credentials():
+def load_openstack_credentials() -> Tuple[Optional[Dict[str, str]], List[str]]:
     """
     Charge les identifiants OpenStack depuis les variables d'environnement.
+    
+    Returns:
+        Tuple contenant:
+            - Dict des credentials si toutes les variables sont présentes, None sinon
+            - Liste des variables manquantes
+    
+    Raises:
+        CredentialsError: Si les variables critiques sont manquantes
+    
+    Examples:
+        >>> creds, missing = load_openstack_credentials()
+        >>> if creds:
+        ...     print(f"Auth URL: {creds['auth_url']}")
     """
-    expected_vars = [
+    expected_vars: List[str] = [
         "OS_AUTH_URL",
         "OS_PROJECT_NAME",
         "OS_USERNAME",
@@ -181,8 +241,8 @@ def load_openstack_credentials():
         "OS_USER_DOMAIN_NAME",
     ]
 
-    creds = {}
-    missing_vars = []
+    creds: Dict[str, str] = {}
+    missing_vars: List[str] = []
 
     for var in expected_vars:
         value = os.getenv(var)

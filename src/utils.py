@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+from typing import Optional, Tuple
 
 from rich import print
 
+from .exceptions import ParsingError
 
-def format_size(size_bytes):
+
+def format_size(size_bytes: int) -> str:
     """
     Formate une taille en bytes dans l'unité la plus appropriée.
 
     Args:
-        size_bytes (int): Taille en bytes à formater
+        size_bytes: Taille en bytes à formater
 
     Returns:
-        str: Taille formatée avec l'unité appropriée (To, Go, Mo, Ko, octets)
+        Taille formatée avec l'unité appropriée (To, Go, Mo, Ko, octets)
 
     Examples:
         >>> format_size(1500)
@@ -30,7 +33,9 @@ def format_size(size_bytes):
     return f"{size_bytes} octets"
 
 
-def parse_flavor_name(name):
+def parse_flavor_name(
+    name: str,
+) -> Tuple[Optional[str], Optional[int], Optional[int], Optional[int]]:
     """
     Parse un nom de flavor OpenStack et extrait les informations de ressources.
 
@@ -40,18 +45,20 @@ def parse_flavor_name(name):
     - Z est la taille du disque en Go
 
     Args:
-        name (str): Nom du flavor à parser (ex: 'a2-ram4-disk50')
+        name: Nom du flavor à parser (ex: 'a2-ram4-disk50')
 
     Returns:
-        tuple: (str, int, int, int) contenant:
-            - Description lisible des ressources
-            - Nombre de vCPUs
-            - Quantité de RAM en Go
-            - Taille du disque en Go
+        Tuple contenant:
+            - Description lisible des ressources (ou None)
+            - Nombre de vCPUs (ou None)
+            - Quantité de RAM en Go (ou None)
+            - Taille du disque en Go (ou None)
 
     Examples:
         >>> parse_flavor_name('a2-ram4-disk50')
         ('2 vCPU / 4 Go RAM / 50 Go disque', 2, 4, 50)
+        >>> parse_flavor_name('invalid')
+        (None, None, None, None)
     """
     try:
         parts = name.split("-")
@@ -59,10 +66,12 @@ def parse_flavor_name(name):
             (p for p in parts if p.startswith("a") and p[1:].isdigit()), None
         )
         ram_part = next(
-            (p for p in parts if p.startswith("ram") and p[3:].isdigit()), None
+            (p for p in parts if p.startswith("ram") and p[3:].isdigit()),
+            None,
         )
         disk_part = next(
-            (p for p in parts if p.startswith("disk") and p[4:].isdigit()), None
+            (p for p in parts if p.startswith("disk") and p[4:].isdigit()),
+            None,
         )
 
         cpu = int(cpu_part[1:]) if cpu_part else None
@@ -72,7 +81,8 @@ def parse_flavor_name(name):
         if all(v is not None for v in [cpu, ram, disk]):
             desc = f"{cpu} vCPU / {ram} Go RAM / {disk} Go disque"
             return desc, cpu, ram, disk
-    except Exception:
+    except (ValueError, IndexError, AttributeError):
+        # Return None values if parsing fails
         pass
     return None, None, None, None
 
@@ -96,12 +106,12 @@ def isoformat(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
 
-def print_header(header):
+def print_header(header: str) -> None:
     """
     Affiche un en-tête formaté avec Rich.
 
     Args:
-        header (str): Le texte de l'en-tête à afficher
+        header: Le texte de l'en-tête à afficher
 
     Examples:
         >>> print_header("LISTE DES INSTANCES")

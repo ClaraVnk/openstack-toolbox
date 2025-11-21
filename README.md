@@ -10,30 +10,32 @@
 
 A suite of tools to optimize and manage your OpenStack resources, with multilingual support (FR/EN).
 
+> **Version 1.6.0** - Enhanced security (encrypted SMTP passwords), improved logging with rotation, complete type hints, and better error handling!
+
+## ✨ What's New in v1.6.0
+
+- 🔒 **Encrypted SMTP passwords** - Passwords are now encrypted using Fernet (AES-128)
+- 📊 **Professional logging** - Colored console output, automatic rotation, JSON support
+- 📝 **Complete type hints** - Better IDE support and code quality
+- 🔧 **Specific exceptions** - 12 custom exceptions for better error handling
+- 📁 **Organized structure** - Clean separation of code and documentation
+
 ## 📋 Features
 
-- 📊 **Metrics Collector** (`openstack_metrics_collector.py`)
-  - Real-time Gnocchi metrics
-  - Prometheus export
-  - Request parallelization
-  - Multi-project support
+### Core Tools
 
-- 📈 **Resource Summary** (`openstack_summary.py`)
-  - Instance list and details
-  - Volumes and snapshots
-  - Images and containers
-  - Cost estimation (calibrated for Infomaniak pricing in EUR/CHF)
-  - Mounted volumes tree view
+- 📊 **Metrics Collector** - Real-time Gnocchi metrics with Prometheus export
+- 📈 **Resource Summary** - Complete overview of instances, volumes, snapshots, and costs
+- 👨‍💼 **Administration** - Multi-project management and resource overview
+- 📧 **Weekly Notifications** - Automated email reports with secure SMTP
+- 🔍 **Optimization** - Identify underutilized resources
 
-- 👨‍💼 **Administration** (`openstack_admin.py`)
-  - Project management
-  - Resource overview
-  - Operation parallelization
+### New in v1.6.0
 
-- 📧 **Weekly Notifications** (`weekly_notification_optimization.py`)
-  - Automated email reports
-  - Interactive SMTP configuration
-  - Cron scheduling
+- 🔒 **Security Module** (`src/security.py`) - Encryption/decryption for sensitive data
+- 📊 **Logger Module** (`src/logger.py`) - Professional logging with rotation and colors
+- 🔧 **Exceptions Module** (`src/exceptions.py`) - 12 specific exceptions for better error handling
+- 📝 **Type Hints** - Complete type annotations for better IDE support
 
 ## 🛠️ Installation
 
@@ -271,14 +273,101 @@ openstack-toolbox
 - `send_email()`: Sends via SMTP
 - `setup_cron()`: Configures cron task
 
+## 📁 Project Structure
+
+```
+openstack-toolbox/
+├── src/          # Python source code (12 modules)
+└── .github/      # GitHub Actions CI/CD
+```
+
+### Source Code (`src/`)
+
+**Core Modules:**
+- `openstack_toolbox.py` - Main CLI
+- `openstack_summary.py` - Resource summary
+- `openstack_admin.py` - Administration tools
+- `openstack_metrics_collector.py` - Prometheus exporter
+- `openstack_optimization.py` - Resource optimization
+- `weekly_notification_optimization.py` - Email notifications
+
+**Utility Modules (v1.6.0):**
+- `config.py` - Configuration management
+- `security.py` - Encryption/decryption ✨ NEW
+- `logger.py` - Logging system ✨ NEW
+- `exceptions.py` - Custom exceptions ✨ NEW
+- `utils.py` - Helper functions
+
+## � Migration from v1.5.0
+
+### Automatic Migration
+
+- ✅ **100% backward compatible** - No action required
+- ✅ Existing SMTP configurations continue to work
+- ✅ System will prompt to re-encrypt passwords on next use
+
+### Recommended Actions
+
+```bash
+# Reconfigure SMTP to enable encryption
+weekly-notification
+```
+
+### New Dependencies
+
+```bash
+# Install the new security dependency
+pip install cryptography>=41.0.0
+```
+
+### Security Improvements
+
+Configuration files now have restricted permissions:
+- `~/.config/openstack-toolbox/smtp_config.ini` : 600 (rw-------)
+- `~/.config/openstack-toolbox/.encryption_key` : 600 (rw-------)
+
+### Troubleshooting
+
+If you encounter decryption errors:
+
+```bash
+# Remove old configuration
+rm ~/.config/openstack-toolbox/smtp_config.ini
+rm ~/.config/openstack-toolbox/.encryption_key
+
+# Reconfigure
+weekly-notification
+```
+
+## 📝 Changelog
+
+### [1.6.0] - 2024-11-21
+
+**Added:**
+- 🔒 Encrypted SMTP passwords using Fernet (AES-128)
+- 📊 Professional logging with rotation and colors
+- 🔧 12 custom exceptions for better error handling
+- 📝 Complete type hints on all core modules
+- 📁 Organized project structure
+
+**Security:**
+- Encrypted password storage
+- Restricted file permissions (600)
+- Unique encryption key per installation
+
+**No breaking changes** - Full backward compatibility maintained
+
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to:
+
 1. Fork the project
 2. Create a branch (`git checkout -b feature/improvement`)
 3. Commit (`git commit -am 'Add feature'`)
 4. Push (`git push origin feature/improvement`)
 5. Open a Pull Request
+
+See [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for technical details.
 
 ## ✨ Credits
 
