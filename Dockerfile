@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Métadonnées
 LABEL maintainer="loutre@ikmail.com"
 LABEL description="OpenStack Metrics Collector - Prometheus Exporter"
-LABEL version="1.4.0"
+LABEL version="1.5.0"
 
 # Variables d'environnement
 ENV PYTHONUNBUFFERED=1
@@ -18,15 +18,13 @@ RUN useradd -m -u 1000 -s /bin/bash openstack && \
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY --chown=openstack:openstack pyproject.toml ./
-
-# Installer les dépendances
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e .
-
-# Copier le code source
+# Copier les fichiers nécessaires pour l'installation
+COPY --chown=openstack:openstack pyproject.toml README.md ./
 COPY --chown=openstack:openstack src/ ./src/
+
+# Installer le package et ses dépendances
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .
 
 # Changer vers l'utilisateur non-root
 USER openstack
