@@ -14,7 +14,7 @@ Déclenché sur :
    - Build le package Python
    - Vérifie avec twine
    - Upload les artifacts
-   - 🚀 Publie sur PyPI si tag `v*`
+   - 🚀 **Publie automatiquement sur PyPI** (push sur main)
 
 2. **Build Docker Image**
    - Build l'image Docker multi-arch (amd64, arm64)
