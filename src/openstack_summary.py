@@ -13,8 +13,8 @@ from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 
-from src.config import get_language_preference, load_openstack_credentials
-from src.utils import format_size, isoformat, print_header
+from .config import get_language_preference, load_openstack_credentials
+from .utils import format_size, isoformat, print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -126,22 +126,14 @@ def generate_billing():
             TRANSLATIONS[lang]["start_date"],
             trim_to_minute(isoformat(default_start_dt)),
         )
-        end_input = input_with_default(
-            TRANSLATIONS[lang]["end_date"], trim_to_minute(isoformat(default_end_dt))
-        )
+        end_input = input_with_default(TRANSLATIONS[lang]["end_date"], trim_to_minute(isoformat(default_end_dt)))
 
         # Parsing des dates saisies
         try:
-            start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(
-                tzinfo=timezone.utc
-            )
-            end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M").replace(
-                tzinfo=timezone.utc
-            )
+            start_dt = datetime.strptime(start_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+            end_dt = datetime.strptime(end_input, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
         except ValueError as e:
-            return TRANSLATIONS[lang]["billing_error"].format(
-                f"Format de date invalide: {e}"
-            )
+            return TRANSLATIONS[lang]["billing_error"].format(f"Format de date invalide: {e}")
 
         start_iso = isoformat(start_dt)
         end_iso = isoformat(end_dt)
@@ -177,9 +169,7 @@ console = Console()
 
 
 # Fonction pour calculer le coût d'une instance
-def calculate_instance_cost(
-    billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5
-):
+def calculate_instance_cost(billing_data, instance_id=None, icu_to_chf=50, icu_to_euro=55.5):
     if not billing_data:
         return 0.0, 0.0
 
@@ -252,9 +242,7 @@ def get_instance_details(conn, instance, flavors):
             "uptime": uptime_str,
         }
     except Exception as e:
-        print(
-            f"[bold red]Erreur lors de la récupération des détails de l'instance {instance.id}: {str(e)}[/bold red]"
-        )
+        print(f"[bold red]Erreur lors de la récupération des détails de l'instance {instance.id}: {str(e)}[/bold red]")
         return None
 
 
@@ -276,10 +264,7 @@ def list_instances(conn):
     # Collecte parallèle des détails des instances
     instance_details = []
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [
-            executor.submit(get_instance_details, conn, instance, flavors)
-            for instance in instances
-        ]
+        futures = [executor.submit(get_instance_details, conn, instance, flavors) for instance in instances]
 
         for future in as_completed(futures):
             try:
@@ -287,9 +272,7 @@ def list_instances(conn):
                 if details:
                     instance_details.append(details)
             except Exception as e:
-                print(
-                    f"[bold red]Erreur lors de la récupération des détails d'une instance : {str(e)}[/bold red]"
-                )
+                print(f"[bold red]Erreur lors de la récupération des détails d'une instance : {str(e)}[/bold red]")
 
     # Affichage des résultats
     table = Table(title="")
@@ -400,9 +383,7 @@ def mounted_volumes(conn):
         instance_id = instance.id
         instance_name = instance.name
         if instance_id in instance_volumes:
-            tree[instance_name] = [
-                volume.name for volume in instance_volumes[instance_id]
-            ]
+            tree[instance_name] = [volume.name for volume in instance_volumes[instance_id]]
         else:
             tree[instance_name] = []
 
@@ -465,9 +446,7 @@ def list_containers(conn):
 def main():
     lang = get_language_preference()
     toolbox_version = get_version()
-    print(
-        f"[yellow bold]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/yellow bold]"
-    )
+    print(f"[yellow bold]{TRANSLATIONS[lang]['welcome'].format(toolbox_version)}[/yellow bold]")
 
     header = r"""
   ___                       _             _
@@ -487,9 +466,9 @@ def main():
     print(header)
 
     # Test des credentials
-    creds = load_openstack_credentials()
+    creds, missing_vars = load_openstack_credentials()
     if not creds:
-        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars']}[/bold red]")
+        print(f"[bold red]{TRANSLATIONS[lang]['missing_vars'].format(', '.join(missing_vars))}[/bold red]")
         return
 
     conn = connection.Connection(**creds)

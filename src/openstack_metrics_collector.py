@@ -20,7 +20,7 @@ from prometheus_client import (
 )
 from pythonjsonlogger import jsonlogger
 
-from src.config import get_language_preference, load_openstack_credentials
+from .config import get_language_preference, load_openstack_credentials
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -372,20 +372,12 @@ def update_metrics(metric, project_name, label_name, label_value):
     label_value_clean = clean_label_value(label_value)
     # Vérifier si la valeur du label est vide
     if label_value_clean == "":
-        logging.warning(
-            TRANSLATIONS[lang]["invalid_metric_id"].format(metric._name, label_value)
-        )
+        logging.warning(TRANSLATIONS[lang]["invalid_metric_id"].format(metric._name, label_value))
         return
     try:
-        metric.labels(project_name=project_name, **{label_name: label_value_clean}).set(
-            1
-        )
+        metric.labels(project_name=project_name, **{label_name: label_value_clean}).set(1)
     except Exception:
-        logging.exception(
-            TRANSLATIONS[lang]["metric_update_error"].format(
-                metric._name, label_name, label_value_clean
-            )
-        )
+        logging.exception(TRANSLATIONS[lang]["metric_update_error"].format(metric._name, label_name, label_value_clean))
 
 
 # Gauge Prometheus
@@ -472,13 +464,9 @@ class GnocchiAPI:
         """
         lang = get_language_preference()
         url = f"{self.gnocchi_url}/v1/resource/{resource_type}"
-        resp = requests.get(url, headers=self.headers)
+        resp = requests.get(url, headers=self.headers, timeout=30)
         if resp.status_code != 200:
-            logger.error(
-                TRANSLATIONS[lang]["resources_error"].format(
-                    resp.status_code, resp.text
-                )
-            )
+            logger.error(TRANSLATIONS[lang]["resources_error"].format(resp.status_code, resp.text))
             return []
         return resp.json()
 
@@ -499,12 +487,10 @@ class GnocchiAPI:
         """
         lang = get_language_preference()
         url = f"{self.gnocchi_url}/v1/resource/instance/{resource_id}/metric"
-        resp = requests.get(url, headers=self.headers)
+        resp = requests.get(url, headers=self.headers, timeout=30)
         if resp.status_code != 200:
             logger.warning(
-                TRANSLATIONS[lang]["metrics_resource_error"].format(
-                    resource_id, resp.status_code, resp.text
-                )
+                TRANSLATIONS[lang]["metrics_resource_error"].format(resource_id, resp.status_code, resp.text)
             )
             return {}
         return resp.json()
@@ -534,13 +520,9 @@ class GnocchiAPI:
             "start": start_iso,
             "stop": end_iso,
         }
-        resp = requests.get(url, headers=self.headers, params=params)
+        resp = requests.get(url, headers=self.headers, params=params, timeout=30)
         if resp.status_code != 200:
-            logger.warning(
-                TRANSLATIONS[lang]["measures_error"].format(
-                    metric_id, resp.status_code, resp.text
-                )
-            )
+            logger.warning(TRANSLATIONS[lang]["measures_error"].format(metric_id, resp.status_code, resp.text))
             return []
         return resp.json()
 
@@ -578,9 +560,7 @@ def collect_resource_metrics(gnocchi, rid, start_iso, end_iso):
     return results
 
 
-def collect_gnocchi_metrics_parallel(
-    gnocchi, resources, start_iso, end_iso, project_name
-):
+def collect_gnocchi_metrics_parallel(gnocchi, resources, start_iso, end_iso, project_name):
     """
     Collecte les métriques Gnocchi en parallèle pour toutes les ressources.
 
@@ -602,11 +582,7 @@ def collect_gnocchi_metrics_parallel(
         for res in resources:
             rid = res.get("id")
             if rid:
-                futures.append(
-                    executor.submit(
-                        collect_resource_metrics, gnocchi, rid, start_iso, end_iso
-                    )
-                )
+                futures.append(executor.submit(collect_resource_metrics, gnocchi, rid, start_iso, end_iso))
 
         for future in as_completed(futures):
             try:
@@ -624,15 +600,9 @@ def collect_gnocchi_metrics_parallel(
 
 
 # Métriques internes globales
-exporter_uptime = Gauge(
-    "exporter_uptime_seconds", TRANSLATIONS[lang]["exporter_uptime_desc"]
-)
-exporter_errors = Counter(
-    "exporter_errors_total", TRANSLATIONS[lang]["exporter_errors_desc"]
-)
-exporter_scrape_duration = Histogram(
-    "exporter_scrape_duration_seconds", TRANSLATIONS[lang]["exporter_scrape_desc"]
-)
+exporter_uptime = Gauge("exporter_uptime_seconds", TRANSLATIONS[lang]["exporter_uptime_desc"])
+exporter_errors = Counter("exporter_errors_total", TRANSLATIONS[lang]["exporter_errors_desc"])
+exporter_scrape_duration = Histogram("exporter_scrape_duration_seconds", TRANSLATIONS[lang]["exporter_scrape_desc"])
 
 start_time = time.time()
 
@@ -676,9 +646,7 @@ def collect_project_metrics(project_config, conn_cache):
             if not token:
                 raise Exception(TRANSLATIONS[lang]["token_error"])
             conn_cache[cache_key] = conn
-        logger.info(
-            TRANSLATIONS[lang]["connection_success"].format(project_name, region)
-        )
+        logger.info(TRANSLATIONS[lang]["connection_success"].format(project_name, region))
     except Exception:
         exporter_errors.inc()
         logger.exception(TRANSLATIONS[lang]["connection_error"].format(project_name))
@@ -689,34 +657,24 @@ def collect_project_metrics(project_config, conn_cache):
         identity_id = get_identity_metrics(conn, project_os_id)
     except Exception:
         exporter_errors.inc()
-        logger.exception(
-            TRANSLATIONS[lang]["identity_metrics_error"].format(project_name)
-        )
+        logger.exception(TRANSLATIONS[lang]["identity_metrics_error"].format(project_name))
         identity_id = None
 
     try:
         instances = list_instances(conn)
     except Exception:
         exporter_errors.inc()
-        logger.exception(
-            TRANSLATIONS[lang]["instances_project_error"].format(project_name)
-        )
+        logger.exception(TRANSLATIONS[lang]["instances_project_error"].format(project_name))
         instances = None
 
     try:
         if instances:
-            used_image_ids = {
-                getattr(inst.image, "id", None)
-                for inst in instances
-                if hasattr(inst, "image")
-            }
+            used_image_ids = {getattr(inst.image, "id", None) for inst in instances if hasattr(inst, "image")}
             all_images = list_images(conn)
             images = [img for img in all_images if img.id in used_image_ids]
     except Exception:
         exporter_errors.inc()
-        logger.exception(
-            TRANSLATIONS[lang]["images_project_error"].format(project_name)
-        )
+        logger.exception(TRANSLATIONS[lang]["images_project_error"].format(project_name))
         instances = None
         images = None
 
@@ -724,27 +682,21 @@ def collect_project_metrics(project_config, conn_cache):
         volumes = list_volumes(conn)
     except Exception:
         exporter_errors.inc()
-        logger.exception(
-            TRANSLATIONS[lang]["volumes_project_error"].format(project_name)
-        )
+        logger.exception(TRANSLATIONS[lang]["volumes_project_error"].format(project_name))
         volumes = None
 
     try:
         floating_ips = list_floating_ips(conn)
     except Exception:
         exporter_errors.inc()
-        logger.exception(
-            TRANSLATIONS[lang]["floating_ips_project_error"].format(project_name)
-        )
+        logger.exception(TRANSLATIONS[lang]["floating_ips_project_error"].format(project_name))
         floating_ips = None
 
     try:
         containers = list_containers(conn)
     except Exception:
         exporter_errors.inc()
-        logger.exception(
-            TRANSLATIONS[lang]["containers_project_error"].format(project_name)
-        )
+        logger.exception(TRANSLATIONS[lang]["containers_project_error"].format(project_name))
         containers = None
 
     # Identity
@@ -821,13 +773,11 @@ def collect_project_metrics(project_config, conn_cache):
             }
             for resource, value in quotas.items():
                 if resource not in allowed_quotas:
-                    logger.debug(
-                        TRANSLATIONS[lang]["quota_ignored"].format(resource, value)
-                    )
+                    logger.debug(TRANSLATIONS[lang]["quota_ignored"].format(resource, value))
                     continue
-                quota_metrics.labels(
-                    project_name=project_name, resource=clean_label_value(resource)
-                ).set(float(value) if value is not None else 0)
+                quota_metrics.labels(project_name=project_name, resource=clean_label_value(resource)).set(
+                    float(value) if value is not None else 0
+                )
 
     # Gnocchi metrics
     try:
@@ -852,9 +802,7 @@ def collect_project_metrics(project_config, conn_cache):
         end_iso = end.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
         resources = gnocchi.get_resources("instance")
-        collect_gnocchi_metrics_parallel(
-            gnocchi, resources, start_iso, end_iso, project_name
-        )
+        collect_gnocchi_metrics_parallel(gnocchi, resources, start_iso, end_iso, project_name)
 
         logging.info(TRANSLATIONS[lang]["metrics_success"])
     except Exception:
@@ -899,9 +847,7 @@ def collect_metrics():
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = []
             for project_name, config in projects.items():
-                futures.append(
-                    executor.submit(collect_project_metrics, config, conn_cache)
-                )
+                futures.append(executor.submit(collect_project_metrics, config, conn_cache))
             for future in as_completed(futures):
                 try:
                     future.result()
@@ -936,7 +882,7 @@ class CustomCollector:
 # Fonction principale pour démarrer le serveur WSGI
 def main():
     lang = get_language_preference()
-    creds = load_openstack_credentials()
+    creds, missing_vars = load_openstack_credentials()
     if not creds:
         print(f"[bold red]{TRANSLATIONS[lang]['credentials_error']}[/]")
         return

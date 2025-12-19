@@ -10,12 +10,12 @@ from email.mime.text import MIMEText
 import tomli
 from rich import print
 
-from src.config import (
+from .config import (
     create_smtp_config_interactive,
     get_language_preference,
     load_smtp_config,
 )
-from src.utils import print_header
+from .utils import print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -264,9 +264,7 @@ def main():
     lang = get_language_preference()
     version = get_version()
 
-    print(
-        f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]"
-    )
+    print(f"\n[yellow bold]{TRANSLATIONS[lang]['welcome'].format(version)}[/yellow bold]")
     print_header("WEEKLY NOTIFICATION")
 
     # Vérifier/créer la configuration SMTP

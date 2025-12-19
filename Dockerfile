@@ -5,7 +5,7 @@ FROM python:3.11-slim
 # Métadonnées
 LABEL maintainer="loutre@ikmail.com"
 LABEL description="OpenStack Toolbox - Complete Suite with Cron"
-LABEL version="1.6.0"
+LABEL version="1.6.1"
 
 # Variables d'environnement
 ENV PYTHONUNBUFFERED=1

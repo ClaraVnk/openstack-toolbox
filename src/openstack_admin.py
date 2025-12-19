@@ -11,8 +11,8 @@ from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 
-from src.config import get_language_preference, load_openstack_credentials
-from src.utils import format_size, print_header
+from .config import get_language_preference, load_openstack_credentials
+from .utils import format_size, print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -128,16 +128,10 @@ def get_project_details(conn, project_id):
         print(TRANSLATIONS[lang]["project_name"].format(project.name))
         print(TRANSLATIONS[lang]["project_description"].format(project.description))
         print(TRANSLATIONS[lang]["project_domain"].format(project.domain_id))
-        is_active = (
-            TRANSLATIONS[lang]["yes"]
-            if project.is_enabled
-            else TRANSLATIONS[lang]["no"]
-        )
+        is_active = TRANSLATIONS[lang]["yes"] if project.is_enabled else TRANSLATIONS[lang]["no"]
         print(TRANSLATIONS[lang]["project_active"].format(is_active))
     else:
-        print(
-            f"[bold red]{TRANSLATIONS[lang]['no_project'].format(project_id)}[/bold red]"
-        )
+        print(f"[bold red]{TRANSLATIONS[lang]['no_project'].format(project_id)}[/bold red]")
 
 
 def list_images(conn):
@@ -236,14 +230,8 @@ def list_volumes(conn):
     table.add_column("Attaché", style="blue")
     table.add_column("Snapshot associé", style="magenta")
     for volume in volumes:
-        attached = (
-            TRANSLATIONS[lang]["yes"]
-            if volume.attachments
-            else TRANSLATIONS[lang]["no"]
-        )
-        snapshot_id = (
-            volume.snapshot_id if volume.snapshot_id else TRANSLATIONS[lang]["none"]
-        )
+        attached = TRANSLATIONS[lang]["yes"] if volume.attachments else TRANSLATIONS[lang]["no"]
+        snapshot_id = volume.snapshot_id if volume.snapshot_id else TRANSLATIONS[lang]["none"]
         table.add_row(
             volume.id,
             volume.name,
@@ -273,9 +261,7 @@ def mounted_volumes(conn):
         instance_id = instance.id
         instance_name = instance.name
         if instance_id in instance_volumes:
-            tree[instance_name] = [
-                volume.name for volume in instance_volumes[instance_id]
-            ]
+            tree[instance_name] = [volume.name for volume in instance_volumes[instance_id]]
         else:
             tree[instance_name] = []
 
@@ -373,11 +359,7 @@ def process_resource_parallel(resource_type, resource, conn):
                 "details": f"Size: {size}, Status: {resource.status}",
             }
         elif resource_type == "image":
-            size = (
-                format_size(resource.size)
-                if resource.size
-                else TRANSLATIONS[lang]["unknown"]
-            )
+            size = format_size(resource.size) if resource.size else TRANSLATIONS[lang]["unknown"]
             return {
                 "id": resource.id,
                 "name": resource.name,
@@ -385,9 +367,7 @@ def process_resource_parallel(resource_type, resource, conn):
                 "details": f"Size: {size}, Status: {resource.status}",
             }
     except Exception as e:
-        print(
-            f"[red]Erreur lors du traitement de la ressource {resource.id}: {str(e)}[/red]"
-        )
+        print(f"[red]Erreur lors du traitement de la ressource {resource.id}: {str(e)}[/red]")
         return None
 
 
@@ -445,9 +425,7 @@ def list_all_resources(conn):
                 if result:
                     processed_resources.append(result)
             except Exception as e:
-                print(
-                    f"[red]Erreur lors du traitement d'une ressource : {str(e)}[/red]"
-                )
+                print(f"[red]Erreur lors du traitement d'une ressource : {str(e)}[/red]")
 
     # Affichage des résultats
     table = Table(title="")
@@ -457,9 +435,7 @@ def list_all_resources(conn):
     table.add_column(TRANSLATIONS[lang]["details_column"], style="white")
 
     for resource in sorted(processed_resources, key=lambda x: (x["type"], x["name"])):
-        table.add_row(
-            resource["type"], resource["id"], resource["name"], resource["details"]
-        )
+        table.add_row(resource["type"], resource["id"], resource["name"], resource["details"])
 
     console = Console()
     console.print(table)
@@ -488,7 +464,7 @@ def main():
     print(header)
 
     # Test des credentials
-    creds = load_openstack_credentials()
+    creds, missing_vars = load_openstack_credentials()
     if not creds:
         print(f"[bold red]{TRANSLATIONS[lang]['connection_error']}[/bold red]")
         return

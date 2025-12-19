@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openstack-toolbox"
-version = "1.7.0"
+version = "1.6.1"
 description = "A toolbox for OpenStack - Docker deployment with automated monitoring and cron tasks"
 readme = "README.md"
 requires-python = ">=3.9"

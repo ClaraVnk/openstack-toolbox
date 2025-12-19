@@ -5,8 +5,6 @@ from typing import Optional, Tuple
 
 from rich import print
 
-from .exceptions import ParsingError
-
 
 def format_size(size_bytes: int) -> str:
     """
@@ -62,9 +60,7 @@ def parse_flavor_name(
     """
     try:
         parts = name.split("-")
-        cpu_part = next(
-            (p for p in parts if p.startswith("a") and p[1:].isdigit()), None
-        )
+        cpu_part = next((p for p in parts if p.startswith("a") and p[1:].isdigit()), None)
         ram_part = next(
             (p for p in parts if p.startswith("ram") and p[3:].isdigit()),
             None,

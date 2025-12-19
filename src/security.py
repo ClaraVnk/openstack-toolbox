@@ -61,9 +61,7 @@ class SecureConfig:
                 self.key_file.chmod(0o600)
                 return key
         except (OSError, IOError) as e:
-            raise ConfigurationError(
-                f"Failed to access encryption key file: {e}"
-            ) from e
+            raise ConfigurationError(f"Failed to access encryption key file: {e}") from e
 
     def _get_cipher(self) -> Fernet:
         """
@@ -123,9 +121,7 @@ class SecureConfig:
             decrypted_bytes = cipher.decrypt(encrypted_bytes)
             return decrypted_bytes.decode()
         except (InvalidToken, ValueError) as e:
-            raise ConfigurationError(
-                "Failed to decrypt data. The encryption key may have changed."
-            ) from e
+            raise ConfigurationError("Failed to decrypt data. The encryption key may have changed.") from e
 
     def is_encrypted(self, value: str) -> bool:
         """

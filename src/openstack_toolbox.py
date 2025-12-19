@@ -56,11 +56,7 @@ def get_commands(lang):
     commands = [
         (
             "openstack-summary",
-            (
-                "Génère un résumé global du projet"
-                if lang == "fr"
-                else "Generates a global project summary"
-            ),
+            ("Génère un résumé global du projet" if lang == "fr" else "Generates a global project summary"),
         ),
         (
             "openstack-admin",
@@ -88,11 +84,7 @@ def get_commands(lang):
         ),
         (
             "openstack-metrics-collector",
-            (
-                "Lance un exporter passif pour Prometheus"
-                if lang == "fr"
-                else "Starts a passive Prometheus exporter"
-            ),
+            ("Lance un exporter passif pour Prometheus" if lang == "fr" else "Starts a passive Prometheus exporter"),
         ),
         ("openstack-toolbox --config", TRANSLATIONS[lang]["config_option"]),
     ]
@@ -127,9 +119,7 @@ def configure_language():
 
 def main():
     parser = argparse.ArgumentParser(description="OpenStack Toolbox")
-    parser.add_argument(
-        "--config", action="store_true", help="Configure language settings"
-    )
+    parser.add_argument("--config", action="store_true", help="Configure language settings")
     args = parser.parse_args()
 
     if args.config:

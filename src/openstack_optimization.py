@@ -11,8 +11,8 @@ from rich import print
 from rich.console import Console
 from rich.table import Table
 
-from src.config import get_language_preference, load_openstack_credentials
-from src.utils import isoformat
+from .config import get_language_preference, load_openstack_credentials
+from .utils import isoformat
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -89,12 +89,8 @@ def generate_billing():
         last_monday = today - timedelta(days=today.weekday() + 7)
         last_sunday = last_monday + timedelta(days=6)
 
-        start_dt = datetime.combine(last_monday, datetime.min.time()).replace(
-            tzinfo=timezone.utc
-        )
-        end_dt = datetime.combine(last_sunday, datetime.max.time()).replace(
-            tzinfo=timezone.utc
-        )
+        start_dt = datetime.combine(last_monday, datetime.min.time()).replace(tzinfo=timezone.utc)
+        end_dt = datetime.combine(last_sunday, datetime.max.time()).replace(tzinfo=timezone.utc)
 
         print(TRANSLATIONS[lang]["billing_period"].format(start_dt, end_dt))
 
@@ -190,18 +186,9 @@ def calculate_underutilized_costs(billing_json):
 
     underutilized_costs = {}
     for entry in billing_data:
-        resource = (
-            entry.get("name")
-            or entry.get("resource")
-            or entry.get("ID")
-            or entry.get("id")
-        )
+        resource = entry.get("name") or entry.get("resource") or entry.get("ID") or entry.get("id")
         cost_icu = (
-            entry.get("rate:unit")
-            or entry.get("ICU")
-            or entry.get("icu")
-            or entry.get("cost")
-            or entry.get("rate:sum")
+            entry.get("rate:unit") or entry.get("ICU") or entry.get("icu") or entry.get("cost") or entry.get("rate:sum")
         )
         if resource is not None and cost_icu is not None:
             try:
@@ -254,9 +241,7 @@ def collect_and_analyze_data(conn, billing_json=None):
     report_body += "\n" + "-" * 50 + "\n"
 
     report_body += f"[{TRANSLATIONS[lang]['underutilized_costs']}]\n"
-    underutilized_costs = (
-        calculate_underutilized_costs(billing_json) if billing_json else {}
-    )
+    underutilized_costs = calculate_underutilized_costs(billing_json) if billing_json else {}
     if not underutilized_costs:
         report_body += TRANSLATIONS[lang]["no_billing"] + "\n"
     else:
@@ -293,7 +278,7 @@ def main():
     print(header)
 
     # Test des credentials
-    creds = load_openstack_credentials()
+    creds, missing_vars = load_openstack_credentials()
     if not creds:
         print(f"[bold red]{TRANSLATIONS[lang]['connection_error']}[/bold red]")
         return

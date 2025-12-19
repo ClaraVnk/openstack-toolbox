@@ -9,10 +9,19 @@
 
 A suite of tools to optimize and manage your OpenStack resources, with multilingual support (FR/EN).
 
-> **Version 1.6.0** - Enhanced security (encrypted SMTP passwords), improved logging with rotation, complete type hints, and better error handling!
+> **Version 1.6.1** - Code quality improvements, security enhancements, and better reliability!
 
-## ✨ What's New in v1.6.0
+## ✨ What's New in v1.6.1
 
+- 🔒 **HTTP timeout protection** - All HTTP requests now have 30s timeout to prevent indefinite hangs
+- 🧹 **Code quality** - Formatted with Black and isort, cleaned unused imports
+- 🔧 **Bug fixes** - Fixed relative imports and credential loading issues
+- ✅ **Security audit** - Passed Bandit security scan with 0 critical issues
+- 📝 **Type safety** - Corrected type hints for better IDE support
+
+## 📜 Previous Versions
+
+### v1.6.0
 - 🔒 **Encrypted SMTP passwords** - Passwords are now encrypted using Fernet (AES-128)
 - 📊 **Professional logging** - Colored console output, automatic rotation, JSON support
 - 📝 **Complete type hints** - Better IDE support and code quality
@@ -524,6 +533,26 @@ weekly-notification
 ```
 
 ## 📝 Changelog
+
+### [1.6.1] - 2024-12-19
+
+**Fixed:**
+- 🔧 Fixed relative imports in all modules (from `src.` to `.`)
+- 🔧 Fixed credential loading to properly handle tuple return values
+- 🔧 Corrected type hint `any` to `Any` in config.py
+
+**Improved:**
+- 🔒 Added 30-second timeout to all HTTP requests (prevents hanging)
+- 🧹 Removed unused imports and variables
+- 🧹 Cleaned whitespace in blank lines
+- ✨ Code formatted with Black (line-length=120)
+- ✨ Imports sorted with isort (profile=black)
+
+**Security:**
+- ✅ Passed Bandit security audit with 0 medium/high severity issues
+- 🔒 All HTTP requests now protected against indefinite hangs
+
+**No breaking changes** - Full backward compatibility maintained
 
 ### [1.6.0] - 2024-11-21
 

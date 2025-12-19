@@ -83,15 +83,11 @@ def setup_logger(
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
 
-        file_handler = RotatingFileHandler(
-            log_file, maxBytes=max_bytes, backupCount=backup_count
-        )
+        file_handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
         file_handler.setLevel(logging.DEBUG)  # Always log everything to file
 
         if json_format:
-            json_formatter = jsonlogger.JsonFormatter(
-                "%(asctime)s %(name)s %(levelname)s %(message)s"
-            )
+            json_formatter = jsonlogger.JsonFormatter("%(asctime)s %(name)s %(levelname)s %(message)s")
             file_handler.setFormatter(json_formatter)
         else:
             file_formatter = logging.Formatter(
