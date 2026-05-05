@@ -667,11 +667,13 @@ def collect_project_metrics(project_config, conn_cache):
         logger.exception(TRANSLATIONS[lang]["instances_project_error"].format(project_name))
         instances = None
 
+    images = None
     try:
         if instances:
             used_image_ids = {getattr(inst.image, "id", None) for inst in instances if hasattr(inst, "image")}
             all_images = list_images(conn)
-            images = [img for img in all_images if img.id in used_image_ids]
+            if all_images is not None:
+                images = [img for img in all_images if img.id in used_image_ids]
     except Exception:
         exporter_errors.inc()
         logger.exception(TRANSLATIONS[lang]["images_project_error"].format(project_name))
@@ -897,6 +899,7 @@ def main():
         httpd.serve_forever()
     except KeyboardInterrupt:
         logger.info(TRANSLATIONS[lang]["manual_stop"])
+        httpd.server_close()
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 echo "🚀 Starting OpenStack Toolbox Container..."
 
@@ -57,13 +57,15 @@ cron
 # Fonction pour gérer l'arrêt propre
 cleanup() {
     echo "🛑 Shutting down gracefully..."
-    pkill -P $$
+    kill "$METRICS_PID" 2>/dev/null || true
+    pkill -f "openstack_metrics_collector" 2>/dev/null || true
     exit 0
 }
 
 trap cleanup SIGTERM SIGINT
 
 # Démarrer le collecteur de métriques Prometheus en arrière-plan
+PROMETHEUS_PORT="${PROMETHEUS_PORT:-8000}"
 echo "📊 Starting Prometheus metrics collector on port $PROMETHEUS_PORT..."
 python -m src.openstack_metrics_collector &
 METRICS_PID=$!

@@ -64,3 +64,7 @@ Makefile
 .flake8
 .pre-commit-config.yaml
 bandit_report.json
+
+# Claude Code
+CLAUDE.md
+.claude/

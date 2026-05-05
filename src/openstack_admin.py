@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-import tomli
 from openstack import connection
 from rich import print
 from rich.console import Console
@@ -12,7 +10,7 @@ from rich.table import Table
 from rich.tree import Tree
 
 from .config import get_language_preference, load_openstack_credentials
-from .utils import format_size, print_header
+from .utils import format_size, get_version, print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -93,29 +91,6 @@ TRANSLATIONS = {
 }
 
 console = Console()
-
-
-def get_version():
-    """
-    Récupère la version du projet depuis le fichier pyproject.toml.
-
-    Returns:
-        str: Version du projet ou "unknown" si non trouvée
-
-    Examples:
-        >>> get_version()
-        '1.2.0'
-    """
-    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
-    pyproject_path = os.path.abspath(pyproject_path)
-
-    try:
-        with open(pyproject_path, "rb") as f:
-            pyproject_data = tomli.load(f)
-        version = pyproject_data.get("project", {}).get("version", "unknown")
-    except Exception:
-        version = "unknown"
-    return version
 
 
 def get_project_details(conn, project_id):
@@ -470,26 +445,29 @@ def main():
         return
 
     conn = connection.Connection(**creds)
-    if not conn.authorize():
-        print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/bold red]")
-        return
+    try:
+        if not conn.authorize():
+            print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/bold red]")
+            return
 
-    # Demander à l'utilisateur de saisir l'ID du projet
-    project_id = input(TRANSLATIONS[lang]["enter_project_id"])
-    get_project_details(conn, project_id)
+        # Demander à l'utilisateur de saisir l'ID du projet
+        project_id = input(TRANSLATIONS[lang]["enter_project_id"])
+        get_project_details(conn, project_id)
 
-    # Lister les ressources
-    list_images(conn)
-    list_instances(conn)
-    list_snapshots(conn)
-    list_backups(conn)
-    list_volumes(conn)
-    print_header(TRANSLATIONS[lang]["volumes_tree_header"])
-    tree = mounted_volumes(conn)
-    print_tree(tree)
-    list_floating_ips(conn)
-    list_containers(conn)
-    list_all_resources(conn)
+        # Lister les ressources
+        list_images(conn)
+        list_instances(conn)
+        list_snapshots(conn)
+        list_backups(conn)
+        list_volumes(conn)
+        print_header(TRANSLATIONS[lang]["volumes_tree_header"])
+        tree = mounted_volumes(conn)
+        print_tree(tree)
+        list_floating_ips(conn)
+        list_containers(conn)
+        list_all_resources(conn)
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

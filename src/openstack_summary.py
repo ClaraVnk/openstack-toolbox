@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
 import json
-import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
-import tomli
 from openstack import connection
 from rich import print
 from rich.console import Console
@@ -14,7 +12,7 @@ from rich.table import Table
 from rich.tree import Tree
 
 from .config import get_language_preference, load_openstack_credentials
-from .utils import format_size, isoformat, print_header
+from .utils import format_size, get_version, isoformat, print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -89,20 +87,6 @@ TRANSLATIONS = {
 }
 
 
-# Fonction pour récupérer la version
-def get_version():
-    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
-    pyproject_path = os.path.abspath(pyproject_path)
-
-    try:
-        with open(pyproject_path, "rb") as f:
-            pyproject_data = tomli.load(f)
-        version = pyproject_data.get("project", {}).get("version", "unknown")
-    except Exception:
-        version = "unknown"
-    return version
-
-
 # Ajout des fonctions auxiliaires
 def trim_to_minute(dt_str):
     return dt_str.replace("T", " ")[:16]
@@ -155,7 +139,7 @@ def generate_billing():
             "json",
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         if result.returncode == 0:
             return result.stdout
         else:
@@ -472,31 +456,31 @@ def main():
         return
 
     conn = connection.Connection(**creds)
-    if not conn.authorize():
-        print("[bold red]❌ Échec de la connexion à OpenStack[/bold red]")
-        return
+    try:
+        if not conn.authorize():
+            print("[bold red]❌ Échec de la connexion à OpenStack[/bold red]")
+            return
 
-    # Générer le fichier de billing
-    billing_text = generate_billing()
-    if "introuvable" in billing_text:
-        print("[bold red]❌ Échec de la récupération du billing[/bold red]")
-    else:
+        # Générer le fichier de billing
+        billing_text = generate_billing()
         try:
             json.loads(billing_text)
         except json.JSONDecodeError:
-            print("[bold red]❌ Erreur de parsing du fichier billing[/bold red]")
+            print(f"[bold yellow]{TRANSLATIONS[lang]['no_billing']}[/bold yellow]")
 
-    # Lister les ressources
-    list_images(conn)
-    list_instances(conn)
-    list_snapshots(conn)
-    list_backups(conn)
-    list_volumes(conn)
-    print_header(TRANSLATIONS[lang]["volumes_tree_header"])
-    tree = mounted_volumes(conn)
-    print_tree(tree)
-    list_floating_ips(conn)
-    list_containers(conn)
+        # Lister les ressources
+        list_images(conn)
+        list_instances(conn)
+        list_snapshots(conn)
+        list_backups(conn)
+        list_volumes(conn)
+        print_header(TRANSLATIONS[lang]["volumes_tree_header"])
+        tree = mounted_volumes(conn)
+        print_tree(tree)
+        list_floating_ips(conn)
+        list_containers(conn)
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

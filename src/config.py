@@ -115,7 +115,16 @@ def create_smtp_config_interactive() -> bool:
     config = configparser.ConfigParser()
 
     server = input("Serveur SMTP [smtp.gmail.com]: ").strip() or "smtp.gmail.com"
-    port = input("Port SMTP [587]: ").strip() or "587"
+    while True:
+        port_input = input("Port SMTP [587]: ").strip() or "587"
+        try:
+            port_val = int(port_input)
+            if 1 <= port_val <= 65535:
+                port = port_input
+                break
+        except ValueError:
+            pass
+        print("Port invalide. Entrez un nombre entre 1 et 65535.")
     username = input("Utilisateur SMTP: ").strip()
     password = getpass.getpass("Mot de passe SMTP: ").strip()
 
@@ -140,10 +149,9 @@ def create_smtp_config_interactive() -> bool:
     }
 
     try:
-        with open(SMTP_CONFIG_FILE, "w", encoding="utf-8") as f:
+        fd = os.open(SMTP_CONFIG_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             config.write(f)
-        # Set file permissions to 600 (read/write for owner only)
-        os.chmod(SMTP_CONFIG_FILE, 0o600)
         return True
     except (OSError, IOError) as e:
         raise SMTPConfigError(f"Failed to save SMTP configuration: {e}") from e

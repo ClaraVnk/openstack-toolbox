@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
 import json
-import os
 import subprocess
 from datetime import datetime, timedelta, timezone
 
-import tomli
 from openstack import connection
 from rich import print
 from rich.console import Console
 from rich.table import Table
 
 from .config import get_language_preference, load_openstack_credentials
-from .utils import isoformat
+from .utils import get_version, isoformat
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -67,20 +65,6 @@ TRANSLATIONS = {
 }
 
 
-# Fonction pour récupérer la version
-def get_version():
-    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
-    pyproject_path = os.path.abspath(pyproject_path)
-
-    try:
-        with open(pyproject_path, "rb") as f:
-            pyproject_data = tomli.load(f)
-        version = pyproject_data.get("project", {}).get("version", "unknown")
-    except Exception:
-        version = "unknown"
-    return version
-
-
 # Fonction pour générer le fichier de billing
 def generate_billing():
     lang = get_language_preference()
@@ -112,7 +96,7 @@ def generate_billing():
             "json",
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
 
         if result.returncode == 0:
             return result.stdout
@@ -133,6 +117,7 @@ def get_vm_statuses_from_cli():
             ["openstack", "server", "list", "-f", "json"],
             capture_output=True,
             text=True,
+            timeout=60,
         )
         if result.returncode != 0:
             print(TRANSLATIONS[lang]["openstack_error"])
@@ -284,23 +269,26 @@ def main():
         return
 
     conn = connection.Connection(**creds)
-    if not conn.authorize():
-        print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/bold red]")
-        return
+    try:
+        if not conn.authorize():
+            print(f"[bold red]{TRANSLATIONS[lang]['auth_error']}[/bold red]")
+            return
 
-    generate_billing()
-    report_body = collect_and_analyze_data(conn)
+        billing_json = generate_billing()
+        report_body = collect_and_analyze_data(conn, billing_json)
 
-    # Enregistrer le rapport dans un fichier
-    with open("openstack_optimization_report.txt", "w") as f:
-        f.write(report_body)
+        try:
+            with open("openstack_optimization_report.txt", "w") as f:
+                f.write(report_body)
+            print(
+                f"[bold green]{TRANSLATIONS[lang]['report_generated'].format('openstack_optimization_report.txt')}[/bold green]"
+            )
+        except OSError as e:
+            print(f"[bold red]❌ Impossible d'écrire le rapport : {e}[/bold red]")
 
-    print(
-        f"[bold green]{TRANSLATIONS[lang]['report_generated'].format('openstack_optimization_report.txt')}[/bold green]"
-    )
-
-    # Afficher le rapport
-    print(report_body)
+        print(report_body)
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

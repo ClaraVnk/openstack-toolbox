@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import os
 from datetime import datetime
 from typing import Optional, Tuple
 
+import tomli
 from rich import print
 
 
@@ -100,6 +102,16 @@ def isoformat(dt: datetime) -> str:
         '2024-03-15T14:30:00+00:00'
     """
     return dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+
+def get_version() -> str:
+    pyproject_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "pyproject.toml"))
+    try:
+        with open(pyproject_path, "rb") as f:
+            data = tomli.load(f)
+        return data.get("project", {}).get("version", "unknown")
+    except Exception:
+        return "unknown"
 
 
 def print_header(header: str) -> None:

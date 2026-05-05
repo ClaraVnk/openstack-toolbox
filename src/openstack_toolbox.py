@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
 
-import tomli
 from rich import print
 from rich.prompt import Prompt
 
 from .config import get_language_preference, set_language_preference
+from .utils import get_version
 
 TRANSLATIONS = {
     "fr": {
@@ -37,19 +36,6 @@ TRANSLATIONS = {
         "usage": "Usage: openstack-toolbox [--config]",
     },
 }
-
-
-def get_version():
-    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
-    pyproject_path = os.path.abspath(pyproject_path)
-
-    try:
-        with open(pyproject_path, "rb") as f:
-            pyproject_data = tomli.load(f)
-        version = pyproject_data.get("project", {}).get("version", "unknown")
-    except Exception:
-        version = "unknown"
-    return version
 
 
 def get_commands(lang):

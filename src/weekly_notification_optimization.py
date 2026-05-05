@@ -7,7 +7,6 @@ import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-import tomli
 from rich import print
 
 from .config import (
@@ -15,7 +14,7 @@ from .config import (
     get_language_preference,
     load_smtp_config,
 )
-from .utils import print_header
+from .utils import get_version, print_header
 
 # Dictionnaire des traductions
 TRANSLATIONS = {
@@ -92,28 +91,6 @@ TRANSLATIONS = {
 }
 
 
-def get_version():
-    """
-    Récupère la version du projet depuis le fichier pyproject.toml.
-
-    Returns:
-        str: Version du projet ou "unknown" si non trouvée
-
-    Examples:
-        >>> get_version()
-        '1.2.0'
-    """
-    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
-    pyproject_path = os.path.abspath(pyproject_path)
-
-    try:
-        with open(pyproject_path, "rb") as f:
-            pyproject_data = tomli.load(f)
-        return pyproject_data.get("project", {}).get("version", "unknown")
-    except Exception:
-        return "unknown"
-
-
 def generate_report():
     """
     Génère un rapport hebdomadaire des ressources OpenStack.
@@ -144,8 +121,13 @@ def generate_report():
             ],
             capture_output=True,
             text=True,
+            timeout=300,
         )
+        if result.returncode != 0:
+            return f"Erreur lors de la génération du rapport (code {result.returncode}) : {result.stderr.strip()}"
         return result.stdout
+    except subprocess.TimeoutExpired:
+        return "Erreur : délai dépassé lors de la génération du rapport."
     except Exception as e:
         return f"Erreur lors de la génération du rapport : {str(e)}"
 
@@ -217,7 +199,7 @@ def setup_cron():
         cron_cmd = f"0 8 * * 1 {sys.executable} {script_path}"
 
         # Lire le crontab actuel
-        result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+        result = subprocess.run(["crontab", "-l"], capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
             current_crontab = result.stdout
         else:
@@ -285,7 +267,7 @@ def main():
     if send_email(smtp_config, TRANSLATIONS[lang]["test_email_subject"], email_body):
         print(f"[bold green]{TRANSLATIONS[lang]['email_sent']}[/]")
     else:
-        print(f"[bold red]{TRANSLATIONS[lang]['email_error']}[/]")
+        print(f"[bold red]{TRANSLATIONS[lang]['check_smtp']}[/]")
         return
 
     # Configurer la tâche cron
